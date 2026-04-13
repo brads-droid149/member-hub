@@ -16,7 +16,7 @@ const mockMember = {
 
 export default function MembershipSettings() {
   const { toast } = useToast();
-  const [status, setStatus] = useState(mockMember.status);
+  const [status, setStatus] = useState<"active" | "paused" | "cancelled">(mockMember.status);
 
   const handlePause = () => {
     setStatus("paused");
