@@ -1,7 +1,8 @@
-import { LayoutDashboard, Gift, Settings, LogOut } from "lucide-react";
+import { LayoutDashboard, Gift, Settings, LogOut, Shield } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useAdmin } from "@/hooks/use-admin";
 import {
   Sidebar,
   SidebarContent,
@@ -24,8 +25,8 @@ const navItems = [
 export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
-  const location = useLocation();
   const navigate = useNavigate();
+  const { isAdmin } = useAdmin();
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -37,7 +38,7 @@ export function AppSidebar() {
       <SidebarContent className="pt-6">
         <div className="px-4 mb-8">
           {!collapsed && (
-          <h2 className="text-lg font-display font-bold text-foreground tracking-tight">
+            <h2 className="text-lg font-display font-bold text-foreground tracking-tight">
               Junkyard Club
             </h2>
           )}
@@ -60,6 +61,20 @@ export function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
+              {isAdmin && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <NavLink
+                      to="/admin"
+                      className="hover:bg-sidebar-accent"
+                      activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
+                    >
+                      <Shield className="mr-2 h-4 w-4" />
+                      {!collapsed && <span>Admin</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
