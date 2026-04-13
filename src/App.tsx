@@ -8,6 +8,7 @@ import Signup from "./pages/Signup";
 import Dashboard from "./pages/Dashboard";
 import Partners from "./pages/Partners";
 import MembershipSettings from "./pages/MembershipSettings";
+import Admin from "./pages/Admin";
 import AppLayout from "./components/AppLayout";
 import ProtectedRoute from "./components/ProtectedRoute";
 import NotFound from "./pages/NotFound";
@@ -33,6 +34,7 @@ const App = () => (
             <Route path="/" element={<Dashboard />} />
             <Route path="/partners" element={<Partners />} />
             <Route path="/settings" element={<MembershipSettings />} />
+            <Route path="/admin" element={<Admin />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
