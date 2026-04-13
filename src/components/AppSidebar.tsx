@@ -37,8 +37,8 @@ export function AppSidebar() {
       <SidebarContent className="pt-6">
         <div className="px-4 mb-8">
           {!collapsed && (
-            <h2 className="text-lg font-display font-bold text-foreground tracking-tight">
-              Junkyard Surf
+          <h2 className="text-lg font-display font-bold text-foreground tracking-tight">
+              Junkyard Club
             </h2>
           )}
         </div>
