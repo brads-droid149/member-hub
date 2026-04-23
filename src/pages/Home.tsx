@@ -264,25 +264,6 @@ export default function Home() {
             <p className="text-sm text-muted-foreground mt-1">Manage your subscription</p>
           </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg font-display">Current Status</CardTitle>
-            </CardHeader>
-            <CardContent className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Badge className={statusColors[status]}>{status}</Badge>
-                <span className="text-sm text-muted-foreground">
-                  {monthsActive} months active · {entries} entries
-                </span>
-              </div>
-              {status !== "active" && (
-                <Button size="sm" onClick={handleResume}>Resume</Button>
-              )}
-            </CardContent>
-          </Card>
-
-
-
           {status !== "cancelled" && (
             <Card className="border-destructive/20">
               <CardHeader>
