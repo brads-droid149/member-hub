@@ -281,27 +281,7 @@ export default function Home() {
             </CardContent>
           </Card>
 
-          {status === "active" && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg font-display flex items-center gap-2">
-                  <Pause className="h-5 w-5" /> Pause Membership
-                </CardTitle>
-                <CardDescription>
-                  Pause for up to {mockMember.maxPauseMonths} months. You've used {mockMember.pauseMonthsUsed} of {mockMember.maxPauseMonths}.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button
-                  variant="outline"
-                  onClick={handlePause}
-                  disabled={mockMember.pauseMonthsUsed >= mockMember.maxPauseMonths}
-                >
-                  Pause Membership
-                </Button>
-              </CardContent>
-            </Card>
-          )}
+
 
           {status !== "cancelled" && (
             <Card className="border-destructive/20">
