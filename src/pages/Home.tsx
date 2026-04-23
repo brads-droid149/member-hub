@@ -158,20 +158,6 @@ export default function Home() {
             </div>
           </div>
 
-          <Card className="relative overflow-hidden border-primary/20">
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent" />
-            <CardContent className="relative flex flex-col items-center justify-center py-12">
-              <p className="text-sm font-medium text-muted-foreground uppercase tracking-widest mb-2">
-                Your Entries
-              </p>
-              <span className="text-7xl font-display font-bold text-primary">{entries}</span>
-              <p className="text-xs text-muted-foreground mt-3 flex items-center gap-1">
-                <TrendingUp className="h-3 w-3" />
-                +1 entry every month you stay active
-              </p>
-            </CardContent>
-          </Card>
-
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
