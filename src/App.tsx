@@ -5,11 +5,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
-import Dashboard from "./pages/Dashboard";
-import Partners from "./pages/Partners";
-import MembershipSettings from "./pages/MembershipSettings";
+import Home from "./pages/Home";
 import Admin from "./pages/Admin";
-import AppLayout from "./components/AppLayout";
 import ProtectedRoute from "./components/ProtectedRoute";
 import NotFound from "./pages/NotFound";
 
@@ -25,17 +22,21 @@ const App = () => (
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route
+            path="/"
             element={
               <ProtectedRoute>
-                <AppLayout />
+                <Home />
               </ProtectedRoute>
             }
-          >
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/partners" element={<Partners />} />
-            <Route path="/settings" element={<MembershipSettings />} />
-            <Route path="/admin" element={<Admin />} />
-          </Route>
+          />
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute>
+                <Admin />
+              </ProtectedRoute>
+            }
+          />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
