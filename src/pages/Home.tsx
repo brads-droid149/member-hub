@@ -235,19 +235,7 @@ export default function Home() {
                   onClick={() => handleCopy(partner.discount_code, partner.id)}
                 >
                   <CardContent className="p-4 flex flex-col items-center text-center gap-3">
-                    <div className="w-full aspect-[16/9] rounded-md bg-secondary flex items-center justify-center overflow-hidden">
-                      {partner.logo_url ? (
-                        <img
-                          src={partner.logo_url}
-                          alt={`${partner.name} logo`}
-                          className="w-full h-full object-contain p-2"
-                        />
-                      ) : (
-                        <span className="text-xs text-muted-foreground font-medium">
-                          {partner.name}
-                        </span>
-                      )}
-                    </div>
+                    <div className="w-full aspect-square rounded-md bg-foreground flex items-center justify-center overflow-hidden" />
                     <div>
                       <p className="font-medium text-foreground text-sm">{partner.name}</p>
                       <p className="text-xs text-muted-foreground">{partner.description || "Member discount"}</p>
