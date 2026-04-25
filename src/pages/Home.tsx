@@ -163,7 +163,7 @@ export default function Home() {
             <div className="flex items-center gap-2 mt-2">
               <Badge className={statusColors[status] || statusColors.active}>{status}</Badge>
               <span className="text-sm text-muted-foreground">
-                Member for {monthsLabel}
+                Crew Member for {monthsLabel}
               </span>
             </div>
           </div>
