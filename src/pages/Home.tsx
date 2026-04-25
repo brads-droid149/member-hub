@@ -227,7 +227,7 @@ export default function Home() {
                   onClick={() => handleCopy(partner.discount_code, partner.id)}
                 >
                   <CardContent className="p-4 flex flex-col items-center text-center gap-3">
-                    <div className="w-full aspect-square rounded-md bg-foreground flex items-center justify-center overflow-hidden" />
+                    <div className="w-full aspect-[16/9] rounded-md bg-white border border-border flex items-center justify-center overflow-hidden" />
                     <div>
                       <p className="font-medium text-foreground text-sm">{partner.name}</p>
                       <p className="text-xs text-muted-foreground">{partner.description || "Member discount"}</p>
