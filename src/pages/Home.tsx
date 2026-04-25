@@ -48,6 +48,7 @@ export default function Home() {
   const { isAdmin } = useAdmin();
 
   const [profile, setProfile] = useState<{ full_name: string | null } | null>(null);
+  const [authName, setAuthName] = useState<string | null>(null);
   const [member, setMember] = useState<{ status: string; months_active: number; entries: number } | null>(null);
   const [giveaway, setGiveaway] = useState<Giveaway | null>(null);
   const [winners, setWinners] = useState<Winner[]>([]);
@@ -60,10 +61,17 @@ export default function Home() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      const metaName =
+        (user.user_metadata?.full_name as string | undefined) ||
+        (user.user_metadata?.name as string | undefined) ||
+        user.email?.split("@")[0] ||
+        null;
+      setAuthName(metaName);
+
       const [profileRes, memberRes, giveawayRes, winnersRes, partnersRes] = await Promise.all([
-        supabase.from("profiles").select("full_name").eq("user_id", user.id).single(),
-        supabase.from("members").select("status, months_active, entries").eq("user_id", user.id).single(),
-        supabase.from("giveaways").select("*").eq("is_active", true).limit(1).single(),
+        supabase.from("profiles").select("full_name").eq("user_id", user.id).maybeSingle(),
+        supabase.from("members").select("status, months_active, entries").eq("user_id", user.id).maybeSingle(),
+        supabase.from("giveaways").select("*").eq("is_active", true).limit(1).maybeSingle(),
         supabase.from("past_winners").select("*").order("won_at", { ascending: false }).limit(5),
         supabase.from("partners").select("*").order("name"),
       ]);
@@ -80,9 +88,19 @@ export default function Home() {
     load();
   }, []);
 
-  const displayName = profile?.full_name || "Member";
+  const toTitle = (s: string) =>
+    s
+      .split(/[\s_-]+/)
+      .filter(Boolean)
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+      .join(" ");
+
+  const rawName = profile?.full_name?.trim() || authName?.trim() || "";
+  const firstName = rawName ? toTitle(rawName).split(" ")[0] : "Member";
   const entries = member?.entries || 0;
-  const monthsActive = member?.months_active || 0;
+  const monthsActive = Math.max(1, member?.months_active || 0);
+  const monthsLabel = `${monthsActive} ${monthsActive === 1 ? "month" : "months"}`;
+
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
