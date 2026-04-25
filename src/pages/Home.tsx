@@ -23,7 +23,6 @@ import {
   XCircle,
   CreditCard,
   LogOut,
-  Shield,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -128,13 +127,6 @@ export default function Home() {
             <Button variant="ghost" size="sm" onClick={() => scrollTo("settings")}>Settings</Button>
           </nav>
           <div className="flex items-center gap-2">
-            {isAdmin && (
-              <Button asChild variant="outline" size="sm">
-                <Link to="/admin">
-                  <Shield className="h-4 w-4 mr-1.5" /> Admin
-                </Link>
-              </Button>
-            )}
             <Button variant="ghost" size="sm" onClick={handleLogout}>
               <LogOut className="h-4 w-4 md:mr-1.5" />
               <span className="hidden md:inline">Sign Out</span>
