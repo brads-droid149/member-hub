@@ -270,51 +270,10 @@ export default function Home() {
             <p className="text-sm text-muted-foreground mt-1">Manage your subscription</p>
           </div>
 
-          {status !== "cancelled" && (
-            <Card className="border-destructive/20">
-              <CardHeader>
-                <CardTitle className="text-lg font-display flex items-center gap-2 text-destructive">
-                  <XCircle className="h-5 w-5" /> Cancel Membership
-                </CardTitle>
-                <CardDescription>This will permanently reset your entries to zero.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="destructive">Cancel Membership</Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Your <strong>{entries} entries</strong> will be permanently reset to zero. This cannot be undone.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Keep Membership</AlertDialogCancel>
-                      <AlertDialogAction onClick={handleCancel} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                        Yes, Cancel
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </CardContent>
-            </Card>
-          )}
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg font-display flex items-center gap-2">
-                <CreditCard className="h-5 w-5" /> Payment Details
-              </CardTitle>
-              <CardDescription>
-                Update your card or billing information via our secure payment portal.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button variant="outline">Manage Payment Method</Button>
-            </CardContent>
-          </Card>
+          <Button variant="outline">
+            <CreditCard className="h-4 w-4 mr-2" />
+            Manage Your Subscription
+          </Button>
         </section>
       </main>
     </div>
