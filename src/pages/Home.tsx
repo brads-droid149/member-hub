@@ -147,7 +147,7 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card>
+            <Card className="md:col-span-2">
               <CardHeader>
                 <CardTitle className="text-lg font-display flex items-center gap-2">
                   <Trophy className="h-5 w-5 text-primary" />
@@ -158,8 +158,8 @@ export default function Home() {
                 {giveaway ? (
                   <>
                     {giveaway.prize_image_url && (
-                      <div className="rounded-lg overflow-hidden">
-                        <img src={giveaway.prize_image_url} alt={giveaway.title} className="w-full h-40 object-cover" />
+                      <div className="rounded-lg overflow-hidden border border-border">
+                        <img src={giveaway.prize_image_url} alt={giveaway.title} className="w-full h-56 object-cover" />
                       </div>
                     )}
                     <div>
@@ -174,31 +174,6 @@ export default function Home() {
                   </>
                 ) : (
                   <p className="text-sm text-muted-foreground py-4 text-center">No active giveaway right now</p>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg font-display">Past Winners</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {winners.length > 0 ? (
-                  <ul className="space-y-4">
-                    {winners.map((w) => (
-                      <li key={w.id} className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium text-foreground">{w.winner_name}</p>
-                          <p className="text-xs text-muted-foreground">{w.prize_title}</p>
-                        </div>
-                        <span className="text-xs text-muted-foreground">
-                          {new Date(w.won_at).toLocaleDateString("en-AU", { month: "short", year: "numeric" })}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="text-sm text-muted-foreground py-4 text-center">No winners yet</p>
                 )}
               </CardContent>
             </Card>
