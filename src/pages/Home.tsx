@@ -119,7 +119,7 @@ export default function Home() {
       <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur-md">
         <div className="max-w-5xl mx-auto px-6 h-14 flex items-center justify-between">
           <h2 className="text-base font-display font-bold text-foreground tracking-tight">
-            Junkyard Club
+            Junkyard Crew
           </h2>
           <nav className="hidden md:flex items-center gap-1">
             <Button variant="ghost" size="sm" onClick={() => scrollTo("overview")}>Overview</Button>
