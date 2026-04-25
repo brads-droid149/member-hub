@@ -31,7 +31,7 @@ export default function Login() {
       <Card className="w-full max-w-md border-border">
         <CardHeader className="text-center">
           <CardTitle className="text-3xl font-display tracking-tight text-foreground">
-            Junkyard Club Portal
+            Junkyard Crew Portal
           </CardTitle>
           <CardDescription className="text-muted-foreground">
             Sign in to your account
