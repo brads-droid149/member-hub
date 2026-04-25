@@ -1,32 +1,10 @@
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import {
-  Trophy,
-  Calendar,
-  TrendingUp,
-  Copy,
-  Check,
-  Pause,
-  XCircle,
-  CreditCard,
-  LogOut,
-} from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Trophy, Calendar, Copy, Check, CreditCard, LogOut } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { useAdmin } from "@/hooks/use-admin";
 import { useToast } from "@/hooks/use-toast";
 import type { Tables } from "@/integrations/supabase/types";
 
@@ -45,7 +23,7 @@ const mockMember = { pauseMonthsUsed: 0, maxPauseMonths: 3 };
 export default function Home() {
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { isAdmin } = useAdmin();
+  
 
   const [profile, setProfile] = useState<{ full_name: string | null } | null>(null);
   const [authName, setAuthName] = useState<string | null>(null);
@@ -270,51 +248,10 @@ export default function Home() {
             <p className="text-sm text-muted-foreground mt-1">Manage your subscription</p>
           </div>
 
-          {status !== "cancelled" && (
-            <Card className="border-destructive/20">
-              <CardHeader>
-                <CardTitle className="text-lg font-display flex items-center gap-2 text-destructive">
-                  <XCircle className="h-5 w-5" /> Cancel Membership
-                </CardTitle>
-                <CardDescription>This will permanently reset your entries to zero.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="destructive">Cancel Membership</Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Your <strong>{entries} entries</strong> will be permanently reset to zero. This cannot be undone.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Keep Membership</AlertDialogCancel>
-                      <AlertDialogAction onClick={handleCancel} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                        Yes, Cancel
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </CardContent>
-            </Card>
-          )}
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg font-display flex items-center gap-2">
-                <CreditCard className="h-5 w-5" /> Payment Details
-              </CardTitle>
-              <CardDescription>
-                Update your card or billing information via our secure payment portal.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button variant="outline">Manage Payment Method</Button>
-            </CardContent>
-          </Card>
+          <Button variant="outline">
+            <CreditCard className="h-4 w-4 mr-2" />
+            Manage Your Subscription
+          </Button>
         </section>
       </main>
     </div>
