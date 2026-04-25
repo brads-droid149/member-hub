@@ -157,9 +157,13 @@ export default function Home() {
               <CardContent className="space-y-4">
                 {giveaway ? (
                   <>
-                    {giveaway.prize_image_url && (
+                    {giveaway.prize_image_url ? (
                       <div className="rounded-lg overflow-hidden border border-border">
                         <img src={giveaway.prize_image_url} alt={giveaway.title} className="w-full h-56 object-cover" />
+                      </div>
+                    ) : (
+                      <div className="w-full h-56 rounded-lg bg-white border border-border flex items-center justify-center overflow-hidden">
+                        <span className="text-muted-foreground text-sm">Prize image</span>
                       </div>
                     )}
                     <div>
