@@ -158,12 +158,12 @@ export default function Home() {
         <section id="overview" className="space-y-8 scroll-mt-20">
           <div>
             <h1 className="text-3xl font-display font-bold text-foreground">
-              Welcome back, {displayName}
+              Welcome back, {firstName}
             </h1>
             <div className="flex items-center gap-2 mt-2">
               <Badge className={statusColors[status] || statusColors.active}>{status}</Badge>
               <span className="text-sm text-muted-foreground">
-                Member for {monthsActive} months
+                Member for {monthsLabel}
               </span>
             </div>
           </div>
