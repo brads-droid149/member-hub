@@ -24,6 +24,7 @@ const mockMember = { pauseMonthsUsed: 0, maxPauseMonths: 3 };
 export default function Home() {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { isAdmin } = useAdmin();
   
 
   const [profile, setProfile] = useState<{ full_name: string | null } | null>(null);
