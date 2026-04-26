@@ -2,10 +2,11 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Trophy, Calendar, Copy, Check, CreditCard, LogOut } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Trophy, Calendar, Copy, Check, CreditCard, LogOut, Shield } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useAdmin } from "@/hooks/use-admin";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Giveaway = Tables<"giveaways">;
@@ -123,6 +124,14 @@ export default function Home() {
             <Button variant="ghost" size="sm" onClick={() => scrollTo("settings")}>Settings</Button>
           </nav>
           <div className="flex items-center gap-2">
+            {isAdmin && (
+              <Button asChild variant="ghost" size="sm">
+                <Link to="/admin">
+                  <Shield className="h-4 w-4 md:mr-1.5" />
+                  <span className="hidden md:inline">Admin</span>
+                </Link>
+              </Button>
+            )}
             <Button variant="ghost" size="sm" onClick={handleLogout}>
               <LogOut className="h-4 w-4 md:mr-1.5" />
               <span className="hidden md:inline">Sign Out</span>
