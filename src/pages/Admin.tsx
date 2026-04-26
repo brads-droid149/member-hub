@@ -2,8 +2,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAdmin } from "@/hooks/use-admin";
 import { Navigate } from "react-router-dom";
 import AdminGiveaways from "./admin/AdminGiveaways";
-import AdminWinners from "./admin/AdminWinners";
-import AdminUsers from "./admin/AdminUsers";
+import AdminPartners from "./admin/AdminPartners";
 
 export default function Admin() {
   const { isAdmin, loading } = useAdmin();
@@ -24,13 +23,11 @@ export default function Admin() {
 
       <Tabs defaultValue="giveaways">
         <TabsList>
-          <TabsTrigger value="giveaways">Giveaways</TabsTrigger>
-          <TabsTrigger value="winners">Past Winners</TabsTrigger>
-          <TabsTrigger value="users">Users</TabsTrigger>
+          <TabsTrigger value="giveaways">Giveaway Manager</TabsTrigger>
+          <TabsTrigger value="partners">Partner Manager</TabsTrigger>
         </TabsList>
-        <TabsContent value="giveaways"><AdminGiveaways /></TabsContent>
-        <TabsContent value="winners"><AdminWinners /></TabsContent>
-        <TabsContent value="users"><AdminUsers /></TabsContent>
+        <TabsContent value="giveaways" className="mt-6"><AdminGiveaways /></TabsContent>
+        <TabsContent value="partners" className="mt-6"><AdminPartners /></TabsContent>
       </Tabs>
     </div>
   );
