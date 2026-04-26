@@ -100,6 +100,8 @@ export default function AdminPartners() {
 
   const handleLogoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    // Reset so picking the same file again still fires onChange
+    e.target.value = "";
     if (!file) return;
     if (!ACCEPTED.includes(file.type)) {
       toast({ title: "Invalid file", description: "JPG or PNG only", variant: "destructive" });
