@@ -82,14 +82,37 @@ export default function AdminWinnerDraw() {
       prize_title: giveaway?.title || "Giveaway Prize",
       giveaway_id: giveaway?.id || null,
     });
+
+    if (error) {
+      setSaving(false);
+      setConfirmOpen(false);
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+      return;
+    }
+
+    // ENTRIES LIFECYCLE
+    // Entries increment by 1 monthly via cron job on billing date — to be
+    // implemented by backend team on Node.js migration. New members start at 1.
+    // Winners reset to 0. Cancelled members reset to 0.
+    const { error: resetError } = await supabase
+      .from("members")
+      .update({ entries: 0 })
+      .eq("user_id", winner.user_id);
+
     setSaving(false);
     setConfirmOpen(false);
-    if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+
+    if (resetError) {
+      toast({
+        title: "Winner saved, but entries reset failed",
+        description: resetError.message,
+        variant: "destructive",
+      });
     } else {
-      toast({ title: "Winner saved!", description: `${winner.full_name} has been added to past winners.` });
-      setWinner(null);
+      toast({ title: "Winner saved!", description: `${winner.full_name} has been added to past winners and their entries have been reset.` });
     }
+    setWinner(null);
+    fetchData();
   };
 
   return (
