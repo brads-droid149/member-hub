@@ -106,10 +106,23 @@ export async function completeSignup(
   });
   if (error) return { error: error.message };
 
-  // Sign in immediately (auto-confirm may or may not be on; signUp returns
-  // a session if confirmations are disabled).
+  // Sign in immediately (auto-confirm is enabled, so signUp returns a session).
   const signIn = await supabase.auth.signInWithPassword({ email, password });
   if (signIn.error) return { error: signIn.error.message };
+
+  // ENTRIES LIFECYCLE
+  // Entries increment by 1 monthly via cron job on billing date — to be
+  // implemented by backend team on Node.js migration. New members start at 1.
+  // Winners reset to 0. Cancelled members reset to 0.
+  const userId = signIn.data.user?.id;
+  if (userId) {
+    await supabase.from("members").insert({
+      user_id: userId,
+      status: "active",
+      entries: 1,
+      months_active: 1,
+    });
+  }
 
   return {};
 }
