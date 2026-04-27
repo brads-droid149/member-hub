@@ -64,7 +64,7 @@ export default function Login() {
     const result = await verifyOtp(phone, code);
     setLoading(false);
     if (!result.ok) {
-      toast({ title: "Verification failed", description: (result as { error: string }).error, variant: "destructive" });
+      toast({ title: "Verification failed", description: result.error, variant: "destructive" });
       return;
     }
     if (result.isNewUser) {
