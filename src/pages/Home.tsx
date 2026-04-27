@@ -82,7 +82,12 @@ export default function Home() {
 
   const rawName = profile?.full_name?.trim() || authName?.trim() || "";
   const firstName = rawName ? toTitle(rawName).split(" ")[0] : "Member";
-  const entries = member?.entries || 0;
+  // ENTRIES LIFECYCLE
+  // Entries increment by 1 monthly via cron job on billing date — to be
+  // implemented by backend team on Node.js migration. New members start at 1.
+  // Winners reset to 0. Cancelled members reset to 0.
+  // This value is read live from the members table for the signed-in user.
+  const entries = member?.entries ?? 0;
   const monthsActive = Math.max(1, member?.months_active || 0);
   const monthsLabel = `${monthsActive} ${monthsActive === 1 ? "month" : "months"}`;
 
