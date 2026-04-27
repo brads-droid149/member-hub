@@ -1,33 +1,47 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useNavigate, useSearchParams, Navigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { completeSignup, isValidAuPhone } from "@/lib/phone-auth";
 
 export default function Signup() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [searchParams] = useSearchParams();
+  const phone = searchParams.get("phone") || "";
   const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
   const { toast } = useToast();
+
+  // If someone lands here without a verified phone in the URL, send them
+  // back to the login flow to verify first.
+  useEffect(() => {
+    if (!isValidAuPhone(phone)) {
+      navigate("/login", { replace: true });
+    }
+  }, [phone, navigate]);
+
+  if (!isValidAuPhone(phone)) {
+    return <Navigate to="/login" replace />;
+  }
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!fullName.trim()) {
+      toast({ title: "Enter your name", variant: "destructive" });
+      return;
+    }
     setLoading(true);
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { data: { full_name: fullName } },
-    });
+    const { error } = await completeSignup(phone, fullName.trim());
     setLoading(false);
     if (error) {
-      toast({ title: "Signup failed", description: error.message, variant: "destructive" });
-    } else {
-      toast({ title: "Check your email", description: "We sent you a confirmation link." });
+      toast({ title: "Signup failed", description: error, variant: "destructive" });
+      return;
     }
+    toast({ title: "Welcome to the Crew!" });
+    navigate("/");
   };
 
   return (
@@ -38,7 +52,7 @@ export default function Signup() {
             Join the Crew
           </CardTitle>
           <CardDescription className="text-muted-foreground">
-            Create your member account
+            Verified {phone} — just one more step
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -51,40 +65,14 @@ export default function Signup() {
                 placeholder="Your name"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
+                autoComplete="name"
                 required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Min 6 characters"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={6}
               />
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Creating account..." : "Create Account"}
+              {loading ? "Creating your account..." : "Create Account"}
             </Button>
           </form>
-          <p className="mt-4 text-center text-sm text-muted-foreground">
-            Already a member?{" "}
-            <Link to="/login" className="text-primary hover:underline">Sign in</Link>
-          </p>
         </CardContent>
       </Card>
     </div>
