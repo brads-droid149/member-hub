@@ -55,7 +55,7 @@ export type VerifyResult = {
  */
 export async function verifyOtp(phone: string, code: string): Promise<VerifyResult> {
   if (code !== MOCK_OTP_CODE) {
-    return { ok: false, error: "Incorrect code. Try again." };
+    return { ok: false, isNewUser: false, error: "Incorrect code. Try again." };
   }
   const normalised = normalisePhone(phone);
   const { email, password } = credsFor(normalised);
@@ -77,6 +77,7 @@ export async function verifyOtp(phone: string, code: string): Promise<VerifyResu
   if (existingProfile) {
     return {
       ok: false,
+      isNewUser: false,
       error: "Account exists but couldn't sign you in. Please contact support.",
     };
   }
