@@ -35,7 +35,7 @@ export default function Signup() {
       <Card className="w-full max-w-md border-border">
         <CardHeader className="text-center">
           <CardTitle className="text-3xl font-display tracking-tight text-foreground">
-            Join the Club
+            Join the Crew
           </CardTitle>
           <CardDescription className="text-muted-foreground">
             Create your member account
