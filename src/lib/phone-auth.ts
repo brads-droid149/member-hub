@@ -43,9 +43,11 @@ export async function sendOtp(phone: string): Promise<{ error?: string }> {
   return {};
 }
 
-export type VerifyResult =
-  | { ok: true; isNewUser: boolean }
-  | { ok: false; error: string };
+export type VerifyResult = {
+  ok: boolean;
+  isNewUser: boolean;
+  error?: string;
+};
 
 /**
  * Verifies the code. Returns whether the user is new (no profile yet)
