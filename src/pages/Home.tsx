@@ -19,7 +19,7 @@ const statusColors: Record<string, string> = {
   cancelled: "bg-destructive/20 text-destructive border-destructive/30",
 };
 
-const mockMember = { pauseMonthsUsed: 0, maxPauseMonths: 3 };
+const STRIPE_PORTAL_URL = "https://billing.stripe.com/p/login/test_replace_me";
 
 export default function Home() {
   const { toast } = useToast();
@@ -63,7 +63,12 @@ export default function Home() {
       }
       if (giveawayRes.data) setGiveaway(giveawayRes.data);
       if (winnersRes.data) setWinners(winnersRes.data);
-      if (partnersRes.data) setPartners(partnersRes.data);
+      if (partnersRes.data) {
+        const sorted = [...partnersRes.data].sort((a, b) =>
+          a.name.localeCompare(b.name, undefined, { sensitivity: "base" })
+        );
+        setPartners(sorted);
+      }
     };
     load();
   }, []);
@@ -191,6 +196,17 @@ export default function Home() {
                 )}
               </CardContent>
             </Card>
+
+            <Card className="md:col-span-2">
+              <CardContent className="py-8 text-center">
+                <p className="text-sm uppercase tracking-wide text-muted-foreground mb-2">
+                  Your Entries This Draw
+                </p>
+                <p className="text-7xl font-display font-bold text-primary">
+                  {entries}
+                </p>
+              </CardContent>
+            </Card>
           </div>
         </section>
 
@@ -243,7 +259,7 @@ export default function Home() {
             <p className="text-sm text-muted-foreground mt-1">Manage your subscription</p>
           </div>
 
-          <Button variant="outline">
+          <Button variant="outline" onClick={() => window.open(STRIPE_PORTAL_URL, "_blank")}>
             <CreditCard className="h-4 w-4 mr-2" />
             Manage Your Subscription
           </Button>

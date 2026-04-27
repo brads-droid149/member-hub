@@ -3,6 +3,7 @@ import { useAdmin } from "@/hooks/use-admin";
 import { Navigate } from "react-router-dom";
 import AdminGiveaways from "./admin/AdminGiveaways";
 import AdminPartners from "./admin/AdminPartners";
+import AdminWinnerDraw from "./admin/AdminWinnerDraw";
 
 export default function Admin() {
   const { isAdmin, loading } = useAdmin();
@@ -25,9 +26,11 @@ export default function Admin() {
         <TabsList>
           <TabsTrigger value="giveaways">Giveaway Manager</TabsTrigger>
           <TabsTrigger value="partners">Partner Manager</TabsTrigger>
+          <TabsTrigger value="draw">Winner Draw</TabsTrigger>
         </TabsList>
         <TabsContent value="giveaways" className="mt-6"><AdminGiveaways /></TabsContent>
         <TabsContent value="partners" className="mt-6"><AdminPartners /></TabsContent>
+        <TabsContent value="draw" className="mt-6"><AdminWinnerDraw /></TabsContent>
       </Tabs>
     </div>
   );
