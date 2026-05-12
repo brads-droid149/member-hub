@@ -40,11 +40,12 @@ type PartnerForm = {
   description: string;
   discount_code: string;
   logo_url: string | null;
+  website_url: string;
 };
 
 const ACCEPTED = ["image/jpeg", "image/jpg", "image/png"];
 
-const emptyForm: PartnerForm = { name: "", description: "", discount_code: "", logo_url: null };
+const emptyForm: PartnerForm = { name: "", description: "", discount_code: "", logo_url: null, website_url: "" };
 
 export default function AdminPartners() {
   const { toast } = useToast();
@@ -91,6 +92,7 @@ export default function AdminPartners() {
       description: p.description ?? "",
       discount_code: p.discount_code,
       logo_url: p.logo_url,
+      website_url: (p as any).website_url ?? "",
     });
     setLogoPreview(p.logo_url);
     setPendingLogo(null);
@@ -132,6 +134,14 @@ export default function AdminPartners() {
     if (!form.name.trim()) e.name = "Brand name is required";
     if (!form.description.trim()) e.description = "Discount description is required";
     if (!form.discount_code.trim()) e.discount_code = "Promo code is required";
+    if (form.website_url.trim()) {
+      try {
+        const u = new URL(form.website_url.trim());
+        if (!["http:", "https:"].includes(u.protocol)) throw new Error();
+      } catch {
+        e.website_url = "Enter a valid URL (https://...)";
+      }
+    }
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -151,6 +161,7 @@ export default function AdminPartners() {
         description: form.description.trim(),
         discount_code: form.discount_code.trim(),
         logo_url: logoUrl,
+        website_url: form.website_url.trim() || null,
       };
 
       if (editingId) {
@@ -340,6 +351,19 @@ export default function AdminPartners() {
                 aria-invalid={!!errors.discount_code}
               />
               {errors.discount_code && <p className="text-xs text-destructive">{errors.discount_code}</p>}
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="p-website">Website URL <span className="text-muted-foreground font-normal">(optional)</span></Label>
+              <Input
+                id="p-website"
+                type="url"
+                value={form.website_url}
+                onChange={(e) => setForm({ ...form, website_url: e.target.value })}
+                placeholder="https://example.com"
+                aria-invalid={!!errors.website_url}
+              />
+              {errors.website_url && <p className="text-xs text-destructive">{errors.website_url}</p>}
             </div>
 
             <DialogFooter>

@@ -270,6 +270,17 @@ export default function Home() {
                       {copied === partner.id ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
                       {partner.discount_code}
                     </div>
+                    {partner.website_url && (
+                      <a
+                        href={partner.website_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="text-xs text-primary hover:underline"
+                      >
+                        Visit site
+                      </a>
+                    )}
                   </CardContent>
                 </Card>
               ))}
