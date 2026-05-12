@@ -68,9 +68,73 @@ export default function AdminGiveaways() {
     setLoading(false);
   };
 
+  // Record winner state
+  const [members, setMembers] = useState<MemberRow[]>([]);
+  const [search, setSearch] = useState("");
+  const [selected, setSelected] = useState<MemberRow | null>(null);
+  const [winnerPrize, setWinnerPrize] = useState("");
+  const [recording, setRecording] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+
+  const loadMembers = async () => {
+    const { data, error } = await supabase.rpc("get_admin_members_overview");
+    if (error) {
+      toast({ title: "Failed to load members", description: error.message, variant: "destructive" });
+    } else if (data) {
+      setMembers(data as MemberRow[]);
+    }
+  };
+
   useEffect(() => {
     loadActive();
+    loadMembers();
   }, []);
+
+  useEffect(() => {
+    setWinnerPrize(title);
+  }, [title]);
+
+  const matches = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return [];
+    return members
+      .filter((m) =>
+        m.user_id.toLowerCase().includes(q) ||
+        (m.full_name ?? "").toLowerCase().includes(q) ||
+        (m.email ?? "").toLowerCase().includes(q),
+      )
+      .slice(0, 8);
+  }, [search, members]);
+
+  const handleRecordWinner = async () => {
+    if (!selected) return;
+    setRecording(true);
+    try {
+      const { error: insertError } = await supabase.from("past_winners").insert({
+        giveaway_id: current?.id ?? null,
+        winner_name: selected.full_name ?? "",
+        state: selected.state ?? null,
+        prize_title: winnerPrize.trim(),
+      });
+      if (insertError) throw insertError;
+
+      const { error: resetError } = await supabase
+        .from("members")
+        .update({ entries: 0 })
+        .eq("user_id", selected.user_id);
+      if (resetError) throw resetError;
+
+      toast({ title: "Winner recorded", description: `${selected.full_name} added to past winners. Entries reset to 0.` });
+      setSelected(null);
+      setSearch("");
+      await loadMembers();
+    } catch (err: any) {
+      toast({ title: "Failed to record winner", description: err.message, variant: "destructive" });
+    } finally {
+      setRecording(false);
+      setConfirmOpen(false);
+    }
+  };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
