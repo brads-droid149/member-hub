@@ -4,6 +4,7 @@ import { Navigate, Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import AdminGiveaways from "./admin/AdminGiveaways";
 import AdminPartners from "./admin/AdminPartners";
+import AdminMembers from "./admin/AdminMembers";
 
 export default function Admin() {
   const { isAdmin, loading } = useAdmin();
