@@ -414,7 +414,10 @@ export default function Home() {
         {/* SETTINGS */}
         <section id="settings" className="space-y-6 scroll-mt-20 max-w-2xl">
           <div>
-            <h2 className="text-2xl font-display font-bold text-foreground">Membership Settings</h2>
+            <h2 className="text-2xl font-display font-bold text-foreground flex items-center gap-2">
+              <SettingsIcon className="h-5 w-5 text-primary" />
+              Membership Settings
+            </h2>
             <p className="text-sm text-muted-foreground mt-1">Manage your subscription</p>
           </div>
 
