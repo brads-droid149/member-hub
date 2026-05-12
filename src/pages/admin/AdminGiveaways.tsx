@@ -352,6 +352,114 @@ export default function AdminGiveaways() {
           </form>
         </CardContent>
       </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Award className="h-4 w-4 text-primary" />
+            Record Winner
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          <div className="space-y-1.5">
+            <Label htmlFor="winner-search">Search member by user ID, name or email</Label>
+            <div className="relative">
+              <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                id="winner-search"
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setSelected(null);
+                }}
+                placeholder="Start typing a user ID..."
+                className="pl-9"
+              />
+            </div>
+            {search && !selected && matches.length > 0 && (
+              <div className="rounded-md border border-border bg-card divide-y divide-border max-h-64 overflow-auto">
+                {matches.map((m) => (
+                  <button
+                    key={m.user_id}
+                    type="button"
+                    onClick={() => {
+                      setSelected(m);
+                      setSearch(m.user_id);
+                    }}
+                    className="w-full text-left px-3 py-2 hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="font-mono text-xs text-muted-foreground">{m.user_id}</div>
+                    <div className="text-sm font-medium text-foreground">{m.full_name || "—"}</div>
+                    <div className="text-xs text-muted-foreground">{m.email || "—"}</div>
+                  </button>
+                ))}
+              </div>
+            )}
+            {search && !selected && matches.length === 0 && (
+              <p className="text-xs text-muted-foreground">No matching members.</p>
+            )}
+          </div>
+
+          <div className="space-y-1.5">
+            <Label>Selected Member</Label>
+            <Input
+              readOnly
+              value={selected ? `${selected.full_name ?? "—"} — ${selected.email ?? "—"}` : ""}
+              placeholder="No member selected"
+              className="bg-muted/40"
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="winner-prize">Prize Title</Label>
+            <Input
+              id="winner-prize"
+              value={winnerPrize}
+              onChange={(e) => setWinnerPrize(e.target.value)}
+              placeholder="Prize title"
+            />
+          </div>
+
+          <div>
+            <Button
+              type="button"
+              disabled={!selected || !winnerPrize.trim() || recording}
+              onClick={() => setConfirmOpen(true)}
+            >
+              {recording ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Recording...
+                </>
+              ) : (
+                <>
+                  <Award className="h-4 w-4 mr-2" />
+                  Record Winner
+                </>
+              )}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Record this winner?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You're about to record <span className="font-semibold text-foreground">{selected?.full_name}</span> ({selected?.email}) as the winner of <span className="font-semibold text-foreground">{winnerPrize}</span>.
+              <br /><br />
+              <strong>This will reset their entries to zero.</strong> This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={recording}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleRecordWinner} disabled={recording}>
+              {recording ? "Recording..." : "Confirm & Reset Entries"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
