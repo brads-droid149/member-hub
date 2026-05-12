@@ -429,7 +429,7 @@ export default function Home() {
           <Accordion type="single" collapsible className="space-y-4">
             <AccordionItem value="profile" className="border rounded-lg bg-card">
               <AccordionTrigger className="px-6 py-4 hover:no-underline">
-                <div className="flex items-center gap-2 text-2xl font-display font-bold">
+                <div className="flex items-center gap-2 text-sm font-medium">
                   <User className="h-5 w-5 text-primary" />
                   Profile Settings
                 </div>
