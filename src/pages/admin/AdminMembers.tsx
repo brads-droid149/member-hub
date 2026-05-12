@@ -126,10 +126,10 @@ export default function AdminMembers() {
   };
 
   const downloadDrawExport = () => {
-    const lines = [["Full Name", "State"].join(",")];
+    const lines = [["User ID", "Full Name", "State"].join(",")];
     for (const r of sorted) {
       const count = Math.max(0, r.entries | 0);
-      const row = [r.full_name ?? "", r.state ?? ""].map(csvEscape).join(",");
+      const row = [r.user_id, r.full_name ?? "", r.state ?? ""].map(csvEscape).join(",");
       for (let i = 0; i < count; i++) lines.push(row);
     }
     triggerDownload(lines, `draw-export-${today()}.csv`);
