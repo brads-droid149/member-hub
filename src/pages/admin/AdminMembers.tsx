@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -10,7 +11,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
-import { Users, Loader2, ArrowUpDown, Download } from "lucide-react";
+import { Users, Loader2, ArrowUpDown, Download, Search } from "lucide-react";
 
 type Row = {
   user_id: string;
@@ -45,6 +46,7 @@ export default function AdminMembers() {
   const [loading, setLoading] = useState(true);
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>("asc");
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     (async () => {
@@ -71,6 +73,17 @@ export default function AdminMembers() {
     });
     return copy;
   }, [rows, sortKey, sortDir]);
+
+  const filtered = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return sorted;
+    return sorted.filter((r) => {
+      const shortId = r.user_id.slice(0, 6).toLowerCase();
+      const fullName = (r.full_name ?? "").toLowerCase();
+      const email = (r.email ?? "").toLowerCase();
+      return shortId.includes(q) || fullName.includes(q) || email.includes(q);
+    });
+  }, [sorted, searchQuery]);
 
   const toggleSort = (key: SortKey) => {
     if (sortKey === key) {
@@ -163,6 +176,16 @@ export default function AdminMembers() {
         </div>
       </div>
 
+      <div className="relative max-w-md">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Search by name, email, or ID..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-9"
+        />
+      </div>
+
       <div className="rounded-lg border border-border bg-card overflow-x-auto">
         <Table>
           <TableHeader>
@@ -193,14 +216,14 @@ export default function AdminMembers() {
                   <Loader2 className="h-5 w-5 animate-spin text-primary mx-auto" />
                 </TableCell>
               </TableRow>
-            ) : sorted.length === 0 ? (
+            ) : filtered.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={8} className="text-center py-12 text-sm text-muted-foreground">
-                  No members yet.
+                  {searchQuery.trim() ? "No members match your search." : "No members yet."}
                 </TableCell>
               </TableRow>
             ) : (
-              sorted.map((r) => (
+              filtered.map((r) => (
                 <TableRow key={r.user_id}>
                   <TableCell className="font-mono text-xs text-muted-foreground">{r.user_id.slice(0, 6)}</TableCell>
                   <TableCell className="font-medium text-foreground">{r.full_name || "—"}</TableCell>
