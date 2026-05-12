@@ -33,6 +33,18 @@ export default function Home() {
   const [copied, setCopied] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Profile form
+  const [userId, setUserId] = useState<string | null>(null);
+  const [pFullName, setPFullName] = useState("");
+  const [pPhone, setPPhone] = useState("");
+  const [pState, setPState] = useState("");
+  const [savingProfile, setSavingProfile] = useState(false);
+
+  // Password form
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [savingPassword, setSavingPassword] = useState(false);
+
   useEffect(() => {
     const load = async () => {
       setLoading(true);
