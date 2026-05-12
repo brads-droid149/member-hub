@@ -429,6 +429,94 @@ export default function Home() {
             <CreditCard className="h-4 w-4 mr-2" />
             Manage Your Subscription
           </Button>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg font-display flex items-center gap-2">
+                <User className="h-5 w-5 text-primary" />
+                Profile Settings
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSaveProfile} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="full_name">Full name</Label>
+                  <Input
+                    id="full_name"
+                    value={pFullName}
+                    onChange={(e) => setPFullName(e.target.value)}
+                    placeholder="Your full name"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Mobile number</Label>
+                  <Input
+                    id="phone"
+                    value={pPhone}
+                    onChange={(e) => setPPhone(e.target.value)}
+                    placeholder="+61 412 345 678"
+                    inputMode="tel"
+                  />
+                  <p className="text-xs text-muted-foreground">Australian format, starting with +61</p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="state">State</Label>
+                  <Select value={pState} onValueChange={setPState}>
+                    <SelectTrigger id="state">
+                      <SelectValue placeholder="Select your state" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {AU_STATES.map((s) => (
+                        <SelectItem key={s} value={s}>{s}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button type="submit" disabled={savingProfile}>
+                  {savingProfile ? "Saving..." : "Save Profile"}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg font-display flex items-center gap-2">
+                <KeyRound className="h-5 w-5 text-primary" />
+                Change Password
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleChangePassword} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="new_password">New password</Label>
+                  <Input
+                    id="new_password"
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    minLength={6}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="confirm_password">Confirm password</Label>
+                  <Input
+                    id="confirm_password"
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    minLength={6}
+                    required
+                  />
+                </div>
+                <Button type="submit" disabled={savingPassword}>
+                  {savingPassword ? "Updating..." : "Update Password"}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
         </section>
       </main>
 
