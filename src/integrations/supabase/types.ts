@@ -48,6 +48,7 @@ export type Database = {
         Row: {
           created_at: string
           entries: number
+          exempt_from_winning: boolean
           id: string
           months_active: number
           status: string
@@ -59,6 +60,7 @@ export type Database = {
         Insert: {
           created_at?: string
           entries?: number
+          exempt_from_winning?: boolean
           id?: string
           months_active?: number
           status?: string
@@ -70,6 +72,7 @@ export type Database = {
         Update: {
           created_at?: string
           entries?: number
+          exempt_from_winning?: boolean
           id?: string
           months_active?: number
           status?: string

@@ -1,0 +1,1 @@
+ALTER TABLE public.members ADD COLUMN IF NOT EXISTS exempt_from_winning BOOLEAN NOT NULL DEFAULT false;
