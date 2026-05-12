@@ -479,7 +479,7 @@ export default function Home() {
 
             <AccordionItem value="password" className="border rounded-lg bg-card">
               <AccordionTrigger className="px-6 py-4 hover:no-underline">
-                <div className="flex items-center gap-2 text-2xl font-display font-bold">
+                <div className="flex items-center gap-2 text-sm font-medium">
                   <KeyRound className="h-5 w-5 text-primary" />
                   Change Password
                 </div>
