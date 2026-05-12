@@ -274,7 +274,7 @@ export default function Home() {
             </Card>
 
             <Card className="flex flex-col h-full">
-              <CardHeader className="border-b border-foreground pb-4">
+              <CardHeader>
                 <CardTitle className="text-lg font-display">Your Entries This Draw</CardTitle>
               </CardHeader>
               <CardContent className="flex-1 flex flex-col justify-center text-center space-y-6 py-10">
@@ -299,10 +299,10 @@ export default function Home() {
             </Card>
 
             <Card className="flex flex-col h-full">
-              <CardHeader className="border-b border-foreground pb-4">
+              <CardHeader>
                 <CardTitle className="text-lg font-display">Past Winners</CardTitle>
               </CardHeader>
-              <CardContent className="flex-1 flex flex-col pt-4">
+              <CardContent className="flex-1 flex flex-col">
                 {loading ? (
                   <ul className="divide-y divide-border">
                     {Array.from({ length: 3 }).map((_, i) => (
