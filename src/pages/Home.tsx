@@ -169,11 +169,11 @@ export default function Home() {
                 {giveaway ? (
                   <>
                     {giveaway.prize_image_url ? (
-                      <div className="rounded-lg overflow-hidden border border-border w-full aspect-video">
+                      <div className="rounded-lg overflow-hidden border border-border w-full max-w-lg mx-auto aspect-video">
                         <img src={giveaway.prize_image_url} alt={giveaway.title} className="w-full h-full object-cover" />
                       </div>
                     ) : (
-                      <div className="w-full aspect-video rounded-lg bg-white border border-border flex items-center justify-center overflow-hidden">
+                      <div className="w-full max-w-lg mx-auto aspect-video rounded-lg bg-white border border-border flex items-center justify-center overflow-hidden">
                         <span className="text-muted-foreground text-sm">Prize image</span>
                       </div>
                     )}
