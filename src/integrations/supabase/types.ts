@@ -118,6 +118,7 @@ export type Database = {
           giveaway_id: string | null
           id: string
           prize_title: string
+          state: string | null
           winner_name: string
           won_at: string
         }
@@ -125,6 +126,7 @@ export type Database = {
           giveaway_id?: string | null
           id?: string
           prize_title: string
+          state?: string | null
           winner_name: string
           won_at?: string
         }
@@ -132,6 +134,7 @@ export type Database = {
           giveaway_id?: string | null
           id?: string
           prize_title?: string
+          state?: string | null
           winner_name?: string
           won_at?: string
         }

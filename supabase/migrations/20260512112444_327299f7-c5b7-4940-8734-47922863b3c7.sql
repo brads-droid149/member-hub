@@ -1,0 +1,1 @@
+ALTER TABLE public.past_winners ADD COLUMN IF NOT EXISTS state text;
