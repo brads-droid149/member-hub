@@ -201,6 +201,20 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_admin_members_overview: {
+        Args: never
+        Returns: {
+          email: string
+          entries: number
+          full_name: string
+          joined_at: string
+          months_active: number
+          phone: string
+          state: string
+          status: string
+          user_id: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
