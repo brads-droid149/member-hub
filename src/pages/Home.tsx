@@ -414,7 +414,10 @@ export default function Home() {
         {/* SETTINGS */}
         <section id="settings" className="space-y-6 scroll-mt-20 max-w-2xl">
           <div>
-            <h2 className="text-2xl font-display font-bold text-foreground">Membership Settings</h2>
+            <h2 className="text-2xl font-display font-bold text-foreground flex items-center gap-2">
+              <SettingsIcon className="h-5 w-5 text-primary" />
+              Membership Settings
+            </h2>
             <p className="text-sm text-muted-foreground mt-1">Manage your subscription</p>
           </div>
 
@@ -426,7 +429,7 @@ export default function Home() {
           <Accordion type="single" collapsible className="space-y-4">
             <AccordionItem value="profile" className="border rounded-lg bg-card">
               <AccordionTrigger className="px-6 py-4 hover:no-underline">
-                <div className="flex items-center gap-2 text-lg font-display">
+                <div className="flex items-center gap-2 text-2xl font-display font-bold">
                   <User className="h-5 w-5 text-primary" />
                   Profile Settings
                 </div>
@@ -476,7 +479,7 @@ export default function Home() {
 
             <AccordionItem value="password" className="border rounded-lg bg-card">
               <AccordionTrigger className="px-6 py-4 hover:no-underline">
-                <div className="flex items-center gap-2 text-lg font-display">
+                <div className="flex items-center gap-2 text-2xl font-display font-bold">
                   <KeyRound className="h-5 w-5 text-primary" />
                   Change Password
                 </div>
