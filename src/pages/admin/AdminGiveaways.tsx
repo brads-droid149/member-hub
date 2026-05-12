@@ -1,14 +1,36 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Upload, Check, Loader2, Trophy } from "lucide-react";
+import { Upload, Check, Loader2, Trophy, Award, Search } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Giveaway = Tables<"giveaways">;
+
+type MemberRow = {
+  user_id: string;
+  full_name: string | null;
+  email: string | null;
+  phone: string | null;
+  state: string | null;
+  status: string | null;
+  entries: number;
+  months_active: number;
+  joined_at: string;
+};
 
 const ACCEPTED = ["image/jpeg", "image/jpg", "image/png"];
 
