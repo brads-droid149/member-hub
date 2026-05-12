@@ -19,7 +19,7 @@ const statusColors: Record<string, string> = {
   cancelled: "bg-destructive/20 text-destructive border-destructive/30",
 };
 
-const STRIPE_PORTAL_URL = "https://billing.stripe.com/p/login/test_replace_me";
+const STRIPE_PORTAL_URL = import.meta.env.VITE_STRIPE_PORTAL_URL;
 
 export default function Home() {
   const { toast } = useToast();
