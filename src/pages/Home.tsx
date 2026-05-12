@@ -50,7 +50,7 @@ export default function Home() {
         supabase.from("profiles").select("full_name").eq("user_id", user.id).maybeSingle(),
         supabase.from("members").select("months_active, entries").eq("user_id", user.id).maybeSingle(),
         supabase.from("giveaways").select("*").eq("is_active", true).limit(1).maybeSingle(),
-        supabase.from("past_winners").select("*").order("won_at", { ascending: false }).limit(5),
+        supabase.from("past_winners").select("*").order("draw_date", { ascending: false, nullsFirst: false }).limit(5),
         supabase.from("partners").select("*").order("name"),
       ]);
 
@@ -250,11 +250,13 @@ export default function Home() {
                           <p className="text-xs text-muted-foreground truncate">{w.prize_title}</p>
                         </div>
                         <span className="text-xs text-muted-foreground whitespace-nowrap">
-                          {new Date(w.won_at).toLocaleDateString("en-AU", {
-                            day: "numeric",
-                            month: "long",
-                            year: "numeric",
-                          })}
+                          {w.draw_date
+                            ? new Date(w.draw_date).toLocaleDateString("en-AU", {
+                                day: "numeric",
+                                month: "long",
+                                year: "numeric",
+                              })
+                            : "—"}
                         </span>
                       </li>
                     ))}
