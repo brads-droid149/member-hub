@@ -115,28 +115,28 @@ export type Database = {
       }
       past_winners: {
         Row: {
+          draw_date: string | null
           giveaway_id: string | null
           id: string
           prize_title: string
           state: string | null
           winner_name: string
-          won_at: string
         }
         Insert: {
+          draw_date?: string | null
           giveaway_id?: string | null
           id?: string
           prize_title: string
           state?: string | null
           winner_name: string
-          won_at?: string
         }
         Update: {
+          draw_date?: string | null
           giveaway_id?: string | null
           id?: string
           prize_title?: string
           state?: string | null
           winner_name?: string
-          won_at?: string
         }
         Relationships: [
           {

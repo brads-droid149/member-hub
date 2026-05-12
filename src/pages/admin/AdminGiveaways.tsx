@@ -14,8 +14,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
-import { Upload, Check, Loader2, Trophy, Award, Search } from "lucide-react";
+import { Upload, Check, Loader2, Trophy, Award, Search, CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Giveaway = Tables<"giveaways">;
@@ -73,6 +77,7 @@ export default function AdminGiveaways() {
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<MemberRow | null>(null);
   const [winnerPrize, setWinnerPrize] = useState("");
+  const [winnerDrawDate, setWinnerDrawDate] = useState<Date | undefined>(undefined);
   const [recording, setRecording] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
 
@@ -115,6 +120,7 @@ export default function AdminGiveaways() {
         winner_name: selected.full_name ?? "",
         state: selected.state ?? null,
         prize_title: winnerPrize.trim(),
+        draw_date: winnerDrawDate ? format(winnerDrawDate, "yyyy-MM-dd") : null,
       });
       if (insertError) throw insertError;
 
@@ -127,6 +133,7 @@ export default function AdminGiveaways() {
       toast({ title: "Winner recorded", description: `${selected.full_name} added to past winners. Entries reset to 0.` });
       setSelected(null);
       setSearch("");
+      setWinnerDrawDate(undefined);
       await loadMembers();
     } catch (err: any) {
       toast({ title: "Failed to record winner", description: err.message, variant: "destructive" });
@@ -410,20 +417,49 @@ export default function AdminGiveaways() {
             />
           </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="winner-prize">Prize Title</Label>
-            <Input
-              id="winner-prize"
-              value={winnerPrize}
-              onChange={(e) => setWinnerPrize(e.target.value)}
-              placeholder="Prize title"
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="winner-prize">Prize Title</Label>
+              <Input
+                id="winner-prize"
+                value={winnerPrize}
+                onChange={(e) => setWinnerPrize(e.target.value)}
+                placeholder="Prize title"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Draw Date</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !winnerDrawDate && "text-muted-foreground",
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {winnerDrawDate ? format(winnerDrawDate, "PPP") : <span>Pick a date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={winnerDrawDate}
+                    onSelect={setWinnerDrawDate}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
           </div>
 
           <div>
             <Button
               type="button"
-              disabled={!selected || !winnerPrize.trim() || recording}
+              disabled={!selected || !winnerPrize.trim() || !winnerDrawDate || recording}
               onClick={() => setConfirmOpen(true)}
             >
               {recording ? (
