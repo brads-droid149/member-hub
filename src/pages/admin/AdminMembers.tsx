@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -19,13 +18,12 @@ type Row = {
   email: string | null;
   phone: string | null;
   state: string | null;
-  status: string;
   entries: number;
   months_active: number;
   joined_at: string;
 };
 
-type SortKey = "status" | "entries";
+type SortKey = "entries";
 type SortDir = "asc" | "desc";
 
 const formatDate = (iso: string) => {
@@ -65,16 +63,14 @@ export default function AdminMembers() {
     if (!sortKey) return rows;
     const copy = [...rows];
     copy.sort((a, b) => {
-      const av = a[sortKey] ?? "";
-      const bv = b[sortKey] ?? "";
+      const av = a[sortKey] ?? 0;
+      const bv = b[sortKey] ?? 0;
       if (av < bv) return sortDir === "asc" ? -1 : 1;
       if (av > bv) return sortDir === "asc" ? 1 : -1;
       return 0;
     });
     return copy;
   }, [rows, sortKey, sortDir]);
-
-  const activeCount = useMemo(() => rows.filter((r) => r.status === "active").length, [rows]);
 
   const toggleSort = (key: SortKey) => {
     if (sortKey === key) {
@@ -91,7 +87,6 @@ export default function AdminMembers() {
       "Email",
       "Mobile",
       "State",
-      "Status",
       "Entries",
       "Months Active",
       "Joined",
@@ -104,7 +99,6 @@ export default function AdminMembers() {
           r.email ?? "",
           r.phone ?? "",
           r.state ?? "",
-          r.status,
           r.entries,
           r.months_active,
           formatDate(r.joined_at),
@@ -124,16 +118,6 @@ export default function AdminMembers() {
     URL.revokeObjectURL(url);
   };
 
-  const statusBadge = (status: string) => {
-    const classes =
-      status === "active"
-        ? "bg-success/20 text-success border-success/30"
-        : status === "cancelled"
-          ? "bg-destructive/20 text-destructive border-destructive/30"
-          : "bg-muted text-muted-foreground border-border";
-    return <Badge className={classes}>{status}</Badge>;
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -143,9 +127,7 @@ export default function AdminMembers() {
             Members
           </h2>
           <p className="text-sm text-muted-foreground mt-1">
-            Total active members:{" "}
-            <span className="font-semibold text-foreground">{activeCount}</span>
-            <span className="text-muted-foreground/70"> / {rows.length} total</span>
+            Total members: <span className="font-semibold text-foreground">{rows.length}</span>
           </p>
         </div>
         <Button onClick={downloadCsv} disabled={loading || rows.length === 0}>
@@ -162,16 +144,6 @@ export default function AdminMembers() {
               <TableHead>Email</TableHead>
               <TableHead>Mobile</TableHead>
               <TableHead>State</TableHead>
-              <TableHead>
-                <button
-                  type="button"
-                  onClick={() => toggleSort("status")}
-                  className="inline-flex items-center gap-1 hover:text-foreground"
-                >
-                  Status
-                  <ArrowUpDown className="h-3 w-3" />
-                </button>
-              </TableHead>
               <TableHead className="text-right">
                 <button
                   type="button"
@@ -189,13 +161,13 @@ export default function AdminMembers() {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-12">
+                <TableCell colSpan={7} className="text-center py-12">
                   <Loader2 className="h-5 w-5 animate-spin text-primary mx-auto" />
                 </TableCell>
               </TableRow>
             ) : sorted.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-12 text-sm text-muted-foreground">
+                <TableCell colSpan={7} className="text-center py-12 text-sm text-muted-foreground">
                   No members yet.
                 </TableCell>
               </TableRow>
@@ -206,7 +178,6 @@ export default function AdminMembers() {
                   <TableCell className="text-sm text-muted-foreground">{r.email || "—"}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">{r.phone || "—"}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">{r.state || "—"}</TableCell>
-                  <TableCell>{statusBadge(r.status)}</TableCell>
                   <TableCell className="text-right font-mono text-sm">{r.entries}</TableCell>
                   <TableCell className="text-right font-mono text-sm">{r.months_active}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">{formatDate(r.joined_at)}</TableCell>

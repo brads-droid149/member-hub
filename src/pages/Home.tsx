@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Trophy, Calendar, Copy, Check, CreditCard, LogOut, Shield, LayoutGrid, Tag, Settings as SettingsIcon } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
@@ -13,11 +12,6 @@ type Giveaway = Tables<"giveaways">;
 type Winner = Tables<"past_winners">;
 type Partner = Tables<"partners">;
 
-const statusColors: Record<string, string> = {
-  active: "bg-success/20 text-success border-success/30",
-  cancelled: "bg-destructive/20 text-destructive border-destructive/30",
-};
-
 const STRIPE_PORTAL_URL = import.meta.env.VITE_STRIPE_PORTAL_URL;
 
 export default function Home() {
@@ -28,12 +22,11 @@ export default function Home() {
 
   const [profile, setProfile] = useState<{ full_name: string | null } | null>(null);
   const [authName, setAuthName] = useState<string | null>(null);
-  const [member, setMember] = useState<{ status: string; months_active: number; entries: number } | null>(null);
+  const [member, setMember] = useState<{ months_active: number; entries: number } | null>(null);
   const [giveaway, setGiveaway] = useState<Giveaway | null>(null);
   const [winners, setWinners] = useState<Winner[]>([]);
   const [partners, setPartners] = useState<Partner[]>([]);
   const [copied, setCopied] = useState<string | null>(null);
-  const [status, setStatus] = useState<"active" | "cancelled">("active");
 
   useEffect(() => {
     const load = async () => {
@@ -49,7 +42,7 @@ export default function Home() {
 
       const [profileRes, memberRes, giveawayRes, winnersRes, partnersRes] = await Promise.all([
         supabase.from("profiles").select("full_name").eq("user_id", user.id).maybeSingle(),
-        supabase.from("members").select("status, months_active, entries").eq("user_id", user.id).maybeSingle(),
+        supabase.from("members").select("months_active, entries").eq("user_id", user.id).maybeSingle(),
         supabase.from("giveaways").select("*").eq("is_active", true).limit(1).maybeSingle(),
         supabase.from("past_winners").select("*").order("won_at", { ascending: false }).limit(5),
         supabase.from("partners").select("*").order("name"),
@@ -58,7 +51,6 @@ export default function Home() {
       if (profileRes.data) setProfile(profileRes.data);
       if (memberRes.data) {
         setMember(memberRes.data);
-        setStatus((memberRes.data.status as "active" | "cancelled") || "active");
       }
       if (giveawayRes.data) setGiveaway(giveawayRes.data);
       if (winnersRes.data) setWinners(winnersRes.data);
@@ -103,11 +95,6 @@ export default function Home() {
     setTimeout(() => setCopied(null), 2000);
   };
 
-  const handleCancel = () => {
-    setStatus("cancelled");
-    toast({ title: "Membership cancelled", description: "Your entries have been reset to zero.", variant: "destructive" });
-  };
-
   const scrollTo = (id: string) => {
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
@@ -149,12 +136,9 @@ export default function Home() {
             <h1 className="text-3xl font-display font-bold text-foreground">
               Welcome back, {firstName}
             </h1>
-            <div className="flex items-center gap-2 mt-2">
-              <Badge className={statusColors[status] || statusColors.active}>{status}</Badge>
-              <span className="text-sm text-muted-foreground">
-                Club Member for {monthsLabel}
-              </span>
-            </div>
+            <p className="text-sm text-muted-foreground mt-2">
+              Club Member for {monthsLabel}
+            </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
