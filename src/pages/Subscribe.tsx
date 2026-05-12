@@ -56,7 +56,7 @@ export default function Subscribe() {
       <Card className="w-full max-w-md border-border/50">
         <CardContent className="p-8 flex flex-col items-center text-center gap-6">
           <div className="text-2xl font-bold tracking-tight">
-            Junkyard <span className="text-primary">Surf Club</span>
+            Junkyard <span className="text-primary">Club</span>
           </div>
 
           <div className="space-y-2">
