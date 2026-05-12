@@ -274,7 +274,7 @@ export default function Home() {
             </Card>
 
             <Card className="flex flex-col h-full">
-              <CardHeader>
+              <CardHeader className="border-b border-foreground pb-4">
                 <CardTitle className="text-lg font-display">Your Entries This Draw</CardTitle>
               </CardHeader>
               <CardContent className="flex-1 flex flex-col justify-center text-center space-y-6 py-10">
@@ -299,14 +299,14 @@ export default function Home() {
             </Card>
 
             <Card className="flex flex-col h-full">
-              <CardHeader>
+              <CardHeader className="border-b border-foreground pb-4">
                 <CardTitle className="text-lg font-display">Past Winners</CardTitle>
               </CardHeader>
-              <CardContent className="flex-1 flex flex-col justify-center">
+              <CardContent className="flex-1 flex flex-col pt-4">
                 {loading ? (
                   <ul className="divide-y divide-border">
                     {Array.from({ length: 3 }).map((_, i) => (
-                      <li key={i} className="py-2 flex items-start justify-between gap-4">
+                      <li key={i} className="py-3 flex items-start justify-between gap-4">
                         <div className="min-w-0 flex-1 space-y-1.5">
                           <Skeleton className="h-4 w-1/2" />
                           <Skeleton className="h-3 w-2/3" />
@@ -319,10 +319,10 @@ export default function Home() {
                   <>
                     <ul className="divide-y divide-border">
                       {winners.slice(0, 3).map((w) => (
-                        <li key={w.id} className="py-2 flex items-start justify-between gap-4">
+                        <li key={w.id} className="py-3 flex items-start justify-between gap-4">
                           <div className="min-w-0">
-                            <p className="font-medium text-foreground text-sm truncate">{w.winner_name}</p>
-                            <p className="text-xs text-muted-foreground truncate">{w.prize_title}</p>
+                            <p className="font-semibold text-foreground text-sm truncate">{w.winner_name}</p>
+                            <p className="text-xs text-muted-foreground truncate mt-0.5">{w.prize_title}</p>
                           </div>
                           <span className="text-xs text-muted-foreground whitespace-nowrap">
                             {w.draw_date
@@ -339,7 +339,7 @@ export default function Home() {
                     <button
                       type="button"
                       onClick={() => scrollTo("past-winners")}
-                      className="mt-2 text-xs font-medium text-primary hover:underline self-start"
+                      className="mt-auto pt-4 text-sm font-medium text-primary hover:underline self-start"
                     >
                       See All Winners
                     </button>
