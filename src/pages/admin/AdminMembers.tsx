@@ -81,17 +81,22 @@ export default function AdminMembers() {
     }
   };
 
+  const triggerDownload = (lines: string[], filename: string) => {
+    const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const today = () => new Date().toISOString().slice(0, 10);
+
   const downloadCsv = () => {
-    const headers = [
-      "User ID",
-      "Full Name",
-      "Email",
-      "Mobile",
-      "State",
-      "Entries",
-      "Months Active",
-      "Joined",
-    ];
+    const headers = ["User ID", "Full Name", "Email", "Mobile", "State", "Entries", "Months Active", "Joined"];
     const lines = [headers.join(",")];
     for (const r of sorted) {
       lines.push(
@@ -109,15 +114,25 @@ export default function AdminMembers() {
           .join(","),
       );
     }
-    const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `members-${new Date().toISOString().slice(0, 10)}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    triggerDownload(lines, `members-${today()}.csv`);
+  };
+
+  const downloadEmailList = () => {
+    const lines = [["Full Name", "Email"].join(",")];
+    for (const r of sorted) {
+      lines.push([r.full_name ?? "", r.email ?? ""].map(csvEscape).join(","));
+    }
+    triggerDownload(lines, `email-list-${today()}.csv`);
+  };
+
+  const downloadDrawExport = () => {
+    const lines = [["Full Name", "State"].join(",")];
+    for (const r of sorted) {
+      const count = Math.max(0, r.entries | 0);
+      const row = [r.full_name ?? "", r.state ?? ""].map(csvEscape).join(",");
+      for (let i = 0; i < count; i++) lines.push(row);
+    }
+    triggerDownload(lines, `draw-export-${today()}.csv`);
   };
 
   return (
@@ -132,10 +147,20 @@ export default function AdminMembers() {
             Total members: <span className="font-semibold text-foreground">{rows.length}</span>
           </p>
         </div>
-        <Button onClick={downloadCsv} disabled={loading || rows.length === 0}>
-          <Download className="h-4 w-4 mr-1.5" />
-          Download Members CSV
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button onClick={downloadCsv} disabled={loading || rows.length === 0}>
+            <Download className="h-4 w-4 mr-1.5" />
+            Download Members CSV
+          </Button>
+          <Button variant="outline" onClick={downloadEmailList} disabled={loading || rows.length === 0}>
+            <Download className="h-4 w-4 mr-1.5" />
+            Email List
+          </Button>
+          <Button variant="outline" onClick={downloadDrawExport} disabled={loading || rows.length === 0}>
+            <Download className="h-4 w-4 mr-1.5" />
+            Draw Export
+          </Button>
+        </div>
       </div>
 
       <div className="rounded-lg border border-border bg-card overflow-x-auto">
