@@ -6,6 +6,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAdmin } from "@/hooks/use-admin";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Giveaway = Tables<"giveaways">;
@@ -27,11 +28,16 @@ export default function Home() {
   const [winners, setWinners] = useState<Winner[]>([]);
   const [partners, setPartners] = useState<Partner[]>([]);
   const [copied, setCopied] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const load = async () => {
+      setLoading(true);
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) {
+        setLoading(false);
+        return;
+      }
 
       const metaName =
         (user.user_metadata?.full_name as string | undefined) ||
@@ -60,6 +66,7 @@ export default function Home() {
         );
         setPartners(sorted);
       }
+      setLoading(false);
     };
     load();
   }, []);
@@ -132,14 +139,21 @@ export default function Home() {
       <main className="max-w-5xl mx-auto px-6 py-10 pb-24 md:pb-10 space-y-16">
         {/* OVERVIEW */}
         <section id="overview" className="space-y-8 scroll-mt-20">
-          <div>
-            <h1 className="text-3xl font-display font-bold text-foreground">
-              Welcome back, {firstName}
-            </h1>
-            <p className="text-sm text-muted-foreground mt-2">
-              Club Member for {monthsLabel}
-            </p>
-          </div>
+          {loading ? (
+            <div className="space-y-2">
+              <Skeleton className="h-9 w-72 max-w-full" />
+              <Skeleton className="h-4 w-40" />
+            </div>
+          ) : (
+            <div>
+              <h1 className="text-3xl font-display font-bold text-foreground">
+                Welcome back, {firstName}
+              </h1>
+              <p className="text-sm text-muted-foreground mt-2">
+                Club Member for {monthsLabel}
+              </p>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Card className="md:col-span-2">
@@ -150,7 +164,15 @@ export default function Home() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {giveaway ? (
+                {loading ? (
+                  <>
+                    <Skeleton className="w-full max-w-lg mx-auto aspect-video rounded-lg" />
+                    <div className="space-y-2">
+                      <Skeleton className="h-5 w-2/3" />
+                      <Skeleton className="h-4 w-1/3" />
+                    </div>
+                  </>
+                ) : giveaway ? (
                   <>
                     {giveaway.prize_image_url ? (
                       <div className="rounded-lg overflow-hidden border border-border w-full max-w-lg mx-auto aspect-video">
@@ -182,11 +204,23 @@ export default function Home() {
                 <CardTitle className="text-lg font-display">Your Entries This Draw</CardTitle>
               </CardHeader>
               <CardContent className="text-center space-y-3 pb-8">
-                <p className="text-7xl font-display font-bold text-primary">{entries}</p>
-                <div className="text-xs text-muted-foreground max-w-xs mx-auto space-y-0.5">
-                  <p>You earn +1 entry every month you stay active.</p>
-                  <p>Entries reset if you cancel or win.</p>
-                </div>
+                {loading ? (
+                  <>
+                    <Skeleton className="h-20 w-24 mx-auto" />
+                    <div className="space-y-1.5 max-w-xs mx-auto">
+                      <Skeleton className="h-3 w-full" />
+                      <Skeleton className="h-3 w-3/4 mx-auto" />
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-7xl font-display font-bold text-primary">{entries}</p>
+                    <div className="text-xs text-muted-foreground max-w-xs mx-auto space-y-0.5">
+                      <p>You earn +1 entry every month you stay active.</p>
+                      <p>Entries reset if you cancel or win.</p>
+                    </div>
+                  </>
+                )}
               </CardContent>
             </Card>
 
@@ -195,7 +229,19 @@ export default function Home() {
                 <CardTitle className="text-lg font-display">Past Winners</CardTitle>
               </CardHeader>
               <CardContent>
-                {winners.length > 0 ? (
+                {loading ? (
+                  <ul className="divide-y divide-border">
+                    {Array.from({ length: 3 }).map((_, i) => (
+                      <li key={i} className="py-3 flex items-start justify-between gap-4">
+                        <div className="min-w-0 flex-1 space-y-1.5">
+                          <Skeleton className="h-4 w-1/2" />
+                          <Skeleton className="h-3 w-2/3" />
+                        </div>
+                        <Skeleton className="h-3 w-20" />
+                      </li>
+                    ))}
+                  </ul>
+                ) : winners.length > 0 ? (
                   <ul className="divide-y divide-border">
                     {winners.map((w) => (
                       <li key={w.id} className="py-3 flex items-start justify-between gap-4">
@@ -230,7 +276,22 @@ export default function Home() {
             </p>
           </div>
 
-          {partners.length > 0 ? (
+          {loading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <Card key={i}>
+                  <CardContent className="p-4 flex flex-col items-center text-center gap-3">
+                    <Skeleton className="w-full aspect-[16/9] rounded-md" />
+                    <div className="w-full space-y-1.5">
+                      <Skeleton className="h-4 w-2/3 mx-auto" />
+                      <Skeleton className="h-3 w-1/2 mx-auto" />
+                    </div>
+                    <Skeleton className="h-7 w-24 rounded-md" />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : partners.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {partners.map((partner) => (
                 <Card
