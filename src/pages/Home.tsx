@@ -276,7 +276,22 @@ export default function Home() {
             </p>
           </div>
 
-          {partners.length > 0 ? (
+          {loading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <Card key={i}>
+                  <CardContent className="p-4 flex flex-col items-center text-center gap-3">
+                    <Skeleton className="w-full aspect-[16/9] rounded-md" />
+                    <div className="w-full space-y-1.5">
+                      <Skeleton className="h-4 w-2/3 mx-auto" />
+                      <Skeleton className="h-3 w-1/2 mx-auto" />
+                    </div>
+                    <Skeleton className="h-7 w-24 rounded-md" />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : partners.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {partners.map((partner) => (
                 <Card
