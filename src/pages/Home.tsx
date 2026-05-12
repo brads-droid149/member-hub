@@ -244,11 +244,11 @@ export default function Home() {
                   Current Giveaway
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="flex flex-col md:flex-row md:items-center gap-4 md:gap-6">
                 {loading ? (
                   <>
-                    <Skeleton className="w-full max-w-lg mx-auto aspect-video rounded-lg" />
-                    <div className="space-y-2">
+                    <Skeleton className="w-full md:w-1/2 aspect-video rounded-lg" />
+                    <div className="w-full md:w-1/2 space-y-2">
                       <Skeleton className="h-5 w-2/3" />
                       <Skeleton className="h-4 w-1/3" />
                     </div>
@@ -256,15 +256,15 @@ export default function Home() {
                 ) : giveaway ? (
                   <>
                     {giveaway.prize_image_url ? (
-                      <div className="rounded-lg overflow-hidden border border-border w-full max-w-lg mx-auto aspect-video">
+                      <div className="rounded-lg overflow-hidden border border-border w-full md:w-1/2 aspect-video">
                         <img src={giveaway.prize_image_url} alt={giveaway.title} className="w-full h-full object-cover" />
                       </div>
                     ) : (
-                      <div className="w-full max-w-lg mx-auto aspect-video rounded-lg bg-white border border-border flex items-center justify-center overflow-hidden">
+                      <div className="w-full md:w-1/2 aspect-video rounded-lg bg-white border border-border flex items-center justify-center overflow-hidden">
                         <span className="text-muted-foreground text-sm">Prize image</span>
                       </div>
                     )}
-                    <div>
+                    <div className="w-full md:w-1/2">
                       <h3 className="font-display font-semibold text-foreground">{giveaway.title}</h3>
                       {giveaway.draw_date && (
                         <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
@@ -275,7 +275,7 @@ export default function Home() {
                     </div>
                   </>
                 ) : (
-                  <p className="text-sm text-muted-foreground py-4 text-center">No active giveaway right now</p>
+                  <p className="text-sm text-muted-foreground py-4 text-center w-full">No active giveaway right now</p>
                 )}
               </CardContent>
             </Card>
