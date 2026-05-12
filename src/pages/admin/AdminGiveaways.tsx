@@ -440,7 +440,7 @@ export default function AdminGiveaways() {
                     )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {winnerDrawDate ? format(winnerDrawDate, "PPP") : <span>Pick a date</span>}
+                    {winnerDrawDate ? format(winnerDrawDate, "dd/MM/yyyy") : <span>DD/MM/YYYY</span>}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
