@@ -128,6 +128,65 @@ export default function Home() {
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
+  const AU_STATES = ["NSW", "VIC", "QLD", "WA", "SA", "TAS", "ACT", "NT"];
+  const PHONE_RE = /^\+61\s?[2-9](?:[\s-]?\d){8}$/;
+
+  const handleSaveProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!userId) return;
+    if (!pFullName.trim()) {
+      toast({ title: "Name required", variant: "destructive" });
+      return;
+    }
+    if (pPhone && !PHONE_RE.test(pPhone.trim())) {
+      toast({
+        title: "Invalid mobile number",
+        description: "Use Australian format, e.g. +61 412 345 678",
+        variant: "destructive",
+      });
+      return;
+    }
+    setSavingProfile(true);
+    const { error } = await supabase
+      .from("profiles")
+      .update({
+        full_name: pFullName.trim(),
+        phone: pPhone.trim() || null,
+        state: pState || null,
+      })
+      .eq("user_id", userId);
+    setSavingProfile(false);
+    if (error) {
+      toast({ title: "Could not save profile", description: error.message, variant: "destructive" });
+      return;
+    }
+    setProfile({ full_name: pFullName.trim() });
+    toast({ title: "Profile updated" });
+  };
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newPassword.length < 6) {
+      toast({ title: "Password too short", description: "Minimum 6 characters", variant: "destructive" });
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast({ title: "Passwords do not match", variant: "destructive" });
+      return;
+    }
+    setSavingPassword(true);
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    setSavingPassword(false);
+    if (error) {
+      toast({ title: "Could not update password", description: error.message, variant: "destructive" });
+      return;
+    }
+    setNewPassword("");
+    setConfirmPassword("");
+    toast({ title: "Password updated" });
+  };
+
+
   return (
     <div className="min-h-screen bg-background">
       {/* Sticky top nav */}
