@@ -27,9 +27,8 @@ export default function Subscribe() {
 
       const { data: member } = await supabase
         .from("members")
-        .select("status")
+        .select("id")
         .eq("user_id", session.user.id)
-        .in("status", ["active", "paused"])
         .maybeSingle();
       setState(member ? "allowed" : "needs-subscribe");
     };
