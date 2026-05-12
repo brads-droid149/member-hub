@@ -273,14 +273,14 @@ export default function Home() {
               </CardContent>
             </Card>
 
-            <Card className="flex flex-col">
+            <Card className="flex flex-col h-full">
               <CardHeader>
                 <CardTitle className="text-lg font-display">Your Entries This Draw</CardTitle>
               </CardHeader>
-              <CardContent className="flex-1 flex flex-col justify-center text-center space-y-3 pb-8">
+              <CardContent className="flex-1 flex flex-col justify-center text-center space-y-6 py-10">
                 {loading ? (
                   <>
-                    <Skeleton className="h-20 w-24 mx-auto" />
+                    <Skeleton className="h-28 w-32 mx-auto" />
                     <div className="space-y-1.5 max-w-xs mx-auto">
                       <Skeleton className="h-3 w-full" />
                       <Skeleton className="h-3 w-3/4 mx-auto" />
@@ -288,7 +288,7 @@ export default function Home() {
                   </>
                 ) : (
                   <>
-                    <p className="text-7xl font-display font-bold text-primary">{entries}</p>
+                    <p className="text-9xl font-display font-bold text-primary leading-none">{entries}</p>
                     <div className="text-xs text-muted-foreground max-w-xs mx-auto space-y-0.5">
                       <p>You earn +1 entry every month you stay active.</p>
                       <p>Entries reset if you cancel or win.</p>
@@ -298,7 +298,7 @@ export default function Home() {
               </CardContent>
             </Card>
 
-            <Card className="flex flex-col">
+            <Card className="flex flex-col h-full">
               <CardHeader>
                 <CardTitle className="text-lg font-display">Past Winners</CardTitle>
               </CardHeader>
@@ -306,7 +306,7 @@ export default function Home() {
                 {loading ? (
                   <ul className="divide-y divide-border">
                     {Array.from({ length: 3 }).map((_, i) => (
-                      <li key={i} className="py-3 flex items-start justify-between gap-4">
+                      <li key={i} className="py-2 flex items-start justify-between gap-4">
                         <div className="min-w-0 flex-1 space-y-1.5">
                           <Skeleton className="h-4 w-1/2" />
                           <Skeleton className="h-3 w-2/3" />
@@ -319,7 +319,7 @@ export default function Home() {
                   <>
                     <ul className="divide-y divide-border">
                       {winners.slice(0, 3).map((w) => (
-                        <li key={w.id} className="py-3 flex items-start justify-between gap-4">
+                        <li key={w.id} className="py-2 flex items-start justify-between gap-4">
                           <div className="min-w-0">
                             <p className="font-medium text-foreground text-sm truncate">{w.winner_name}</p>
                             <p className="text-xs text-muted-foreground truncate">{w.prize_title}</p>
@@ -339,7 +339,7 @@ export default function Home() {
                     <button
                       type="button"
                       onClick={() => scrollTo("past-winners")}
-                      className="mt-4 text-sm font-medium text-primary hover:underline self-start"
+                      className="mt-2 text-xs font-medium text-primary hover:underline self-start"
                     >
                       See All Winners
                     </button>
