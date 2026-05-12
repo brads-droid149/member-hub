@@ -11,6 +11,10 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showReset, setShowReset] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -24,6 +28,20 @@ export default function Login() {
       return;
     }
     navigate("/");
+  };
+
+  const handleReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setResetLoading(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(resetEmail.trim(), {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    setResetLoading(false);
+    if (error) {
+      toast({ title: "Reset failed", description: error.message, variant: "destructive" });
+      return;
+    }
+    setResetSent(true);
   };
 
   return (
@@ -64,6 +82,51 @@ export default function Login() {
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? "Signing in..." : "Sign In"}
             </Button>
+
+            <div className="text-center">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowReset((v) => !v);
+                  setResetSent(false);
+                  if (!resetEmail) setResetEmail(email);
+                }}
+                className="text-sm text-primary hover:underline"
+              >
+                Forgot password?
+              </button>
+            </div>
+
+            {showReset && (
+              <div className="space-y-2 rounded-md border border-border p-3">
+                {resetSent ? (
+                  <p className="text-sm text-success text-center">
+                    Check your email for a reset link.
+                  </p>
+                ) : (
+                  <>
+                    <Label htmlFor="reset-email">Email for reset link</Label>
+                    <Input
+                      id="reset-email"
+                      type="email"
+                      value={resetEmail}
+                      onChange={(e) => setResetEmail(e.target.value)}
+                      required
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full"
+                      disabled={resetLoading || !resetEmail.trim()}
+                      onClick={handleReset}
+                    >
+                      {resetLoading ? "Sending..." : "Send reset link"}
+                    </Button>
+                  </>
+                )}
+              </div>
+            )}
+
             <p className="text-sm text-center text-muted-foreground">
               No account?{" "}
               <Link to="/signup" className="text-primary hover:underline">
