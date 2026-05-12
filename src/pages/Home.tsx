@@ -61,15 +61,22 @@ export default function Home() {
         null;
       setAuthName(metaName);
 
+      setUserId(user.id);
+
       const [profileRes, memberRes, giveawayRes, winnersRes, partnersRes] = await Promise.all([
-        supabase.from("profiles").select("full_name").eq("user_id", user.id).maybeSingle(),
+        supabase.from("profiles").select("full_name, phone, state").eq("user_id", user.id).maybeSingle(),
         supabase.from("members").select("months_active, entries").eq("user_id", user.id).maybeSingle(),
         supabase.from("giveaways").select("*").eq("is_active", true).limit(1).maybeSingle(),
         supabase.from("past_winners").select("*").order("draw_date", { ascending: false, nullsFirst: false }).limit(5),
         supabase.from("partners").select("*").order("name"),
       ]);
 
-      if (profileRes.data) setProfile(profileRes.data);
+      if (profileRes.data) {
+        setProfile({ full_name: profileRes.data.full_name });
+        setPFullName(profileRes.data.full_name ?? "");
+        setPPhone(profileRes.data.phone ?? "");
+        setPState(profileRes.data.state ?? "");
+      }
       if (memberRes.data) {
         setMember(memberRes.data);
       }
