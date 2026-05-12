@@ -1,6 +1,7 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAdmin } from "@/hooks/use-admin";
-import { Navigate } from "react-router-dom";
+import { Navigate, Link } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 import AdminGiveaways from "./admin/AdminGiveaways";
 import AdminPartners from "./admin/AdminPartners";
 
