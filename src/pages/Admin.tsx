@@ -35,9 +35,11 @@ export default function Admin() {
         <TabsList>
           <TabsTrigger value="giveaways">Giveaway Manager</TabsTrigger>
           <TabsTrigger value="partners">Partner Manager</TabsTrigger>
+          <TabsTrigger value="members">Members</TabsTrigger>
         </TabsList>
         <TabsContent value="giveaways" className="mt-6"><AdminGiveaways /></TabsContent>
         <TabsContent value="partners" className="mt-6"><AdminPartners /></TabsContent>
+        <TabsContent value="members" className="mt-6"><AdminMembers /></TabsContent>
       </Tabs>
     </div>
   );
