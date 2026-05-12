@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Trophy, Calendar, Copy, Check, CreditCard, LogOut, Shield, LayoutGrid, Tag, Settings as SettingsIcon } from "lucide-react";
+import { Trophy, Calendar, Copy, Check, CreditCard, LogOut, Shield, LayoutGrid, Tag, Settings as SettingsIcon, User, KeyRound } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -30,6 +33,18 @@ export default function Home() {
   const [copied, setCopied] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Profile form
+  const [userId, setUserId] = useState<string | null>(null);
+  const [pFullName, setPFullName] = useState("");
+  const [pPhone, setPPhone] = useState("");
+  const [pState, setPState] = useState("");
+  const [savingProfile, setSavingProfile] = useState(false);
+
+  // Password form
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [savingPassword, setSavingPassword] = useState(false);
+
   useEffect(() => {
     const load = async () => {
       setLoading(true);
@@ -46,15 +61,22 @@ export default function Home() {
         null;
       setAuthName(metaName);
 
+      setUserId(user.id);
+
       const [profileRes, memberRes, giveawayRes, winnersRes, partnersRes] = await Promise.all([
-        supabase.from("profiles").select("full_name").eq("user_id", user.id).maybeSingle(),
+        supabase.from("profiles").select("full_name, phone, state").eq("user_id", user.id).maybeSingle(),
         supabase.from("members").select("months_active, entries").eq("user_id", user.id).maybeSingle(),
         supabase.from("giveaways").select("*").eq("is_active", true).limit(1).maybeSingle(),
         supabase.from("past_winners").select("*").order("draw_date", { ascending: false, nullsFirst: false }).limit(5),
         supabase.from("partners").select("*").order("name"),
       ]);
 
-      if (profileRes.data) setProfile(profileRes.data);
+      if (profileRes.data) {
+        setProfile({ full_name: profileRes.data.full_name });
+        setPFullName(profileRes.data.full_name ?? "");
+        setPPhone(profileRes.data.phone ?? "");
+        setPState(profileRes.data.state ?? "");
+      }
       if (memberRes.data) {
         setMember(memberRes.data);
       }
@@ -105,6 +127,65 @@ export default function Home() {
   const scrollTo = (id: string) => {
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
+
+  const AU_STATES = ["NSW", "VIC", "QLD", "WA", "SA", "TAS", "ACT", "NT"];
+  const PHONE_RE = /^\+61\s?[2-9](?:[\s-]?\d){8}$/;
+
+  const handleSaveProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!userId) return;
+    if (!pFullName.trim()) {
+      toast({ title: "Name required", variant: "destructive" });
+      return;
+    }
+    if (pPhone && !PHONE_RE.test(pPhone.trim())) {
+      toast({
+        title: "Invalid mobile number",
+        description: "Use Australian format, e.g. +61 412 345 678",
+        variant: "destructive",
+      });
+      return;
+    }
+    setSavingProfile(true);
+    const { error } = await supabase
+      .from("profiles")
+      .update({
+        full_name: pFullName.trim(),
+        phone: pPhone.trim() || null,
+        state: pState || null,
+      })
+      .eq("user_id", userId);
+    setSavingProfile(false);
+    if (error) {
+      toast({ title: "Could not save profile", description: error.message, variant: "destructive" });
+      return;
+    }
+    setProfile({ full_name: pFullName.trim() });
+    toast({ title: "Profile updated" });
+  };
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newPassword.length < 6) {
+      toast({ title: "Password too short", description: "Minimum 6 characters", variant: "destructive" });
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast({ title: "Passwords do not match", variant: "destructive" });
+      return;
+    }
+    setSavingPassword(true);
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    setSavingPassword(false);
+    if (error) {
+      toast({ title: "Could not update password", description: error.message, variant: "destructive" });
+      return;
+    }
+    setNewPassword("");
+    setConfirmPassword("");
+    toast({ title: "Password updated" });
+  };
+
 
   return (
     <div className="min-h-screen bg-background">
@@ -348,6 +429,94 @@ export default function Home() {
             <CreditCard className="h-4 w-4 mr-2" />
             Manage Your Subscription
           </Button>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg font-display flex items-center gap-2">
+                <User className="h-5 w-5 text-primary" />
+                Profile Settings
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSaveProfile} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="full_name">Full name</Label>
+                  <Input
+                    id="full_name"
+                    value={pFullName}
+                    onChange={(e) => setPFullName(e.target.value)}
+                    placeholder="Your full name"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Mobile number</Label>
+                  <Input
+                    id="phone"
+                    value={pPhone}
+                    onChange={(e) => setPPhone(e.target.value)}
+                    placeholder="+61 412 345 678"
+                    inputMode="tel"
+                  />
+                  <p className="text-xs text-muted-foreground">Australian format, starting with +61</p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="state">State</Label>
+                  <Select value={pState} onValueChange={setPState}>
+                    <SelectTrigger id="state">
+                      <SelectValue placeholder="Select your state" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {AU_STATES.map((s) => (
+                        <SelectItem key={s} value={s}>{s}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button type="submit" disabled={savingProfile}>
+                  {savingProfile ? "Saving..." : "Save Profile"}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg font-display flex items-center gap-2">
+                <KeyRound className="h-5 w-5 text-primary" />
+                Change Password
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleChangePassword} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="new_password">New password</Label>
+                  <Input
+                    id="new_password"
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    minLength={6}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="confirm_password">Confirm password</Label>
+                  <Input
+                    id="confirm_password"
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    minLength={6}
+                    required
+                  />
+                </div>
+                <Button type="submit" disabled={savingPassword}>
+                  {savingPassword ? "Updating..." : "Update Password"}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
         </section>
       </main>
 
