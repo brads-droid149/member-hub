@@ -15,7 +15,6 @@ type Partner = Tables<"partners">;
 
 const statusColors: Record<string, string> = {
   active: "bg-success/20 text-success border-success/30",
-  paused: "bg-warning/20 text-warning border-warning/30",
   cancelled: "bg-destructive/20 text-destructive border-destructive/30",
 };
 
@@ -34,7 +33,7 @@ export default function Home() {
   const [winners, setWinners] = useState<Winner[]>([]);
   const [partners, setPartners] = useState<Partner[]>([]);
   const [copied, setCopied] = useState<string | null>(null);
-  const [status, setStatus] = useState<"active" | "paused" | "cancelled">("active");
+  const [status, setStatus] = useState<"active" | "cancelled">("active");
 
   useEffect(() => {
     const load = async () => {
@@ -59,7 +58,7 @@ export default function Home() {
       if (profileRes.data) setProfile(profileRes.data);
       if (memberRes.data) {
         setMember(memberRes.data);
-        setStatus((memberRes.data.status as "active" | "paused" | "cancelled") || "active");
+        setStatus((memberRes.data.status as "active" | "cancelled") || "active");
       }
       if (giveawayRes.data) setGiveaway(giveawayRes.data);
       if (winnersRes.data) setWinners(winnersRes.data);
@@ -104,17 +103,9 @@ export default function Home() {
     setTimeout(() => setCopied(null), 2000);
   };
 
-  const handlePause = () => {
-    setStatus("paused");
-    toast({ title: "Membership paused", description: "You can resume anytime from this page." });
-  };
   const handleCancel = () => {
     setStatus("cancelled");
     toast({ title: "Membership cancelled", description: "Your entries have been reset to zero.", variant: "destructive" });
-  };
-  const handleResume = () => {
-    setStatus("active");
-    toast({ title: "Welcome back!", description: "Your membership is active again." });
   };
 
   const scrollTo = (id: string) => {
