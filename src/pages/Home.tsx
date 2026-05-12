@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Trophy, Calendar, Copy, Check, CreditCard, LogOut, Shield } from "lucide-react";
+import { Trophy, Calendar, Copy, Check, CreditCard, LogOut, Shield, LayoutGrid, Tag, Settings as SettingsIcon } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -142,7 +142,7 @@ export default function Home() {
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-6 py-10 space-y-16">
+      <main className="max-w-5xl mx-auto px-6 py-10 pb-24 md:pb-10 space-y-16">
         {/* OVERVIEW */}
         <section id="overview" className="space-y-8 scroll-mt-20">
           <div>
@@ -303,6 +303,30 @@ export default function Home() {
           </Button>
         </section>
       </main>
+
+      {/* Mobile bottom tab bar */}
+      <nav
+        className="md:hidden fixed bottom-0 inset-x-0 z-40 border-t border-border bg-background/95 backdrop-blur-md pb-[env(safe-area-inset-bottom)]"
+        aria-label="Section navigation"
+      >
+        <div className="grid grid-cols-3">
+          {[
+            { id: "overview", label: "Overview", Icon: LayoutGrid },
+            { id: "partners", label: "Partners", Icon: Tag },
+            { id: "settings", label: "Settings", Icon: SettingsIcon },
+          ].map(({ id, label, Icon }) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => scrollTo(id)}
+              className="flex flex-col items-center justify-center gap-0.5 py-2.5 text-muted-foreground hover:text-foreground active:bg-accent transition-colors"
+            >
+              <Icon className="h-5 w-5" />
+              <span className="text-[11px] font-medium">{label}</span>
+            </button>
+          ))}
+        </div>
+      </nav>
     </div>
   );
 }
