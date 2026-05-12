@@ -14,8 +14,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
-import { Upload, Check, Loader2, Trophy, Award, Search } from "lucide-react";
+import { Upload, Check, Loader2, Trophy, Award, Search, CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Giveaway = Tables<"giveaways">;
@@ -73,6 +77,7 @@ export default function AdminGiveaways() {
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<MemberRow | null>(null);
   const [winnerPrize, setWinnerPrize] = useState("");
+  const [winnerDrawDate, setWinnerDrawDate] = useState<Date | undefined>(undefined);
   const [recording, setRecording] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
 
@@ -115,6 +120,7 @@ export default function AdminGiveaways() {
         winner_name: selected.full_name ?? "",
         state: selected.state ?? null,
         prize_title: winnerPrize.trim(),
+        draw_date: winnerDrawDate ? format(winnerDrawDate, "yyyy-MM-dd") : null,
       });
       if (insertError) throw insertError;
 
@@ -127,6 +133,7 @@ export default function AdminGiveaways() {
       toast({ title: "Winner recorded", description: `${selected.full_name} added to past winners. Entries reset to 0.` });
       setSelected(null);
       setSearch("");
+      setWinnerDrawDate(undefined);
       await loadMembers();
     } catch (err: any) {
       toast({ title: "Failed to record winner", description: err.message, variant: "destructive" });
