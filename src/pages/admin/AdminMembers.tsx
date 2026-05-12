@@ -96,12 +96,12 @@ export default function AdminMembers() {
   const today = () => new Date().toISOString().slice(0, 10);
 
   const downloadCsv = () => {
-    const headers = ["User ID", "Full Name", "Email", "Mobile", "State", "Entries", "Months Active", "Joined"];
+    const headers = ["ID", "Full Name", "Email", "Mobile", "State", "Entries", "Months Active", "Joined"];
     const lines = [headers.join(",")];
     for (const r of sorted) {
       lines.push(
         [
-          r.user_id,
+          r.user_id.slice(0, 6),
           r.full_name ?? "",
           r.email ?? "",
           r.phone ?? "",
@@ -118,18 +118,18 @@ export default function AdminMembers() {
   };
 
   const downloadEmailList = () => {
-    const lines = [["Full Name", "Email"].join(",")];
+    const lines = [["ID", "Full Name", "Email"].join(",")];
     for (const r of sorted) {
-      lines.push([r.full_name ?? "", r.email ?? ""].map(csvEscape).join(","));
+      lines.push([r.user_id.slice(0, 6), r.full_name ?? "", r.email ?? ""].map(csvEscape).join(","));
     }
     triggerDownload(lines, `email-list-${today()}.csv`);
   };
 
   const downloadDrawExport = () => {
-    const lines = [["User ID", "Full Name", "State"].join(",")];
+    const lines = [["ID", "Full Name", "State"].join(",")];
     for (const r of sorted) {
       const count = Math.max(0, r.entries | 0);
-      const row = [r.user_id, r.full_name ?? "", r.state ?? ""].map(csvEscape).join(",");
+      const row = [r.user_id.slice(0, 6), r.full_name ?? "", r.state ?? ""].map(csvEscape).join(",");
       for (let i = 0; i < count; i++) lines.push(row);
     }
     triggerDownload(lines, `draw-export-${today()}.csv`);
@@ -167,7 +167,7 @@ export default function AdminMembers() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>User ID</TableHead>
+              <TableHead>ID</TableHead>
               <TableHead>Full Name</TableHead>
               <TableHead>Email</TableHead>
               <TableHead>Mobile</TableHead>
@@ -202,7 +202,7 @@ export default function AdminMembers() {
             ) : (
               sorted.map((r) => (
                 <TableRow key={r.user_id}>
-                  <TableCell className="font-mono text-xs text-muted-foreground">{r.user_id}</TableCell>
+                  <TableCell className="font-mono text-xs text-muted-foreground">{r.user_id.slice(0, 6)}</TableCell>
                   <TableCell className="font-medium text-foreground">{r.full_name || "—"}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">{r.email || "—"}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">{r.phone || "—"}</TableCell>
