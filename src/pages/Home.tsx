@@ -6,6 +6,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAdmin } from "@/hooks/use-admin";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Giveaway = Tables<"giveaways">;
@@ -27,11 +28,16 @@ export default function Home() {
   const [winners, setWinners] = useState<Winner[]>([]);
   const [partners, setPartners] = useState<Partner[]>([]);
   const [copied, setCopied] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const load = async () => {
+      setLoading(true);
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) {
+        setLoading(false);
+        return;
+      }
 
       const metaName =
         (user.user_metadata?.full_name as string | undefined) ||
@@ -60,6 +66,7 @@ export default function Home() {
         );
         setPartners(sorted);
       }
+      setLoading(false);
     };
     load();
   }, []);
