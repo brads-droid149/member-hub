@@ -421,8 +421,12 @@ export default function Home() {
             <p className="text-sm text-muted-foreground mt-1">Manage your subscription</p>
           </div>
 
-          <Button variant="outline" onClick={() => window.open(STRIPE_PORTAL_URL, "_blank")}>
-            <CreditCard className="h-4 w-4 mr-2" />
+          <Button
+            variant="ghost"
+            className="w-full justify-start border rounded-lg bg-card px-6 py-4 h-auto text-sm font-medium text-foreground hover:bg-accent/50"
+            onClick={() => window.open(STRIPE_PORTAL_URL, "_blank")}
+          >
+            <CreditCard className="h-5 w-5 text-primary mr-2" />
             Manage Your Subscription
           </Button>
 
