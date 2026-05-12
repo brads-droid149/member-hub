@@ -417,20 +417,49 @@ export default function AdminGiveaways() {
             />
           </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="winner-prize">Prize Title</Label>
-            <Input
-              id="winner-prize"
-              value={winnerPrize}
-              onChange={(e) => setWinnerPrize(e.target.value)}
-              placeholder="Prize title"
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="winner-prize">Prize Title</Label>
+              <Input
+                id="winner-prize"
+                value={winnerPrize}
+                onChange={(e) => setWinnerPrize(e.target.value)}
+                placeholder="Prize title"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Draw Date</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !winnerDrawDate && "text-muted-foreground",
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {winnerDrawDate ? format(winnerDrawDate, "PPP") : <span>Pick a date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={winnerDrawDate}
+                    onSelect={setWinnerDrawDate}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
           </div>
 
           <div>
             <Button
               type="button"
-              disabled={!selected || !winnerPrize.trim() || recording}
+              disabled={!selected || !winnerPrize.trim() || !winnerDrawDate || recording}
               onClick={() => setConfirmOpen(true)}
             >
               {recording ? (
