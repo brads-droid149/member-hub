@@ -68,7 +68,7 @@ export default function Home() {
         supabase.from("profiles").select("full_name, phone, state").eq("user_id", user.id).maybeSingle(),
         supabase.from("members").select("months_active, entries").eq("user_id", user.id).maybeSingle(),
         supabase.from("giveaways").select("*").eq("is_active", true).limit(1).maybeSingle(),
-        supabase.from("past_winners").select("*").order("draw_date", { ascending: false, nullsFirst: false }).limit(5),
+        supabase.from("past_winners").select("*").order("draw_date", { ascending: false, nullsFirst: false }),
         supabase.from("partners").select("*").order("name"),
       ]);
 
@@ -273,11 +273,11 @@ export default function Home() {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="flex flex-col">
               <CardHeader>
                 <CardTitle className="text-lg font-display">Your Entries This Draw</CardTitle>
               </CardHeader>
-              <CardContent className="text-center space-y-3 pb-8">
+              <CardContent className="flex-1 flex flex-col justify-center text-center space-y-3 pb-8">
                 {loading ? (
                   <>
                     <Skeleton className="h-20 w-24 mx-auto" />
@@ -298,11 +298,11 @@ export default function Home() {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="flex flex-col">
               <CardHeader>
                 <CardTitle className="text-lg font-display">Past Winners</CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="flex-1 flex flex-col justify-center">
                 {loading ? (
                   <ul className="divide-y divide-border">
                     {Array.from({ length: 3 }).map((_, i) => (
@@ -316,25 +316,34 @@ export default function Home() {
                     ))}
                   </ul>
                 ) : winners.length > 0 ? (
-                  <ul className="divide-y divide-border">
-                    {winners.map((w) => (
-                      <li key={w.id} className="py-3 flex items-start justify-between gap-4">
-                        <div className="min-w-0">
-                          <p className="font-medium text-foreground text-sm truncate">{w.winner_name}</p>
-                          <p className="text-xs text-muted-foreground truncate">{w.prize_title}</p>
-                        </div>
-                        <span className="text-xs text-muted-foreground whitespace-nowrap">
-                          {w.draw_date
-                            ? new Date(w.draw_date).toLocaleDateString("en-AU", {
-                                day: "numeric",
-                                month: "long",
-                                year: "numeric",
-                              })
-                            : "—"}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
+                  <>
+                    <ul className="divide-y divide-border">
+                      {winners.slice(0, 3).map((w) => (
+                        <li key={w.id} className="py-3 flex items-start justify-between gap-4">
+                          <div className="min-w-0">
+                            <p className="font-medium text-foreground text-sm truncate">{w.winner_name}</p>
+                            <p className="text-xs text-muted-foreground truncate">{w.prize_title}</p>
+                          </div>
+                          <span className="text-xs text-muted-foreground whitespace-nowrap">
+                            {w.draw_date
+                              ? new Date(w.draw_date).toLocaleDateString("en-AU", {
+                                  day: "numeric",
+                                  month: "long",
+                                  year: "numeric",
+                                })
+                              : "—"}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                    <button
+                      type="button"
+                      onClick={() => scrollTo("past-winners")}
+                      className="mt-4 text-sm font-medium text-primary hover:underline self-start"
+                    >
+                      See All Winners
+                    </button>
+                  </>
                 ) : (
                   <p className="text-sm text-muted-foreground text-center py-6">No winners yet</p>
                 )}
