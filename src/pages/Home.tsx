@@ -199,9 +199,10 @@ export default function Home() {
               </CardHeader>
               <CardContent className="text-center space-y-3 pb-8">
                 <p className="text-7xl font-display font-bold text-primary">{entries}</p>
-                <p className="text-xs text-muted-foreground max-w-xs mx-auto">
-                  You earn +1 entry every month you stay active. Entries reset if you cancel or win.
-                </p>
+                <div className="text-xs text-muted-foreground max-w-xs mx-auto space-y-0.5">
+                  <p>You earn +1 entry every month you stay active.</p>
+                  <p>Entries reset if you cancel or win.</p>
+                </div>
               </CardContent>
             </Card>
 
