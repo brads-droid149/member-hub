@@ -83,6 +83,7 @@ export default function AdminMembers() {
 
   const downloadCsv = () => {
     const headers = [
+      "User ID",
       "Full Name",
       "Email",
       "Mobile",
@@ -95,6 +96,7 @@ export default function AdminMembers() {
     for (const r of sorted) {
       lines.push(
         [
+          r.user_id,
           r.full_name ?? "",
           r.email ?? "",
           r.phone ?? "",
@@ -140,6 +142,7 @@ export default function AdminMembers() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead>User ID</TableHead>
               <TableHead>Full Name</TableHead>
               <TableHead>Email</TableHead>
               <TableHead>Mobile</TableHead>
@@ -161,19 +164,20 @@ export default function AdminMembers() {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-12">
+                <TableCell colSpan={8} className="text-center py-12">
                   <Loader2 className="h-5 w-5 animate-spin text-primary mx-auto" />
                 </TableCell>
               </TableRow>
             ) : sorted.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-12 text-sm text-muted-foreground">
+                <TableCell colSpan={8} className="text-center py-12 text-sm text-muted-foreground">
                   No members yet.
                 </TableCell>
               </TableRow>
             ) : (
               sorted.map((r) => (
                 <TableRow key={r.user_id}>
+                  <TableCell className="font-mono text-xs text-muted-foreground">{r.user_id}</TableCell>
                   <TableCell className="font-medium text-foreground">{r.full_name || "—"}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">{r.email || "—"}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">{r.phone || "—"}</TableCell>
