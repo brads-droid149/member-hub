@@ -193,14 +193,44 @@ export default function Home() {
               </CardContent>
             </Card>
 
-            <Card className="md:col-span-2">
-              <CardContent className="py-8 text-center">
-                <p className="text-sm uppercase tracking-wide text-muted-foreground mb-2">
-                  Your Entries This Draw
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg font-display">Your Entries This Draw</CardTitle>
+              </CardHeader>
+              <CardContent className="text-center space-y-3 pb-8">
+                <p className="text-7xl font-display font-bold text-primary">{entries}</p>
+                <p className="text-xs text-muted-foreground max-w-xs mx-auto">
+                  You earn +1 entry every month you stay active. Entries reset if you cancel or win.
                 </p>
-                <p className="text-7xl font-display font-bold text-primary">
-                  {entries}
-                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg font-display">Past Winners</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {winners.length > 0 ? (
+                  <ul className="divide-y divide-border">
+                    {winners.map((w) => (
+                      <li key={w.id} className="py-3 flex items-start justify-between gap-4">
+                        <div className="min-w-0">
+                          <p className="font-medium text-foreground text-sm truncate">{w.winner_name}</p>
+                          <p className="text-xs text-muted-foreground truncate">{w.prize_title}</p>
+                        </div>
+                        <span className="text-xs text-muted-foreground whitespace-nowrap">
+                          {new Date(w.won_at).toLocaleDateString("en-AU", {
+                            day: "numeric",
+                            month: "long",
+                            year: "numeric",
+                          })}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center py-6">No winners yet</p>
+                )}
               </CardContent>
             </Card>
           </div>
