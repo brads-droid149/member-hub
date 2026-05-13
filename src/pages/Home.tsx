@@ -231,7 +231,7 @@ export default function Home() {
               <h1 className="text-3xl font-display font-bold text-foreground">
                 Welcome back, {firstName}
               </h1>
-              <p className="text-sm text-muted-foreground mt-2">
+              <p className="text-sm text-muted-foreground mt-2 text-sm">
                 Club Member for {monthsLabel}
               </p>
             </div>
@@ -274,10 +274,10 @@ export default function Home() {
             </Card>
 
             <Card className="flex flex-col h-full">
-              <CardHeader>
+              <CardHeader className="flex flex-col space-y-1.5 p-6 py-[15px]">
                 <CardTitle className="text-lg font-display">Your Entries This Draw</CardTitle>
               </CardHeader>
-              <CardContent className="flex-1 flex flex-col justify-center text-center space-y-6 py-10">
+              <CardContent className="p-6 flex-1 flex flex-col justify-center text-center space-y-6 py-0">
                 {loading ? (
                   <>
                     <Skeleton className="h-28 w-32 mx-auto" />
@@ -299,7 +299,7 @@ export default function Home() {
             </Card>
 
             <Card className="flex flex-col h-full">
-              <CardHeader>
+              <CardHeader className="flex flex-col space-y-1.5 p-6 py-[15px]">
                 <CardTitle className="text-lg font-display">Past Winners</CardTitle>
               </CardHeader>
               <CardContent className="flex-1 flex flex-col">
