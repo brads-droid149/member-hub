@@ -137,7 +137,7 @@ export default function Signup() {
                 onChange={(e) => setMobile(e.target.value)}
                 required
               />
-              <p className="text-xs text-muted-foreground">Format: +61 followed by 9 digits.</p>
+              <p className="text-xs text-muted-foreground">Australian mobile format: +61 followed by 9 digits, e.g. +61412345678</p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="state">State</Label>
