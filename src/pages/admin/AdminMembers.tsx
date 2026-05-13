@@ -131,9 +131,9 @@ export default function AdminMembers() {
   };
 
   const downloadEmailList = () => {
-    const lines = [["ID", "Full Name", "Email"].join(",")];
+    const lines = [["Full Name", "Email"].join(",")];
     for (const r of sorted) {
-      lines.push([r.user_id.slice(0, 6), r.full_name ?? "", r.email ?? ""].map(csvEscape).join(","));
+      lines.push([r.full_name ?? "", r.email ?? ""].map(csvEscape).join(","));
     }
     triggerDownload(lines, `email-list-${today()}.csv`);
   };
