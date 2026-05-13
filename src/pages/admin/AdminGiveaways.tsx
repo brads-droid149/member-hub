@@ -30,7 +30,6 @@ type MemberRow = {
   email: string | null;
   phone: string | null;
   state: string | null;
-  status: string | null;
   entries: number;
   months_active: number;
   joined_at: string;
