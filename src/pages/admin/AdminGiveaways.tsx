@@ -395,7 +395,7 @@ export default function AdminGiveaways() {
                     }}
                     className="w-full text-left px-3 py-2 hover:bg-muted/50 transition-colors"
                   >
-                    <div className="font-mono text-xs text-muted-foreground">{m.user_id}</div>
+                    <div className="font-mono text-xs text-muted-foreground">{m.user_id.slice(0, 6)}</div>
                     <div className="text-sm font-medium text-foreground">{m.full_name || "—"}</div>
                     <div className="text-xs text-muted-foreground">{m.email || "—"}</div>
                   </button>
