@@ -109,8 +109,10 @@ export default function Home() {
   // Winners reset to 0. Cancelled members reset to 0.
   // This value is read live from the members table for the signed-in user.
   const entries = member?.entries ?? 0;
-  const monthsActive = Math.max(1, member?.months_active || 0);
-  const monthsLabel = `${monthsActive} ${monthsActive === 1 ? "month" : "months"}`;
+  const monthsActive = member?.months_active ?? 0;
+  const monthsLabel = monthsActive === 0
+    ? "New Member"
+    : `Club Member for ${monthsActive} ${monthsActive === 1 ? "month" : "months"}`;
 
 
   const handleLogout = async () => {
