@@ -231,7 +231,7 @@ export default function Home() {
               <h1 className="text-3xl font-display font-bold text-foreground">
                 Welcome back, {firstName}
               </h1>
-              <p className="text-sm text-muted-foreground mt-2">
+              <p className="text-sm text-muted-foreground mt-2 text-sm">
                 Club Member for {monthsLabel}
               </p>
             </div>
