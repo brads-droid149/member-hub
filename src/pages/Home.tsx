@@ -132,7 +132,7 @@ export default function Home() {
   };
 
   const AU_STATES = ["NSW", "VIC", "QLD", "WA", "SA", "TAS", "ACT", "NT"];
-  const PHONE_RE = /^\+61\s?[2-9](?:[\s-]?\d){8}$/;
+  const PHONE_RE = /^\+614\d{8}$/;
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
