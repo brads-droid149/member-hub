@@ -234,7 +234,7 @@ export default function Home() {
                 Welcome back, {firstName}
               </h1>
               <p className="text-sm text-muted-foreground mt-2 text-sm">
-                Club Member for {monthsLabel}
+                {monthsLabel}
               </p>
             </div>
           )}
