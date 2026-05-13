@@ -74,7 +74,7 @@ export default function Signup() {
       return;
     }
 
-    toast({ title: "Welcome to the Crew!", description: "Check your email to confirm your account." });
+    toast({ title: "Welcome to the Club!", description: "Check your email to confirm your account." });
     navigate("/login");
   };
 
@@ -83,7 +83,7 @@ export default function Signup() {
       <Card className="w-full max-w-md border-border">
         <CardHeader className="text-center">
           <CardTitle className="text-3xl font-display tracking-tight text-foreground">
-            Join the Crew
+            Join the Club
           </CardTitle>
           <CardDescription className="text-muted-foreground">
             Create your account
