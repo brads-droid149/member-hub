@@ -30,11 +30,11 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
 
       const { data: member } = await supabase
         .from("members")
-        .select("id")
+        .select("id, status")
         .eq("user_id", userId)
         .maybeSingle();
       if (cancelled) return;
-      setAccess(member ? "allowed" : "no-membership");
+      setAccess(member && member.status === "active" ? "allowed" : "no-membership");
     };
 
     supabase.auth.getSession().then(({ data }) => evaluate(data.session));

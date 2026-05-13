@@ -51,6 +51,7 @@ export type Database = {
           exempt_from_winning: boolean
           id: string
           months_active: number
+          status: string
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
           updated_at: string
@@ -62,6 +63,7 @@ export type Database = {
           exempt_from_winning?: boolean
           id?: string
           months_active?: number
+          status?: string
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
           updated_at?: string
@@ -73,6 +75,7 @@ export type Database = {
           exempt_from_winning?: boolean
           id?: string
           months_active?: number
+          status?: string
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
           updated_at?: string
@@ -211,6 +214,7 @@ export type Database = {
           months_active: number
           phone: string
           state: string
+          status: string
           user_id: string
         }[]
       }

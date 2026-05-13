@@ -132,7 +132,7 @@ export default function Home() {
   };
 
   const AU_STATES = ["NSW", "VIC", "QLD", "WA", "SA", "TAS", "ACT", "NT"];
-  const PHONE_RE = /^\+61\s?[2-9](?:[\s-]?\d){8}$/;
+  const PHONE_RE = /^\+614\d{8}$/;
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -144,7 +144,7 @@ export default function Home() {
     if (pPhone && !PHONE_RE.test(pPhone.trim())) {
       toast({
         title: "Invalid mobile number",
-        description: "Use Australian format, e.g. +61 412 345 678",
+        description: "Australian mobile format: +61 followed by 9 digits, e.g. +61412345678",
         variant: "destructive",
       });
       return;
