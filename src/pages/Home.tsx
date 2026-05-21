@@ -243,6 +243,17 @@ export default function Home() {
       </header>
 
       <main className="max-w-5xl mx-auto px-6 py-10 pb-24 md:pb-10 space-y-16">
+        {member?.status === "past_due" && (
+          <Alert variant="destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription className="flex flex-wrap items-center justify-between gap-2">
+              <span>Your last payment didn't go through. Update your payment method to keep your membership active.</span>
+              <Button size="sm" variant="outline" onClick={handleManageSubscription} disabled={openingPortal}>
+                {openingPortal ? "Opening…" : "Update payment"}
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
         {/* OVERVIEW */}
         <section id="overview" className="space-y-8 scroll-mt-20">
           {loading ? (
