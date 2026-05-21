@@ -55,11 +55,11 @@ export default function Signup() {
     }
 
     setLoading(true);
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email: email.trim(),
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/`,
+        emailRedirectTo: `${window.location.origin}/subscribe`,
         data: {
           full_name: fullName.trim(),
           phone: trimmedMobile,
@@ -74,8 +74,13 @@ export default function Signup() {
       return;
     }
 
-    toast({ title: "Welcome to the Club!", description: "Check your email to confirm your account." });
-    navigate("/login");
+    if (data.session) {
+      toast({ title: "Welcome to the Club!", description: "Choose your membership to get started." });
+      navigate("/subscribe");
+    } else {
+      toast({ title: "Welcome to the Club!", description: "Check your email to confirm your account, then sign in to choose your membership." });
+      navigate("/login");
+    }
   };
 
   return (
