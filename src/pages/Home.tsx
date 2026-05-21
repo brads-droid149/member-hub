@@ -11,13 +11,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAdmin } from "@/hooks/use-admin";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertTriangle } from "lucide-react";
+import { getStripeEnvironment } from "@/lib/stripe";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Giveaway = Tables<"giveaways">;
 type Winner = Tables<"past_winners">;
 type Partner = Tables<"partners">;
-
-const STRIPE_PORTAL_URL = import.meta.env.VITE_STRIPE_PORTAL_URL ?? "https://billing.stripe.com/p/login/3cIbJ34vv6ZN0F467z0oM00";
 
 export default function Home() {
   const { toast } = useToast();
@@ -27,7 +28,8 @@ export default function Home() {
 
   const [profile, setProfile] = useState<{ full_name: string | null } | null>(null);
   const [authName, setAuthName] = useState<string | null>(null);
-  const [member, setMember] = useState<{ months_active: number; entries: number } | null>(null);
+  const [member, setMember] = useState<{ months_active: number; entries: number; status: string } | null>(null);
+  const [openingPortal, setOpeningPortal] = useState(false);
   const [giveaway, setGiveaway] = useState<Giveaway | null>(null);
   const [winners, setWinners] = useState<Winner[]>([]);
   const [partners, setPartners] = useState<Partner[]>([]);
@@ -66,7 +68,7 @@ export default function Home() {
 
       const [profileRes, memberRes, giveawayRes, winnersRes, partnersRes] = await Promise.all([
         supabase.from("profiles").select("full_name, phone, state").eq("user_id", user.id).maybeSingle(),
-        supabase.from("members").select("months_active, entries").eq("user_id", user.id).maybeSingle(),
+        supabase.from("members").select("months_active, entries, status").eq("user_id", user.id).maybeSingle(),
         supabase.from("giveaways").select("*").eq("is_active", true).limit(1).maybeSingle(),
         supabase.from("past_winners").select("*").order("draw_date", { ascending: false, nullsFirst: false }),
         supabase.from("partners").select("*").order("name"),
@@ -187,6 +189,26 @@ export default function Home() {
     setNewPassword("");
     setConfirmPassword("");
     toast({ title: "Password updated" });
+  };
+
+  const handleManageSubscription = async () => {
+    setOpeningPortal(true);
+    const { data, error } = await supabase.functions.invoke("create-portal-session", {
+      body: {
+        environment: getStripeEnvironment(),
+        returnUrl: window.location.origin + "/",
+      },
+    });
+    setOpeningPortal(false);
+    if (error || !data?.url) {
+      toast({
+        title: "Could not open billing portal",
+        description: error?.message || "Please try again in a moment",
+        variant: "destructive",
+      });
+      return;
+    }
+    window.open(data.url, "_blank", "noopener,noreferrer");
   };
 
 
