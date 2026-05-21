@@ -34,7 +34,9 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
         .eq("user_id", userId)
         .maybeSingle();
       if (cancelled) return;
-      setAccess(member && member.status === "active" ? "allowed" : "no-membership");
+      // Allow access while payment is being retried (past_due). Home shows a banner.
+      const allowedStatuses = ["active", "past_due"];
+      setAccess(member && allowedStatuses.includes(member.status) ? "allowed" : "no-membership");
     };
 
     supabase.auth.getSession().then(({ data }) => evaluate(data.session));
