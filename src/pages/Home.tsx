@@ -519,11 +519,12 @@ export default function Home() {
 
           <Button
             variant="ghost"
+            disabled={openingPortal}
             className="w-full justify-start border rounded-lg bg-card px-6 py-4 h-auto text-sm font-medium text-foreground hover:bg-accent/50"
-            onClick={() => window.open(STRIPE_PORTAL_URL, "_blank")}
+            onClick={handleManageSubscription}
           >
             <CreditCard className="h-5 w-5 text-primary mr-2" />
-            Manage Your Subscription
+            {openingPortal ? "Opening…" : "Manage Your Subscription"}
           </Button>
 
           <Accordion type="single" collapsible className="space-y-4">
