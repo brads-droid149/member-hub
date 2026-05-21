@@ -50,7 +50,7 @@ export default function Subscribe() {
         .select("status")
         .eq("user_id", session.user.id)
         .maybeSingle();
-      setState(member && member.status === "active" ? "allowed" : "needs-subscribe");
+      setState(member && ["active", "past_due"].includes(member.status) ? "allowed" : "needs-subscribe");
     };
     check();
   }, []);

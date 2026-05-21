@@ -69,6 +69,12 @@ async function syncMember(opts: {
       status: memberStatus,
       updated_at: new Date().toISOString(),
     };
+    // Track when past_due began so the daily job can auto-cancel after 7 days.
+    if (memberStatus === "past_due" && existing.status !== "past_due") {
+      update.past_due_since = new Date().toISOString();
+    } else if (memberStatus !== "past_due" && existing.status === "past_due") {
+      update.past_due_since = null;
+    }
     if (isReactivation) {
       update.months_active = 1;
       update.entries = 1;
