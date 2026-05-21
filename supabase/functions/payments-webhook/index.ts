@@ -48,7 +48,8 @@ async function syncMember(opts: {
     .maybeSingle();
 
   if (!existing) {
-    // New member — first month active, first entry.
+    // New member — first month active, first entry. Anchor the monthly
+    // credit cron to now so the next +1 happens ~1 month from today.
     await supa.from("members").insert({
       user_id: userId,
       stripe_customer_id: subscription.customer,
@@ -56,10 +57,9 @@ async function syncMember(opts: {
       status: memberStatus,
       months_active: 1,
       entries: 1,
+      last_entry_credited_at: new Date().toISOString(),
     });
   } else {
-    // If the previous row was cancelled/paused and the new subscription is
-    // active, treat as a fresh signup: reset months_active and entries to 1.
     const isReactivation =
       ["cancelled", "paused"].includes(existing.status) && memberStatus === "active";
 
@@ -72,10 +72,16 @@ async function syncMember(opts: {
     if (isReactivation) {
       update.months_active = 1;
       update.entries = 1;
+      update.last_entry_credited_at = new Date().toISOString();
     }
     await supa.from("members").update(update).eq("user_id", userId);
   }
 }
+
+// NOTE: Monthly entry crediting is handled by the `credit_monthly_entries`
+// pg_cron job (runs daily). It applies uniformly to monthly AND annual
+// subscribers — +1 entry per calendar month active, regardless of billing
+// frequency. We intentionally do NOT increment entries on invoice.paid.
 
 // Monthly renewal: invoice.paid (billing_reason=subscription_cycle) increments
 // entries and months_active by 1. We skip the first invoice (billing_reason=
