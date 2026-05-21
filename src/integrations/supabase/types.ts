@@ -50,6 +50,7 @@ export type Database = {
           entries: number
           exempt_from_winning: boolean
           id: string
+          last_entry_credited_at: string
           months_active: number
           status: string
           stripe_customer_id: string | null
@@ -62,6 +63,7 @@ export type Database = {
           entries?: number
           exempt_from_winning?: boolean
           id?: string
+          last_entry_credited_at?: string
           months_active?: number
           status?: string
           stripe_customer_id?: string | null
@@ -74,6 +76,7 @@ export type Database = {
           entries?: number
           exempt_from_winning?: boolean
           id?: string
+          last_entry_credited_at?: string
           months_active?: number
           status?: string
           stripe_customer_id?: string | null
@@ -252,6 +255,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      credit_monthly_entries: { Args: never; Returns: undefined }
       get_admin_members_overview: {
         Args: never
         Returns: {
