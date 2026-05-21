@@ -251,18 +251,20 @@ export default function Home() {
                 {loading ? (
                   <Skeleton className="w-full aspect-video rounded-lg" />
                 ) : giveaway ? (
-                  <div className="relative w-full aspect-video rounded-lg overflow-hidden border border-border">
-                    {giveaway.prize_image_url ? (
-                      <img src={giveaway.prize_image_url} alt={giveaway.title} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full bg-white flex items-center justify-center">
-                        <span className="text-muted-foreground text-sm">Prize image</span>
-                      </div>
-                    )}
-                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent px-5 py-5">
-                      <h3 className="font-display font-semibold text-white drop-shadow">{giveaway.title}</h3>
+                  <div className="space-y-4">
+                    <div className="w-full rounded-lg overflow-hidden border border-border">
+                      {giveaway.prize_image_url ? (
+                        <img src={giveaway.prize_image_url} alt={giveaway.title} className="w-full h-auto block" />
+                      ) : (
+                        <div className="w-full aspect-video bg-white flex items-center justify-center">
+                          <span className="text-muted-foreground text-sm">Prize image</span>
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <h3 className="font-display font-semibold text-foreground">{giveaway.title}</h3>
                       {giveaway.draw_date && (
-                        <p className="text-sm text-white/90 flex items-center gap-1 mt-1 drop-shadow">
+                        <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
                           <Calendar className="h-3 w-3" />
                           Draw: {new Date(giveaway.draw_date).toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" })}
                         </p>
