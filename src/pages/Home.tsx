@@ -17,7 +17,7 @@ type Giveaway = Tables<"giveaways">;
 type Winner = Tables<"past_winners">;
 type Partner = Tables<"partners">;
 
-const STRIPE_PORTAL_URL = import.meta.env.VITE_STRIPE_PORTAL_URL;
+const STRIPE_PORTAL_URL = import.meta.env.VITE_STRIPE_PORTAL_URL ?? "https://billing.stripe.com/p/login/3cIbJ34vv6ZN0F467z0oM00";
 
 export default function Home() {
   const { toast } = useToast();

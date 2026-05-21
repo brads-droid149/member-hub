@@ -6,7 +6,8 @@ import { supabase } from "@/integrations/supabase/client";
 
 const STRIPE_PAYMENT_LINK =
   import.meta.env.VITE_STRIPE_PAYMENT_LINK ??
-  "https://buy.stripe.com/3cIbJ34vv6ZN0F467z0oM00";
+  "https://buy.stripe.com/aFa6oJ3rrabZ3Rg67z0oM01";
+
 
 type State = "loading" | "needs-subscribe" | "allowed" | "no-session";
 
