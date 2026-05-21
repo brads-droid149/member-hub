@@ -43,7 +43,7 @@ async function syncMember(opts: {
 
   const { data: existing } = await supa
     .from("members")
-    .select("id, months_active")
+    .select("id, status")
     .eq("user_id", userId)
     .maybeSingle();
 
@@ -58,16 +58,59 @@ async function syncMember(opts: {
       entries: 1,
     });
   } else {
-    await supa
-      .from("members")
-      .update({
-        stripe_customer_id: subscription.customer,
-        stripe_subscription_id: subscription.id,
-        status: memberStatus,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("user_id", userId);
+    // If the previous row was cancelled/paused and the new subscription is
+    // active, treat as a fresh signup: reset months_active and entries to 1.
+    const isReactivation =
+      ["cancelled", "paused"].includes(existing.status) && memberStatus === "active";
+
+    const update: Record<string, unknown> = {
+      stripe_customer_id: subscription.customer,
+      stripe_subscription_id: subscription.id,
+      status: memberStatus,
+      updated_at: new Date().toISOString(),
+    };
+    if (isReactivation) {
+      update.months_active = 1;
+      update.entries = 1;
+    }
+    await supa.from("members").update(update).eq("user_id", userId);
   }
+}
+
+// Monthly renewal: invoice.paid (billing_reason=subscription_cycle) increments
+// entries and months_active by 1. We skip the first invoice (billing_reason=
+// subscription_create) because syncMember already initializes those to 1.
+async function handleInvoicePaid(invoice: any) {
+  const reason = invoice.billing_reason;
+  if (reason !== "subscription_cycle" && reason !== "subscription_update") return;
+
+  const subscriptionId = invoice.subscription || invoice.parent?.subscription_details?.subscription;
+  if (!subscriptionId) return;
+
+  const supa = getSupabase();
+  const { data: sub } = await supa
+    .from("subscriptions")
+    .select("user_id")
+    .eq("stripe_subscription_id", subscriptionId)
+    .maybeSingle();
+  if (!sub?.user_id) return;
+
+  const { data: member } = await supa
+    .from("members")
+    .select("entries, months_active")
+    .eq("user_id", sub.user_id)
+    .maybeSingle();
+  if (!member) return;
+
+  await supa
+    .from("members")
+    .update({
+      entries: (member.entries ?? 0) + 1,
+      months_active: (member.months_active ?? 0) + 1,
+      status: "active",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("user_id", sub.user_id);
 }
 
 async function handleSubscriptionUpsert(subscription: any, env: StripeEnv) {
@@ -139,6 +182,10 @@ async function handleWebhook(req: Request, env: StripeEnv) {
       break;
     case "customer.subscription.deleted":
       await handleSubscriptionDeleted(event.data.object, env);
+      break;
+    case "invoice.paid":
+    case "invoice.payment_succeeded":
+      await handleInvoicePaid(event.data.object);
       break;
     default:
       console.log("Unhandled event:", event.type);
