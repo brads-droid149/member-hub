@@ -11,13 +11,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAdmin } from "@/hooks/use-admin";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertTriangle } from "lucide-react";
+import { getStripeEnvironment } from "@/lib/stripe";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Giveaway = Tables<"giveaways">;
 type Winner = Tables<"past_winners">;
 type Partner = Tables<"partners">;
-
-const STRIPE_PORTAL_URL = import.meta.env.VITE_STRIPE_PORTAL_URL ?? "https://billing.stripe.com/p/login/3cIbJ34vv6ZN0F467z0oM00";
 
 export default function Home() {
   const { toast } = useToast();
@@ -27,7 +28,8 @@ export default function Home() {
 
   const [profile, setProfile] = useState<{ full_name: string | null } | null>(null);
   const [authName, setAuthName] = useState<string | null>(null);
-  const [member, setMember] = useState<{ months_active: number; entries: number } | null>(null);
+  const [member, setMember] = useState<{ months_active: number; entries: number; status: string } | null>(null);
+  const [openingPortal, setOpeningPortal] = useState(false);
   const [giveaway, setGiveaway] = useState<Giveaway | null>(null);
   const [winners, setWinners] = useState<Winner[]>([]);
   const [partners, setPartners] = useState<Partner[]>([]);
@@ -66,7 +68,7 @@ export default function Home() {
 
       const [profileRes, memberRes, giveawayRes, winnersRes, partnersRes] = await Promise.all([
         supabase.from("profiles").select("full_name, phone, state").eq("user_id", user.id).maybeSingle(),
-        supabase.from("members").select("months_active, entries").eq("user_id", user.id).maybeSingle(),
+        supabase.from("members").select("months_active, entries, status").eq("user_id", user.id).maybeSingle(),
         supabase.from("giveaways").select("*").eq("is_active", true).limit(1).maybeSingle(),
         supabase.from("past_winners").select("*").order("draw_date", { ascending: false, nullsFirst: false }),
         supabase.from("partners").select("*").order("name"),
@@ -189,6 +191,26 @@ export default function Home() {
     toast({ title: "Password updated" });
   };
 
+  const handleManageSubscription = async () => {
+    setOpeningPortal(true);
+    const { data, error } = await supabase.functions.invoke("create-portal-session", {
+      body: {
+        environment: getStripeEnvironment(),
+        returnUrl: window.location.origin + "/",
+      },
+    });
+    setOpeningPortal(false);
+    if (error || !data?.url) {
+      toast({
+        title: "Could not open billing portal",
+        description: error?.message || "Please try again in a moment",
+        variant: "destructive",
+      });
+      return;
+    }
+    window.open(data.url, "_blank", "noopener,noreferrer");
+  };
+
 
   return (
     <div className="min-h-screen bg-background">
@@ -221,6 +243,17 @@ export default function Home() {
       </header>
 
       <main className="max-w-5xl mx-auto px-6 py-10 pb-24 md:pb-10 space-y-16">
+        {member?.status === "past_due" && (
+          <Alert variant="destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription className="flex flex-wrap items-center justify-between gap-2">
+              <span>Your last payment didn't go through. Update your payment method to keep your membership active.</span>
+              <Button size="sm" variant="outline" onClick={handleManageSubscription} disabled={openingPortal}>
+                {openingPortal ? "Opening…" : "Update payment"}
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
         {/* OVERVIEW */}
         <section id="overview" className="space-y-8 scroll-mt-20">
           {loading ? (
@@ -497,11 +530,12 @@ export default function Home() {
 
           <Button
             variant="ghost"
+            disabled={openingPortal}
             className="w-full justify-start border rounded-lg bg-card px-6 py-4 h-auto text-sm font-medium text-foreground hover:bg-accent/50"
-            onClick={() => window.open(STRIPE_PORTAL_URL, "_blank")}
+            onClick={handleManageSubscription}
           >
             <CreditCard className="h-5 w-5 text-primary mr-2" />
-            Manage Your Subscription
+            {openingPortal ? "Opening…" : "Manage Your Subscription"}
           </Button>
 
           <Accordion type="single" collapsible className="space-y-4">

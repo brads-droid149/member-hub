@@ -9,7 +9,9 @@ import Subscribe from "./pages/Subscribe";
 import ResetPassword from "./pages/ResetPassword";
 import Home from "./pages/Home";
 import Admin from "./pages/Admin";
+import CheckoutReturn from "./pages/CheckoutReturn";
 import ProtectedRoute from "./components/ProtectedRoute";
+import { PaymentTestModeBanner } from "./components/PaymentTestModeBanner";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -20,11 +22,13 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <PaymentTestModeBanner />
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/subscribe" element={<Subscribe />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/checkout/return" element={<CheckoutReturn />} />
           <Route
             path="/"
             element={
