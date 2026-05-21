@@ -52,6 +52,7 @@ export type Database = {
           id: string
           last_entry_credited_at: string
           months_active: number
+          past_due_since: string | null
           status: string
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
@@ -65,6 +66,7 @@ export type Database = {
           id?: string
           last_entry_credited_at?: string
           months_active?: number
+          past_due_since?: string | null
           status?: string
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
@@ -78,6 +80,7 @@ export type Database = {
           id?: string
           last_entry_credited_at?: string
           months_active?: number
+          past_due_since?: string | null
           status?: string
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
@@ -255,6 +258,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cancel_stale_past_due_members: { Args: never; Returns: undefined }
       credit_monthly_entries: { Args: never; Returns: undefined }
       get_admin_members_overview: {
         Args: never
