@@ -86,6 +86,9 @@ async function syncMember(opts: {
 // Monthly renewal: invoice.paid (billing_reason=subscription_cycle) increments
 // entries and months_active by 1. We skip the first invoice (billing_reason=
 // subscription_create) because syncMember already initializes those to 1.
+// Renewals no longer mutate entries — the daily pg_cron handles monthly
+// credits uniformly for monthly and annual plans. We still ensure status
+// flips back to 'active' on a successful renewal payment.
 async function handleInvoicePaid(invoice: any) {
   const reason = invoice.billing_reason;
   if (reason !== "subscription_cycle" && reason !== "subscription_update") return;
@@ -101,21 +104,9 @@ async function handleInvoicePaid(invoice: any) {
     .maybeSingle();
   if (!sub?.user_id) return;
 
-  const { data: member } = await supa
-    .from("members")
-    .select("entries, months_active")
-    .eq("user_id", sub.user_id)
-    .maybeSingle();
-  if (!member) return;
-
   await supa
     .from("members")
-    .update({
-      entries: (member.entries ?? 0) + 1,
-      months_active: (member.months_active ?? 0) + 1,
-      status: "active",
-      updated_at: new Date().toISOString(),
-    })
+    .update({ status: "active", updated_at: new Date().toISOString() })
     .eq("user_id", sub.user_id);
 }
 
