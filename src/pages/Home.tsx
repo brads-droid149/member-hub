@@ -67,9 +67,17 @@ export default function Home() {
 
       setUserId(user.id);
 
-      const [profileRes, memberRes, giveawayRes, winnersRes, partnersRes] = await Promise.all([
+      const [profileRes, memberRes, subRes, giveawayRes, winnersRes, partnersRes] = await Promise.all([
         supabase.from("profiles").select("full_name, phone, state").eq("user_id", user.id).maybeSingle(),
         supabase.from("members").select("months_active, entries, status").eq("user_id", user.id).maybeSingle(),
+        supabase
+          .from("subscriptions")
+          .select("cancel_at_period_end, current_period_end")
+          .eq("user_id", user.id)
+          .eq("environment", getStripeEnvironment())
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
         supabase.from("giveaways").select("*").eq("is_active", true).limit(1).maybeSingle(),
         supabase.from("past_winners").select("*").order("draw_date", { ascending: false, nullsFirst: false }),
         supabase.from("partners").select("*").order("name"),
@@ -84,6 +92,7 @@ export default function Home() {
       if (memberRes.data) {
         setMember(memberRes.data);
       }
+      if (subRes.data) setSubscription(subRes.data);
       if (giveawayRes.data) setGiveaway(giveawayRes.data);
       if (winnersRes.data) setWinners(winnersRes.data);
       if (partnersRes.data) {
@@ -95,6 +104,41 @@ export default function Home() {
       setLoading(false);
     };
     load();
+
+    // Realtime: keep members data fresh after Stripe portal actions
+    // (cancel / pause / update payment) without requiring a page reload.
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      channel = supabase
+        .channel(`home-member-${user.id}`)
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "members", filter: `user_id=eq.${user.id}` },
+          async () => {
+            const { data } = await supabase
+              .from("members")
+              .select("months_active, entries, status")
+              .eq("user_id", user.id)
+              .maybeSingle();
+            if (data) setMember(data);
+            const { data: s } = await supabase
+              .from("subscriptions")
+              .select("cancel_at_period_end, current_period_end")
+              .eq("user_id", user.id)
+              .eq("environment", getStripeEnvironment())
+              .order("created_at", { ascending: false })
+              .limit(1)
+              .maybeSingle();
+            if (s) setSubscription(s);
+          },
+        )
+        .subscribe();
+    })();
+    return () => {
+      if (channel) supabase.removeChannel(channel);
+    };
   }, []);
 
   const toTitle = (s: string) =>
