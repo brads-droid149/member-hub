@@ -230,7 +230,7 @@ export default function Signup() {
                 className="mt-1"
               />
               <Label htmlFor="marketing" className="text-sm font-normal leading-relaxed cursor-pointer">
-                I'd like to receive news, offers and updates from Junkyard Club
+                I'd like to receive news, offers and updates from Junkyard Surf
               </Label>
             </div>
 
