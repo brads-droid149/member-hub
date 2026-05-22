@@ -299,6 +299,25 @@ export default function Home() {
             </AlertDescription>
           </Alert>
         )}
+        {subscription?.cancel_at_period_end && subscription.current_period_end && member?.status === "active" && (
+          <Alert>
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription className="flex flex-wrap items-center justify-between gap-2">
+              <span>
+                Your membership ends on{" "}
+                {new Date(subscription.current_period_end).toLocaleDateString("en-AU", {
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric",
+                })}
+                . You can resume anytime before then.
+              </span>
+              <Button size="sm" variant="outline" onClick={handleManageSubscription} disabled={openingPortal}>
+                {openingPortal ? "Opening…" : "Manage membership"}
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
         {/* OVERVIEW */}
         <section id="overview" className="space-y-8 scroll-mt-20">
           {loading ? (
