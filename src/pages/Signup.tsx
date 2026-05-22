@@ -61,14 +61,14 @@ export default function Signup() {
       return;
     }
 
-    // Check for duplicate phone number
-    const { data: existingPhone } = await supabase
-      .from("profiles")
-      .select("id")
-      .eq("phone", trimmedMobile)
-      .maybeSingle();
-
-    if (existingPhone) {
+    // Check for duplicate phone via SECURITY DEFINER RPC
+    // (anon can't read other users' profiles directly under RLS).
+    const { data: phoneTaken, error: phoneCheckError } = await supabase.rpc("phone_exists", {
+      _phone: trimmedMobile,
+    });
+    if (phoneCheckError) {
+      console.error("phone_exists check failed:", phoneCheckError);
+    } else if (phoneTaken) {
       toast({ title: "Mobile number already registered", variant: "destructive" });
       return;
     }

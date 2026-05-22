@@ -29,6 +29,7 @@ export default function Home() {
   const [profile, setProfile] = useState<{ full_name: string | null } | null>(null);
   const [authName, setAuthName] = useState<string | null>(null);
   const [member, setMember] = useState<{ months_active: number; entries: number; status: string } | null>(null);
+  const [subscription, setSubscription] = useState<{ cancel_at_period_end: boolean | null; current_period_end: string | null } | null>(null);
   const [openingPortal, setOpeningPortal] = useState(false);
   const [giveaway, setGiveaway] = useState<Giveaway | null>(null);
   const [winners, setWinners] = useState<Winner[]>([]);
@@ -66,9 +67,17 @@ export default function Home() {
 
       setUserId(user.id);
 
-      const [profileRes, memberRes, giveawayRes, winnersRes, partnersRes] = await Promise.all([
+      const [profileRes, memberRes, subRes, giveawayRes, winnersRes, partnersRes] = await Promise.all([
         supabase.from("profiles").select("full_name, phone, state").eq("user_id", user.id).maybeSingle(),
         supabase.from("members").select("months_active, entries, status").eq("user_id", user.id).maybeSingle(),
+        supabase
+          .from("subscriptions")
+          .select("cancel_at_period_end, current_period_end")
+          .eq("user_id", user.id)
+          .eq("environment", getStripeEnvironment())
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
         supabase.from("giveaways").select("*").eq("is_active", true).limit(1).maybeSingle(),
         supabase.from("past_winners").select("*").order("draw_date", { ascending: false, nullsFirst: false }),
         supabase.from("partners").select("*").order("name"),
@@ -83,6 +92,7 @@ export default function Home() {
       if (memberRes.data) {
         setMember(memberRes.data);
       }
+      if (subRes.data) setSubscription(subRes.data);
       if (giveawayRes.data) setGiveaway(giveawayRes.data);
       if (winnersRes.data) setWinners(winnersRes.data);
       if (partnersRes.data) {
@@ -94,6 +104,41 @@ export default function Home() {
       setLoading(false);
     };
     load();
+
+    // Realtime: keep members data fresh after Stripe portal actions
+    // (cancel / pause / update payment) without requiring a page reload.
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      channel = supabase
+        .channel(`home-member-${user.id}`)
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "members", filter: `user_id=eq.${user.id}` },
+          async () => {
+            const { data } = await supabase
+              .from("members")
+              .select("months_active, entries, status")
+              .eq("user_id", user.id)
+              .maybeSingle();
+            if (data) setMember(data);
+            const { data: s } = await supabase
+              .from("subscriptions")
+              .select("cancel_at_period_end, current_period_end")
+              .eq("user_id", user.id)
+              .eq("environment", getStripeEnvironment())
+              .order("created_at", { ascending: false })
+              .limit(1)
+              .maybeSingle();
+            if (s) setSubscription(s);
+          },
+        )
+        .subscribe();
+    })();
+    return () => {
+      if (channel) supabase.removeChannel(channel);
+    };
   }, []);
 
   const toTitle = (s: string) =>
@@ -250,6 +295,25 @@ export default function Home() {
               <span>Your last payment didn't go through. Update your payment method to keep your membership active.</span>
               <Button size="sm" variant="outline" onClick={handleManageSubscription} disabled={openingPortal}>
                 {openingPortal ? "Opening…" : "Update payment"}
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+        {subscription?.cancel_at_period_end && subscription.current_period_end && member?.status === "active" && (
+          <Alert>
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription className="flex flex-wrap items-center justify-between gap-2">
+              <span>
+                Your membership ends on{" "}
+                {new Date(subscription.current_period_end).toLocaleDateString("en-AU", {
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric",
+                })}
+                . You can resume anytime before then.
+              </span>
+              <Button size="sm" variant="outline" onClick={handleManageSubscription} disabled={openingPortal}>
+                {openingPortal ? "Opening…" : "Manage membership"}
               </Button>
             </AlertDescription>
           </Alert>

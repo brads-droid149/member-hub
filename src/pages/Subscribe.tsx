@@ -34,6 +34,8 @@ export default function Subscribe() {
   const [showCheckout, setShowCheckout] = useState(false);
 
   useEffect(() => {
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+
     const check = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return setState("no-session");
@@ -51,8 +53,24 @@ export default function Subscribe() {
         .eq("user_id", session.user.id)
         .maybeSingle();
       setState(member && ["active", "past_due"].includes(member.status) ? "allowed" : "needs-subscribe");
+
+      // Listen for webhook-driven membership activation while user waits on this page.
+      channel = supabase
+        .channel(`members-self-${session.user.id}`)
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "members", filter: `user_id=eq.${session.user.id}` },
+          (payload) => {
+            const next = (payload.new as { status?: string } | null)?.status;
+            if (next && ["active", "past_due"].includes(next)) setState("allowed");
+          },
+        )
+        .subscribe();
     };
     check();
+    return () => {
+      if (channel) supabase.removeChannel(channel);
+    };
   }, []);
 
   if (state === "loading") {

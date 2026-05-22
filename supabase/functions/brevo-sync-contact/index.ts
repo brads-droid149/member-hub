@@ -35,15 +35,33 @@ Deno.serve(async (req) => {
     }
     const { email, full_name, phone, state, marketing_opt_in } = parsed.data;
 
-    // Optional: auth check if called with bearer token; otherwise allow (called right after signup)
+    // Require authenticated caller and verify the email matches the signed-in user.
+    // The signup flow calls this immediately after auth.signUp succeeds, so the
+    // browser already has a valid session token attached to functions.invoke().
     const authHeader = req.headers.get("Authorization");
-    if (authHeader) {
-      const supabase = createClient(
-        Deno.env.get("SUPABASE_URL")!,
-        Deno.env.get("SUPABASE_ANON_KEY")!,
-        { global: { headers: { Authorization: authHeader } } }
-      );
-      await supabase.auth.getUser();
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: authHeader } } },
+    );
+    const { data: { user }, error: userErr } = await supabase.auth.getUser();
+    if (userErr || !user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    if (user.email?.toLowerCase() !== email.toLowerCase()) {
+      return new Response(JSON.stringify({ error: "Email does not match authenticated user" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const firstName = full_name?.split(" ")[0];
