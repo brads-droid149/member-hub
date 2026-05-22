@@ -100,6 +100,21 @@ export default function Signup() {
       return;
     }
 
+    // Sync contact to Brevo (non-blocking — don't fail signup if it errors)
+    try {
+      await supabase.functions.invoke("brevo-sync-contact", {
+        body: {
+          email: email.trim(),
+          full_name: fullName.trim(),
+          phone: trimmedMobile,
+          state,
+          marketing_opt_in: marketingOptIn,
+        },
+      });
+    } catch (err) {
+      console.error("Brevo sync failed:", err);
+    }
+
     if (data.session) {
       toast({ title: "Welcome to the Club!", description: "Choose your membership to get started." });
       navigate("/subscribe");
