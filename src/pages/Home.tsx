@@ -29,6 +29,7 @@ export default function Home() {
   const [profile, setProfile] = useState<{ full_name: string | null } | null>(null);
   const [authName, setAuthName] = useState<string | null>(null);
   const [member, setMember] = useState<{ months_active: number; entries: number; status: string } | null>(null);
+  const [subscription, setSubscription] = useState<{ cancel_at_period_end: boolean | null; current_period_end: string | null } | null>(null);
   const [openingPortal, setOpeningPortal] = useState(false);
   const [giveaway, setGiveaway] = useState<Giveaway | null>(null);
   const [winners, setWinners] = useState<Winner[]>([]);
