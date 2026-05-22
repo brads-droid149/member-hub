@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.create-portal-session]
 verify_jwt = false
+
+[functions.brevo-sync-contact]
+verify_jwt = false
