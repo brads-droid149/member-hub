@@ -83,13 +83,10 @@ export default function CheckoutReturn() {
             </h1>
             <p className="text-muted-foreground">
               {status === "waiting" && "We're activating your membership. This usually takes a few seconds."}
-              {status === "active" && "Your membership is active. Enjoy your first entry into the next draw!"}
+              {status === "active" && "Your membership is active. Enjoy our partner discounts and your first entry into the next draw!"}
               {status === "timeout" && "Payment received. Activation is taking longer than expected — refresh in a moment, and contact us if it doesn't appear."}
               {status === "no-session" && "Please sign in to view your membership."}
             </p>
-            {sessionId && (
-              <p className="text-xs text-muted-foreground/70 break-all">Ref: {sessionId}</p>
-            )}
           </div>
           <Button
             className="w-full"
