@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
@@ -25,6 +26,8 @@ export default function Signup() {
   const [password, setPassword] = useState("");
   const [mobile, setMobile] = useState("+61");
   const [state, setState] = useState<string>("");
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [marketingOptIn, setMarketingOptIn] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -53,6 +56,22 @@ export default function Signup() {
       toast({ title: "Select your state", variant: "destructive" });
       return;
     }
+    if (!agreedToTerms) {
+      toast({ title: "You must agree to the Terms & Conditions and Privacy Policy", variant: "destructive" });
+      return;
+    }
+
+    // Check for duplicate phone number
+    const { data: existingPhone } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("phone", trimmedMobile)
+      .maybeSingle();
+
+    if (existingPhone) {
+      toast({ title: "Mobile number already registered", variant: "destructive" });
+      return;
+    }
 
     setLoading(true);
     const { data, error } = await supabase.auth.signUp({
@@ -64,13 +83,20 @@ export default function Signup() {
           full_name: fullName.trim(),
           phone: trimmedMobile,
           state,
+          marketing_opt_in: marketingOptIn,
         },
       },
     });
     setLoading(false);
 
     if (error) {
-      toast({ title: "Signup failed", description: error.message, variant: "destructive" });
+      // Translate duplicate-key errors on phone to a friendly message
+      const msg = error.message.toLowerCase();
+      if (msg.includes("duplicate key") && msg.includes("phone")) {
+        toast({ title: "Mobile number already registered", variant: "destructive" });
+      } else {
+        toast({ title: "Signup failed", description: error.message, variant: "destructive" });
+      }
       return;
     }
 
@@ -159,6 +185,40 @@ export default function Signup() {
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Required: Terms & Privacy */}
+            <div className="flex items-start gap-2">
+              <Checkbox
+                id="terms"
+                checked={agreedToTerms}
+                onCheckedChange={(checked) => setAgreedToTerms(checked === true)}
+                className="mt-1"
+              />
+              <Label htmlFor="terms" className="text-sm font-normal leading-relaxed cursor-pointer">
+                I agree to the{" "}
+                <Link to="/terms" target="_blank" className="text-primary hover:underline">
+                  Terms & Conditions
+                </Link>{" "}
+                and{" "}
+                <Link to="/privacy" target="_blank" className="text-primary hover:underline">
+                  Privacy Policy
+                </Link>
+              </Label>
+            </div>
+
+            {/* Optional: Marketing */}
+            <div className="flex items-start gap-2">
+              <Checkbox
+                id="marketing"
+                checked={marketingOptIn}
+                onCheckedChange={(checked) => setMarketingOptIn(checked === true)}
+                className="mt-1"
+              />
+              <Label htmlFor="marketing" className="text-sm font-normal leading-relaxed cursor-pointer">
+                I'd like to receive news, offers and updates from Junkyard Club
+              </Label>
+            </div>
+
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? "Creating account..." : "Create Account"}
             </Button>
