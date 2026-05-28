@@ -7,7 +7,7 @@ export default function Terms() {
         <section className="space-y-2">
           <h2 className="text-xl font-semibold text-foreground">1. Membership</h2>
           <p className="text-muted-foreground">
-            By joining Junkyard Club, you agree to pay the subscription fee and abide by our community guidelines.
+            By joining Junkyard Surf Club, you agree to pay the subscription fee and abide by our community guidelines.
           </p>
         </section>
         <section className="space-y-2">

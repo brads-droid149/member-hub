@@ -79,7 +79,7 @@ export default function CheckoutReturn() {
           )}
           <div className="space-y-2">
             <h1 className="text-2xl font-bold">
-              {isActive ? "Welcome to Junkyard Club" : "Confirming your payment…"}
+              {isActive ? "Welcome to Junkyard Surf Club" : "Confirming your payment…"}
             </h1>
             <p className="text-muted-foreground">
               {status === "waiting" && "We're activating your membership. This usually takes a few seconds."}
