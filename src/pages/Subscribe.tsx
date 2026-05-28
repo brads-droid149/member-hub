@@ -95,7 +95,7 @@ export default function Subscribe() {
         <div className="max-w-2xl mx-auto space-y-6">
           <div className="text-center space-y-2">
             <div className="text-2xl font-bold tracking-tight">
-              Junkyard <span className="text-primary">Club</span>
+              Junkyard Surf <span className="text-primary">Club</span>
             </div>
             <p className="text-muted-foreground">
               Complete your {selected.price}{selected.cadence} membership
@@ -130,7 +130,7 @@ export default function Subscribe() {
       <Card className="w-full max-w-2xl border-border/50">
         <CardContent className="p-8 flex flex-col items-center text-center gap-6">
           <div className="text-2xl font-bold tracking-tight">
-            Junkyard <span className="text-primary">Club</span>
+            Junkyard Surf <span className="text-primary">Club</span>
           </div>
 
           <div className="space-y-2">
