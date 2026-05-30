@@ -1,30 +1,31 @@
-# Rename portal to "Junkyard Surf Club"
+## Fix: Authenticate `create-checkout` and Use Verified `user.id`
 
-The brand name "Junkyard Club" appears in a handful of user-facing pages. The cleanest approach is a targeted find-and-replace across those strings — no schema, route, or logic changes are needed. The Supabase project, Stripe products, edge functions, and DB tables don't carry the brand name in identifiers, so nothing on the backend has to move.
+### Problem
+`create-checkout` accepts anonymous requests and trusts a client-supplied `userId`, allowing any caller to link a Stripe checkout session to any account.
 
-## Files to update
+### Solution
+Mirror the auth pattern from `create-portal-session/index.ts`, then use the verified `user.id` from the JWT instead of `body.userId`. This removes the need for a 403 mismatch check — the server never trusts client-supplied identity.
 
-| File | Change |
-|---|---|
-| `src/pages/CheckoutReturn.tsx` (L82) | "Welcome to Junkyard Club" → "Welcome to Junkyard Surf Club" |
-| `src/pages/Home.tsx` (L266) | Hero title "Junkyard Club" → "Junkyard Surf Club" |
-| `src/pages/Home.tsx` (L531) | "…won a Junkyard Club giveaway." → "…won a Junkyard Surf Club giveaway." |
-| `src/pages/Login.tsx` (L52) | "Junkyard Club" → "Junkyard Surf Club" |
-| `src/pages/Subscribe.tsx` (L98, L133) | "Junkyard <span>Club</span>" → "Junkyard Surf <span>Club</span>" (keeps the teal accent on "Club") |
-| `src/pages/Terms.tsx` (L10) | "By joining Junkyard Club…" → "By joining Junkyard Surf Club…" |
-| `index.html` | Set `<title>` and `og:title` to "Junkyard Surf Club" + matching meta description (currently still the Lovable placeholders) |
+### Changes
+**File:** `supabase/functions/create-checkout/index.ts`
 
-## Intentionally left alone
+1. Add `import { createClient } from "npm:@supabase/supabase-js@2"`.
+2. Add a module-level admin Supabase client using `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY`.
+3. In the POST handler, before parsing the body or calling Stripe:
+   - Read the `Authorization` header and extract the Bearer token.
+   - Call `supabase.auth.getUser(token)`.
+   - Return **401 Unauthorized** if the token is missing, invalid, or no user is returned.
+4. Parse the body and call `createCheckoutSession({ ..., userId: user.id })` — ignore `body.userId` entirely. No 403 check is needed because the server never reads a client-supplied user id.
+5. Leave all other logic untouched (price lookup, `resolveOrCreateCustomer`, Stripe session creation, error handling, `customerEmail`, `returnUrl`, `environment`).
 
-- `src/pages/Signup.tsx` L233 — already says "Junkyard Surf" (the company name), correct as-is.
-- `supabase/functions/payments-webhook/index.ts` L15 — internal code comment, not user-facing.
-- `.lovable/plan.md` — internal scratchpad.
-- Stripe product names, Brevo list, DB tables, env vars — unchanged (identifiers, not display copy).
+### Safety Check
+`body.userId` is only forwarded into `createCheckoutSession`, where it is used for:
+- Stripe customer metadata lookup (`metadata['userId']`)
+- Stripe customer creation metadata
+- Checkout session metadata (and subscription metadata for recurring)
 
-## Out of scope (call out for follow-up if you want them done)
+All three uses are strictly improved by substituting the verified JWT `user.id`. No downstream code depends on `body.userId` differing from the authenticated user.
 
-- Updating the Stripe **product display name** in the Stripe dashboard (shows on hosted invoices/receipts) — needs to be edited in Stripe, not in code.
-- Updating the Brevo **sender name** on transactional emails.
-- Favicon / logo asset swap.
-
-Confirm and I'll apply the rename.
+### Deployment
+- Edge function auto-deploys on save.
+- Existing `Subscribe` flow already calls `supabase.functions.invoke("create-checkout", ...)`, which automatically attaches the session Bearer token, so the client side needs no changes.
