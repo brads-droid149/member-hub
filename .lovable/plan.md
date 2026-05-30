@@ -1,31 +1,22 @@
-## Fix: Authenticate `create-checkout` and Use Verified `user.id`
+Fix .env files being tracked in git — a critical security issue where Stripe and Supabase keys are in version control.
 
-### Problem
-`create-checkout` accepts anonymous requests and trusts a client-supplied `userId`, allowing any caller to link a Stripe checkout session to any account.
+1. Update `.gitignore` to add at the top:
+   ```
+   .env
+   .env.*
+   !.env.example
+   ```
 
-### Solution
-Mirror the auth pattern from `create-portal-session/index.ts`, then use the verified `user.id` from the JWT instead of `body.userId`. This removes the need for a 403 mismatch check — the server never trusts client-supplied identity.
+2. Create `.env.example` with all keys found across .env files, using placeholder values:
+   - `VITE_SUPABASE_PROJECT_ID=your_supabase_project_id`
+   - `VITE_SUPABASE_PUBLISHABLE_KEY=your_supabase_anon_key`
+   - `VITE_SUPABASE_URL=your_supabase_url`
+   - `VITE_STRIPE_PAYMENT_LINK=your_stripe_payment_link`
+   - `VITE_STRIPE_PORTAL_URL=your_stripe_portal_url`
+   - `VITE_PAYMENTS_CLIENT_TOKEN=your_stripe_publishable_key`
 
-### Changes
-**File:** `supabase/functions/create-checkout/index.ts`
+3. Add comment at top of `.env.example`: "Copy this file to .env and fill in real values. Never commit .env to git."
 
-1. Add `import { createClient } from "npm:@supabase/supabase-js@2"`.
-2. Add a module-level admin Supabase client using `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY`.
-3. In the POST handler, before parsing the body or calling Stripe:
-   - Read the `Authorization` header and extract the Bearer token.
-   - Call `supabase.auth.getUser(token)`.
-   - Return **401 Unauthorized** if the token is missing, invalid, or no user is returned.
-4. Parse the body and call `createCheckoutSession({ ..., userId: user.id })` — ignore `body.userId` entirely. No 403 check is needed because the server never reads a client-supplied user id.
-5. Leave all other logic untouched (price lookup, `resolveOrCreateCustomer`, Stripe session creation, error handling, `customerEmail`, `returnUrl`, `environment`).
+4. Do not delete the actual .env, .env.development, or .env.production files from disk — only stop tracking them in git.
 
-### Safety Check
-`body.userId` is only forwarded into `createCheckoutSession`, where it is used for:
-- Stripe customer metadata lookup (`metadata['userId']`)
-- Stripe customer creation metadata
-- Checkout session metadata (and subscription metadata for recurring)
-
-All three uses are strictly improved by substituting the verified JWT `user.id`. No downstream code depends on `body.userId` differing from the authenticated user.
-
-### Deployment
-- Edge function auto-deploys on save.
-- Existing `Subscribe` flow already calls `supabase.functions.invoke("create-checkout", ...)`, which automatically attaches the session Bearer token, so the client side needs no changes.
+Note: per project guidelines, `.env` files are auto-generated and managed by the Supabase integration, but they still must not be committed to version control.
