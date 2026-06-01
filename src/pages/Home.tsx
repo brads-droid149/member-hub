@@ -219,7 +219,7 @@ export default function Home() {
             {active === "winners" && (
               <WinnersSection winners={winners} setWinners={setWinners} />
             )}
-            {active === "settings" && (
+            {active === "settings" && !profileLoading && (
               <SettingsSection
                 userId={userId}
                 initialFullName={profile?.full_name ?? ""}
