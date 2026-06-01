@@ -1,22 +1,62 @@
-Fix .env files being tracked in git — a critical security issue where Stripe and Supabase keys are in version control.
+# Sidebar Layout Refactor for Home
 
-1. Update `.gitignore` to add at the top:
-   ```
-   .env
-   .env.*
-   !.env.example
-   ```
+Reorganise the current single-page `Home.tsx` into a persistent sidebar shell with four sections, each in its own component file. All existing logic, Supabase queries, realtime subscriptions, and toast notifications are preserved verbatim — only layout and file structure change.
 
-2. Create `.env.example` with all keys found across .env files, using placeholder values:
-   - `VITE_SUPABASE_PROJECT_ID=your_supabase_project_id`
-   - `VITE_SUPABASE_PUBLISHABLE_KEY=your_supabase_anon_key`
-   - `VITE_SUPABASE_URL=your_supabase_url`
-   - `VITE_STRIPE_PAYMENT_LINK=your_stripe_payment_link`
-   - `VITE_STRIPE_PORTAL_URL=your_stripe_portal_url`
-   - `VITE_PAYMENTS_CLIENT_TOKEN=your_stripe_publishable_key`
+## New file structure
 
-3. Add comment at top of `.env.example`: "Copy this file to .env and fill in real values. Never commit .env to git."
+```
+src/pages/Home.tsx                  // shell: SidebarProvider + AppSidebar + active section
+src/components/home/AppSidebar.tsx  // sidebar with logo + 4 nav items + Admin/Sign Out footer
+src/components/home/OverviewSection.tsx
+src/components/home/PartnersSection.tsx
+src/components/home/WinnersSection.tsx
+src/components/home/SettingsSection.tsx
+```
 
-4. Do not delete the actual .env, .env.development, or .env.production files from disk — only stop tracking them in git.
+## Sidebar
 
-Note: per project guidelines, `.env` files are auto-generated and managed by the Supabase integration, but they still must not be committed to version control.
+- Uses existing `Sidebar`, `SidebarProvider`, `SidebarContent`, `SidebarGroup`, `SidebarMenu`, `SidebarTrigger` from `@/components/ui/sidebar` with `collapsible="icon"` so it shrinks to icons on desktop and becomes an off-canvas sheet on mobile (already handled by the shadcn component via `useIsMobile`).
+- Top of sidebar: "Junkyard Surf Club" wordmark (same `font-display font-bold` styling used today in the header).
+- Nav items (with lucide icons already imported in Home): Overview (`LayoutGrid`), Partner Discounts (`Tag`), Past Winners (`Trophy`), Settings (`SettingsIcon`).
+- Active item highlighted via `SidebarMenuButton isActive={active === id}`.
+- Sidebar footer: Admin link (if `useAdmin().isAdmin`) and Sign Out button — moves the existing top-bar actions into the sidebar.
+- Mobile: a `SidebarTrigger` (hamburger) lives in a small sticky top bar above the main content so the sidebar can be reopened when collapsed off-canvas.
+
+## Section state & lazy data fetching
+
+`Home.tsx` owns:
+- `active` state: `"overview" | "partners" | "winners" | "settings"`, default `"overview"`.
+- A `loaded` set tracking which sections have been visited.
+- Shared state needed by the banners and multiple sections: `userId`, `member`, `subscription`, `authName`, and the realtime members channel (kept exactly as today). These load on mount because the past-due / cancel-at-period-end alerts must render on every section.
+- A `setActive` callback passed to both the sidebar and to `OverviewSection` (so the "See All Winners" link calls `setActive("winners")` instead of navigating).
+
+Each section component fetches only its own data on first mount:
+
+| Section | Queries (run on first visit only) |
+|---|---|
+| Overview | `giveaways` (active), `past_winners` (top 3 for preview), plus reads shared `member` for entries counter |
+| Partner Discounts | `partners` ordered + alphabetised, owns `copied` state and `handleCopy` |
+| Past Winners | `past_winners` full list ordered by `draw_date` |
+| Settings | `profiles` row for the form, owns profile + password form state and all three handlers (`handleSaveProfile`, `handleChangePassword`, `handleManageSubscription`) |
+
+To keep behaviour identical, Overview's winners preview re-fetches its own top-3 list independently of the Past Winners section (small query, simpler than sharing). "See All Winners" is a `<button>` that calls `setActive("winners")`.
+
+## Banners and shared chrome
+
+The two existing alerts (`past_due` and `cancel_at_period_end`) stay in `Home.tsx` rendered above the active section content, using the shared `member`/`subscription` state and `handleManageSubscription` (kept in the shell since it's also used by Settings — passed down as a prop, or each owner defines its own copy; plan: keep one copy in the shell for the banner and a separate copy in Settings to keep components self-contained, since the function has no shared state).
+
+## Routing
+
+No route changes. `/` still renders `Home`. Section switching is in-component state, not URL — matches the request ("navigate to the Past Winners tab in the sidebar").
+
+## Styling
+
+- Existing dark theme tokens and `font-display` are reused; no new colors.
+- Main content keeps the current `max-w-5xl mx-auto px-6 py-10` container, now nested inside `SidebarInset` / a flex child next to the sidebar.
+- Per shadcn-sidebar guidance, the outer flex wrapper uses `w-full` and `min-h-screen`.
+
+## Out of scope
+
+- No changes to Supabase schema, edge functions, or business logic.
+- No changes to other routes (`/admin`, `/login`, etc.).
+- No new dependencies.
