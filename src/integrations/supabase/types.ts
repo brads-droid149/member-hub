@@ -384,6 +384,7 @@ export type Database = {
         Returns: {
           email: string
           entries: number
+          exempt_from_winning: boolean
           full_name: string
           joined_at: string
           months_active: number
