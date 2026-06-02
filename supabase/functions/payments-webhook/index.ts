@@ -192,8 +192,8 @@ async function handleSubscriptionDeleted(subscription: any, env: StripeEnv) {
   }
 }
 
-async function handleWebhook(req: Request, env: StripeEnv) {
-  const event = await verifyWebhook(req, env);
+export async function handleWebhook(req: Request, env: StripeEnv) {
+  const event = await _verifyWebhookFn(req, env);
 
   switch (event.type) {
     case "customer.subscription.created":
