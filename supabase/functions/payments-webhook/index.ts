@@ -221,14 +221,14 @@ export async function handleWebhook(req: Request, env: StripeEnv) {
   switch (event.type) {
     case "customer.subscription.created":
     case "customer.subscription.updated":
-      await handleSubscriptionUpsert(event.data.object, env);
+      await handleSubscriptionUpsert(event.data.object as Stripe.Subscription, env);
       break;
     case "customer.subscription.deleted":
-      await handleSubscriptionDeleted(event.data.object, env);
+      await handleSubscriptionDeleted(event.data.object as Stripe.Subscription, env);
       break;
     case "invoice.paid":
     case "invoice.payment_succeeded":
-      await handleInvoicePaid(event.data.object);
+      await handleInvoicePaid(event.data.object as Stripe.Invoice);
       break;
     default:
       console.log("Unhandled event:", event.type);
