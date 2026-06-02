@@ -19,7 +19,6 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
 import { Upload, Check, Loader2, Trophy, Award, Search, CalendarIcon } from "lucide-react";
-import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Tables } from "@/integrations/supabase/types";
 import { useAdminMembers, type AdminMemberRow } from "@/contexts/AdminMembersContext";
