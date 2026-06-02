@@ -2,15 +2,18 @@ import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { type StripeEnv, createStripeClient } from "../_shared/stripe.ts";
 
-const ALLOWED_ORIGINS = [
-  "https://members.junkyardsurf.com.au",
-  "https://id-preview--1e6b66b5-43de-4635-a973-ff3a00d82e29.lovable.app",
-];
-
+// Allow the production domain, any Lovable preview domain (*.lovable.app),
+// and localhost for dev. Anything else is rejected.
 function isAllowedReturnUrl(url: string | undefined): boolean {
   if (!url) return true;
   try {
-    return ALLOWED_ORIGINS.some((o) => new URL(url).origin === o);
+    const parsed = new URL(url);
+    if (parsed.protocol !== "https:" && parsed.protocol !== "http:") return false;
+    const host = parsed.hostname;
+    if (host === "members.junkyardsurf.com.au") return true;
+    if (host === "localhost" || host === "127.0.0.1") return true;
+    if (host.endsWith(".lovable.app")) return true;
+    return false;
   } catch {
     return false;
   }

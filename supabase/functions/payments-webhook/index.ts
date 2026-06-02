@@ -122,12 +122,12 @@ async function syncMember(opts: {
 // Renewals no longer mutate entries — the daily pg_cron handles monthly
 // credits uniformly for monthly and annual plans. We still ensure status
 // flips back to 'active' on a successful renewal payment.
-async function handleInvoicePaid(invoice: Stripe.Invoice) {
-  const reason = invoice.billing_reason;
-  if (reason !== "subscription_cycle" && reason !== "subscription_update") return;
-
-  // `invoice.subscription` was removed in newer API versions in favor of
-  // `invoice.parent.subscription_details.subscription`. Support both shapes.
+// Resolve a userId from an invoice via (1) subscription metadata,
+// (2) local subscriptions table, or (3) Stripe customer metadata. The
+// fallback chain handles the case where invoice.paid arrives before
+// customer.subscription.created (Stripe doesn't guarantee event order).
+async function userIdFromInvoice(invoice: Stripe.Invoice, env: StripeEnv): Promise<string | null> {
+  // Subscription id from either legacy or new invoice shape.
   const legacySub = (invoice as unknown as { subscription?: string | Stripe.Subscription | null })
     .subscription;
   const parentSub = (invoice as unknown as {
@@ -135,20 +135,67 @@ async function handleInvoicePaid(invoice: Stripe.Invoice) {
   }).parent?.subscription_details?.subscription;
   const rawSub = legacySub ?? parentSub;
   const subscriptionId = typeof rawSub === "string" ? rawSub : rawSub?.id;
-  if (!subscriptionId) return;
 
-  const supa = getSupabase();
-  const { data: sub } = await supa
-    .from("subscriptions")
-    .select("user_id")
-    .eq("stripe_subscription_id", subscriptionId)
-    .maybeSingle();
-  if (!sub?.user_id) return;
+  if (subscriptionId) {
+    const { data: sub } = await getSupabase()
+      .from("subscriptions")
+      .select("user_id")
+      .eq("stripe_subscription_id", subscriptionId)
+      .maybeSingle();
+    if (sub?.user_id) return sub.user_id as string;
+  }
 
-  await supa
+  // Fallback: pull userId from the Stripe Customer metadata. Avoids a
+  // race where invoice.paid arrives before subscription.created has
+  // populated the local subscriptions table.
+  const customerId = typeof invoice.customer === "string"
+    ? invoice.customer
+    : invoice.customer?.id;
+  if (customerId) {
+    try {
+      const { createStripeClient } = await import("../_shared/stripe.ts");
+      const stripe = createStripeClient(env);
+      const customer = await stripe.customers.retrieve(customerId);
+      if (customer && !("deleted" in customer && customer.deleted)) {
+        const uid = (customer as Stripe.Customer).metadata?.userId;
+        if (uid) return uid;
+      }
+    } catch (e) {
+      console.error("userIdFromInvoice: customer lookup failed", e);
+    }
+  }
+  return null;
+}
+
+async function handleInvoicePaid(invoice: Stripe.Invoice, env: StripeEnv) {
+  const reason = invoice.billing_reason;
+  if (reason !== "subscription_cycle" && reason !== "subscription_update") return;
+  const userId = await userIdFromInvoice(invoice, env);
+  if (!userId) return;
+  await getSupabase()
     .from("members")
-    .update({ status: "active", updated_at: new Date().toISOString() })
-    .eq("user_id", sub.user_id);
+    .update({ status: "active", past_due_since: null, updated_at: new Date().toISOString() })
+    .eq("user_id", userId);
+}
+
+async function handleInvoicePaymentFailed(invoice: Stripe.Invoice, env: StripeEnv) {
+  const userId = await userIdFromInvoice(invoice, env);
+  if (!userId) return;
+  // Mark past_due immediately; the daily cron auto-cancels after 7 days.
+  // Use .is() to only set past_due_since if it's not already tracked.
+  const supa = getSupabase();
+  const { data: existing } = await supa
+    .from("members")
+    .select("status, past_due_since")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (!existing) return;
+  const update: Record<string, unknown> = {
+    status: "past_due",
+    updated_at: new Date().toISOString(),
+  };
+  if (!existing.past_due_since) update.past_due_since = new Date().toISOString();
+  await supa.from("members").update(update).eq("user_id", userId);
 }
 
 async function handleSubscriptionUpsert(subscription: Stripe.Subscription, env: StripeEnv) {
@@ -228,7 +275,10 @@ export async function handleWebhook(req: Request, env: StripeEnv) {
       break;
     case "invoice.paid":
     case "invoice.payment_succeeded":
-      await handleInvoicePaid(event.data.object as Stripe.Invoice);
+      await handleInvoicePaid(event.data.object as Stripe.Invoice, env);
+      break;
+    case "invoice.payment_failed":
+      await handleInvoicePaymentFailed(event.data.object as Stripe.Invoice, env);
       break;
     default:
       console.log("Unhandled event:", event.type);
