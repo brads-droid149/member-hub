@@ -69,8 +69,16 @@ export function PartnersSection({ partners, setPartners }: PartnersSectionProps)
           {partners.map((partner) => (
             <Card
               key={partner.id}
+              role="button"
+              tabIndex={0}
               className="cursor-pointer hover:border-primary/40 transition-colors group"
               onClick={() => handleCopy(partner.discount_code, partner.id)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  handleCopy(partner.discount_code, partner.id);
+                }
+              }}
             >
               <CardContent className="p-4 flex flex-col items-center text-center gap-3">
                 <div className="w-full aspect-[16/9] rounded-md bg-white border border-border flex items-center justify-center overflow-hidden">
