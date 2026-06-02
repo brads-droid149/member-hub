@@ -116,7 +116,7 @@ export default function AdminGiveaways() {
       setSelected(null);
       setSearch("");
       setWinnerDrawDate(undefined);
-      await loadMembers();
+      await refreshMembers();
     } catch (err: any) {
       toast({ title: "Failed to record winner", description: err.message, variant: "destructive" });
     } finally {
