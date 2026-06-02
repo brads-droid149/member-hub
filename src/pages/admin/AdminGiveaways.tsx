@@ -19,7 +19,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
 import { Upload, Check, Loader2, Trophy, Award, Search, CalendarIcon } from "lucide-react";
-import { format } from "date-fns";
+import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Tables } from "@/integrations/supabase/types";
 import { useAdminMembers, type AdminMemberRow } from "@/contexts/AdminMembersContext";
@@ -103,7 +103,7 @@ export default function AdminGiveaways() {
         winner_name: selected.full_name ?? "",
         state: selected.state ?? null,
         prize_title: winnerPrize.trim(),
-        draw_date: winnerDrawDate ? format(winnerDrawDate, "yyyy-MM-dd") : null,
+        draw_date: winnerDrawDate ? winnerDrawDate.toISOString().slice(0, 10) : null,
       });
       if (insertError) throw insertError;
 
@@ -423,7 +423,7 @@ export default function AdminGiveaways() {
                     )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {winnerDrawDate ? format(winnerDrawDate, "dd/MM/yyyy") : <span>DD/MM/YYYY</span>}
+                    {winnerDrawDate ? winnerDrawDate.toLocaleDateString("en-AU", { day: "2-digit", month: "2-digit", year: "numeric" }) : <span>DD/MM/YYYY</span>}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
