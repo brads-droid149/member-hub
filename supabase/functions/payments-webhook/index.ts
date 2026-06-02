@@ -62,7 +62,7 @@ function mapMemberStatus(stripeStatus: string): string {
 
 async function syncMember(opts: {
   userId: string;
-  subscription: any;
+  subscription: Stripe.Subscription;
 }) {
   const supa = getSupabase();
   const { userId, subscription } = opts;
