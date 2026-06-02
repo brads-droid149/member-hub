@@ -7,8 +7,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { CreditCard, Settings as SettingsIcon, User, KeyRound } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-
-const AU_STATES = ["NSW", "VIC", "QLD", "WA", "SA", "TAS", "ACT", "NT"];
+import { AU_STATES } from "@/lib/constants";
 const PHONE_RE = /^\+614\d{8}$/;
 
 interface SettingsSectionProps {
