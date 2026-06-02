@@ -3,9 +3,9 @@ import { Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import type { Session } from "@supabase/supabase-js";
 
-type Access = "loading" | "allowed" | "no-session" | "no-membership";
+type Access = "loading" | "allowed" | "no-session" | "no-membership" | "not-admin";
 
-export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
+export default function ProtectedRoute({ children, adminOnly }: { children: React.ReactNode; adminOnly?: boolean }) {
   const [access, setAccess] = useState<Access>("loading");
 
   useEffect(() => {
@@ -25,6 +25,10 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
       if (cancelled) return;
       if (isAdmin) {
         setAccess("allowed");
+        return;
+      }
+      if (adminOnly) {
+        setAccess("not-admin");
         return;
       }
 
@@ -48,7 +52,7 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
       cancelled = true;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [adminOnly]);
 
   if (access === "loading") {
     return (
@@ -60,5 +64,6 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
 
   if (access === "no-session") return <Navigate to="/login" replace />;
   if (access === "no-membership") return <Navigate to="/subscribe" replace />;
+  if (access === "not-admin") return <Navigate to="/" replace />;
   return <>{children}</>;
 }

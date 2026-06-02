@@ -1,6 +1,5 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useAdmin } from "@/hooks/use-admin";
-import { Navigate, Link } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import AdminGiveaways from "./admin/AdminGiveaways";
 import AdminPartners from "./admin/AdminPartners";
@@ -8,18 +7,6 @@ import AdminMembers from "./admin/AdminMembers";
 import { AdminMembersProvider } from "@/contexts/AdminMembersContext";
 
 export default function Admin() {
-  const { isAdmin, loading } = useAdmin();
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <div className="h-8 w-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
-
-  if (!isAdmin) return <Navigate to="/" replace />;
-
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <Link
