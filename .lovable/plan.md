@@ -1,62 +1,53 @@
-# Sidebar Layout Refactor for Home
+# Add tests for highest-risk flows
 
-Reorganise the current single-page `Home.tsx` into a persistent sidebar shell with four sections, each in its own component file. All existing logic, Supabase queries, realtime subscriptions, and toast notifications are preserved verbatim — only layout and file structure change.
+Add automated tests for three areas: the `payments-webhook` edge function, the `ProtectedRoute` component, and the `has_active_subscription` SQL function. Use the existing Vitest setup (`vitest.config.ts`, `src/test/setup.ts`). Delete the placeholder `src/test/example.test.ts`.
 
-## New file structure
+## 1. `payments-webhook` handler tests
 
-```
-src/pages/Home.tsx                  // shell: SidebarProvider + AppSidebar + active section
-src/components/home/AppSidebar.tsx  // sidebar with logo + 4 nav items + Admin/Sign Out footer
-src/components/home/OverviewSection.tsx
-src/components/home/PartnersSection.tsx
-src/components/home/WinnersSection.tsx
-src/components/home/SettingsSection.tsx
-```
+File: `supabase/functions/payments-webhook/index.test.ts` (Deno test, run via the edge-function test tool — matches the existing `_test.ts` Deno convention).
 
-## Sidebar
+The handler currently imports `verifyWebhook` and constructs the Supabase client at module scope. To make it testable without hitting Stripe or the real database, refactor `index.ts` minimally: export `handleWebhook` and accept optional injected `{ verifyWebhookFn, supabaseClient }` that default to the existing implementations. No production behavior change.
 
-- Uses existing `Sidebar`, `SidebarProvider`, `SidebarContent`, `SidebarGroup`, `SidebarMenu`, `SidebarTrigger` from `@/components/ui/sidebar` with `collapsible="icon"` so it shrinks to icons on desktop and becomes an off-canvas sheet on mobile (already handled by the shadcn component via `useIsMobile`).
-- Top of sidebar: "Junkyard Surf Club" wordmark (same `font-display font-bold` styling used today in the header).
-- Nav items (with lucide icons already imported in Home): Overview (`LayoutGrid`), Partner Discounts (`Tag`), Past Winners (`Trophy`), Settings (`SettingsIcon`).
-- Active item highlighted via `SidebarMenuButton isActive={active === id}`.
-- Sidebar footer: Admin link (if `useAdmin().isAdmin`) and Sign Out button — moves the existing top-bar actions into the sidebar.
-- Mobile: a `SidebarTrigger` (hamburger) lives in a small sticky top bar above the main content so the sidebar can be reopened when collapsed off-canvas.
+- **subscription.created → member active**: inject stub `verifyWebhookFn` returning a `customer.subscription.created` event with `metadata.userId`; inject a stub Supabase client recording calls. Assert `members` insert called with `status: 'active'`, `entries: 1`, `months_active: 1`.
+- **subscription.deleted → cancelled + entries 0**: stub event type `customer.subscription.deleted` with `metadata.userId`. Assert `members` update called with `status: 'cancelled'`, `entries: 0`.
+- **invalid signature → 400**: do NOT stub `verifyWebhookFn`; POST with a bogus `stripe-signature` and `?env=sandbox`. Assert response status is 400.
 
-## Section state & lazy data fetching
+## 2. `ProtectedRoute` component tests
 
-`Home.tsx` owns:
-- `active` state: `"overview" | "partners" | "winners" | "settings"`, default `"overview"`.
-- A `loaded` set tracking which sections have been visited.
-- Shared state needed by the banners and multiple sections: `userId`, `member`, `subscription`, `authName`, and the realtime members channel (kept exactly as today). These load on mount because the past-due / cancel-at-period-end alerts must render on every section.
-- A `setActive` callback passed to both the sidebar and to `OverviewSection` (so the "See All Winners" link calls `setActive("winners")` instead of navigating).
+File: `src/test/ProtectedRoute.test.tsx`.
 
-Each section component fetches only its own data on first mount:
+Mock `@/integrations/supabase/client` with `vi.mock` so `supabase.auth.getSession`, `supabase.auth.onAuthStateChange`, `supabase.rpc('has_role', …)`, and `supabase.from('members').select(...).eq(...).maybeSingle()` are controllable per test. Render with `MemoryRouter` + `<Routes>` containing `/protected`, `/login`, `/subscribe` so we can assert which route is rendered after redirect. Use `findByText` to wait past the loading spinner.
 
-| Section | Queries (run on first visit only) |
-|---|---|
-| Overview | `giveaways` (active), `past_winners` (top 3 for preview), plus reads shared `member` for entries counter |
-| Partner Discounts | `partners` ordered + alphabetised, owns `copied` state and `handleCopy` |
-| Past Winners | `past_winners` full list ordered by `draw_date` |
-| Settings | `profiles` row for the form, owns profile + password form state and all three handlers (`handleSaveProfile`, `handleChangePassword`, `handleManageSubscription`) |
+- **no session → /login**: `getSession` returns `{ session: null }`. Expect login route rendered.
+- **session, no membership → /subscribe**: session present, `has_role` false, `members` query returns `null`. Expect subscribe route.
+- **session + active member → children rendered**: session present, `has_role` false, `members` returns `{ status: 'active' }`. Expect "Protected!" content.
+- **session + past_due member → children rendered**: session present, `has_role` false, `members` returns `{ status: 'past_due' }`. Expect "Protected!" content (dunning grace period — banner shown elsewhere, no redirect).
+- **admin without membership → children rendered**: session present, `has_role` true, `members` null. Expect "Protected!" content.
 
-To keep behaviour identical, Overview's winners preview re-fetches its own top-3 list independently of the Past Winners section (small query, simpler than sharing). "See All Winners" is a `<button>` that calls `setActive("winners")`.
+## 3. `has_active_subscription` SQL function test
 
-## Banners and shared chrome
+File: `src/test/has_active_subscription.test.ts`.
 
-The two existing alerts (`past_due` and `cancel_at_period_end`) stay in `Home.tsx` rendered above the active section content, using the shared `member`/`subscription` state and `handleManageSubscription` (kept in the shell since it's also used by Settings — passed down as a prop, or each owner defines its own copy; plan: keep one copy in the shell for the banner and a separate copy in Settings to keep components self-contained, since the function has no shared state).
+The project has no pgTAP harness, so test via a Vitest integration test that:
 
-## Routing
+- Uses `@supabase/supabase-js` with the **service role key** read from a `SUPABASE_SERVICE_ROLE_KEY` test env var (skipped via `it.skipIf(!process.env.SUPABASE_SERVICE_ROLE_KEY)` so CI without secrets still passes).
+- Creates a throwaway auth user, inserts three `subscriptions` rows for it (`active`, `past_due`, `canceled` with past `current_period_end`), calls `supabase.rpc('has_active_subscription', { user_uuid, check_env: 'sandbox' })` after each setup, asserts: `active` → true, `past_due` → true, `canceled` (expired) → false.
+- Cleans up the user + rows in `afterAll`.
 
-No route changes. `/` still renders `Home`. Section switching is in-component state, not URL — matches the request ("navigate to the Past Winners tab in the sidebar").
+Document in the test file header that running it requires `SUPABASE_SERVICE_ROLE_KEY` in `.env` and that it writes to the real backend.
 
-## Styling
+## Technical notes
 
-- Existing dark theme tokens and `font-display` are reused; no new colors.
-- Main content keeps the current `max-w-5xl mx-auto px-6 py-10` container, now nested inside `SidebarInset` / a flex child next to the sidebar.
-- Per shadcn-sidebar guidance, the outer flex wrapper uses `w-full` and `min-h-screen`.
+- Keep `src/test/setup.ts` as-is.
+- Delete `src/test/example.test.ts` (placeholder).
+- Webhook refactor: export `handleWebhook` with an optional second arg for DI defaulting to current behavior — no behavior change in production.
+- No new npm dependencies needed; `vitest`, `@testing-library/react`, `jsdom` already installed.
+- Run frontend tests with the existing test runner; run the Deno webhook test with `supabase--test_edge_functions`.
 
-## Out of scope
+## Files changed
 
-- No changes to Supabase schema, edge functions, or business logic.
-- No changes to other routes (`/admin`, `/login`, etc.).
-- No new dependencies.
+- new `supabase/functions/payments-webhook/index.test.ts`
+- edited `supabase/functions/payments-webhook/index.ts` (export + DI seam only)
+- new `src/test/ProtectedRoute.test.tsx`
+- new `src/test/has_active_subscription.test.ts`
+- deleted `src/test/example.test.ts`
