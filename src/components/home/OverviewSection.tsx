@@ -38,22 +38,24 @@ export function OverviewSection({
   useEffect(() => {
     if (!giveawayLoaded) {
       (async () => {
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from("giveaways")
           .select("*")
           .eq("is_active", true)
           .limit(1)
           .maybeSingle();
+        if (error) console.error("Failed to load giveaway:", error);
         setGiveaway(data ?? null);
         setGiveawayLoaded(true);
       })();
     }
     if (winners === null) {
       (async () => {
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from("past_winners")
           .select("*")
           .order("draw_date", { ascending: false, nullsFirst: false });
+        if (error) console.error("Failed to load past winners:", error);
         setWinners(data ?? []);
       })();
     }
