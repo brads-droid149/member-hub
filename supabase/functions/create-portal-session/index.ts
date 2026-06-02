@@ -13,6 +13,8 @@ function isAllowedReturnUrl(url: string | undefined): boolean {
     if (host === "members.junkyardsurf.com.au") return true;
     if (host === "localhost" || host === "127.0.0.1") return true;
     if (host.endsWith(".lovable.app")) return true;
+    if (host.endsWith(".lovableproject.com")) return true;
+    if (host.endsWith(".lovable.dev")) return true;
     return false;
   } catch {
     return false;
