@@ -187,6 +187,7 @@ export function OverviewSection({
                 </ul>
                 <button
                   type="button"
+                  aria-label="See all past winners"
                   onClick={onSeeAllWinners}
                   className="mt-auto pt-4 text-sm font-medium text-primary hover:underline self-start"
                 >
