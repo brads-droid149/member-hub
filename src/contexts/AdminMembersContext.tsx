@@ -44,8 +44,30 @@ export function AdminMembersProvider({ children }: { children: ReactNode }) {
     refresh();
   }, [refresh]);
 
+  const setExempt = useCallback(
+    async (userId: string, value: boolean) => {
+      // Optimistic update
+      setMembers((prev) =>
+        prev.map((m) => (m.user_id === userId ? { ...m, exempt_from_winning: value } : m)),
+      );
+      const { error } = await supabase
+        .from("members")
+        .update({ exempt_from_winning: value })
+        .eq("user_id", userId);
+      if (error) {
+        // Revert
+        setMembers((prev) =>
+          prev.map((m) => (m.user_id === userId ? { ...m, exempt_from_winning: !value } : m)),
+        );
+        toast({ title: "Failed to update exempt flag", description: error.message, variant: "destructive" });
+        throw error;
+      }
+    },
+    [toast],
+  );
+
   return (
-    <AdminMembersContext.Provider value={{ members, loading, refresh }}>
+    <AdminMembersContext.Provider value={{ members, loading, refresh, setExempt }}>
       {children}
     </AdminMembersContext.Provider>
   );
