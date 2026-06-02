@@ -12,16 +12,7 @@ import {
 import { Users, Loader2, ArrowUpDown, Download, Search } from "lucide-react";
 import { useAdminMembers, type AdminMemberRow } from "@/contexts/AdminMembersContext";
 
-type Row = {
-  user_id: string;
-  full_name: string | null;
-  email: string | null;
-  phone: string | null;
-  state: string | null;
-  entries: number;
-  months_active: number;
-  joined_at: string;
-};
+type Row = AdminMemberRow;
 
 type SortKey = "entries";
 type SortDir = "asc" | "desc";
