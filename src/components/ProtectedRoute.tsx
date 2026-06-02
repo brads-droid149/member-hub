@@ -27,6 +27,10 @@ export default function ProtectedRoute({ children, adminOnly }: { children: Reac
         setAccess("allowed");
         return;
       }
+      if (adminOnly) {
+        setAccess("not-admin");
+        return;
+      }
 
       const { data: member } = await supabase
         .from("members")
