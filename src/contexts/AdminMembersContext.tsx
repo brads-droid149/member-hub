@@ -19,6 +19,7 @@ type Ctx = {
   members: AdminMemberRow[];
   loading: boolean;
   refresh: () => Promise<void>;
+  setExempt: (userId: string, value: boolean) => Promise<void>;
 };
 
 const AdminMembersContext = createContext<Ctx | null>(null);
