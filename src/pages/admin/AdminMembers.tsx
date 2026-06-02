@@ -1,5 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -10,8 +9,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useToast } from "@/hooks/use-toast";
 import { Users, Loader2, ArrowUpDown, Download, Search } from "lucide-react";
+import { useAdminMembers, type AdminMemberRow } from "@/contexts/AdminMembersContext";
 
 type Row = {
   user_id: string;
