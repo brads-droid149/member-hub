@@ -1,0 +1,104 @@
+import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { createClient } from "npm:@supabase/supabase-js@2";
+import { type StripeEnv, createStripeClient } from "../_shared/stripe.ts";
+
+const supabase = createClient(
+  Deno.env.get("SUPABASE_URL")!,
+  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+);
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  if (req.method !== "POST") {
+    return new Response("Method not allowed", { status: 405, headers: corsHeaders });
+  }
+  try {
+    const token = req.headers.get("Authorization")?.replace("Bearer ", "");
+    if (!token) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const { data: isAdmin } = await supabase.rpc("has_role", {
+      _user_id: user.id,
+      _role: "admin",
+    });
+    if (!isAdmin) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const body = await req.json().catch(() => ({}));
+    const targetUserId: string | undefined = body.userId;
+    const environment: StripeEnv = body.environment === "live" ? "live" : "sandbox";
+    const immediate: boolean = body.immediate === true;
+    if (!targetUserId || !/^[a-f0-9-]{36}$/i.test(targetUserId)) {
+      return new Response(JSON.stringify({ error: "Invalid userId" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const { data: member } = await supabase
+      .from("members")
+      .select("stripe_subscription_id, stripe_customer_id, status")
+      .eq("user_id", targetUserId)
+      .maybeSingle();
+
+    let stripeSubId = member?.stripe_subscription_id as string | null | undefined;
+
+    // Fallback: look up the most recent subscription row for this user/env.
+    if (!stripeSubId) {
+      const { data: sub } = await supabase
+        .from("subscriptions")
+        .select("stripe_subscription_id")
+        .eq("user_id", targetUserId)
+        .eq("environment", environment)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      stripeSubId = sub?.stripe_subscription_id;
+    }
+
+    if (stripeSubId) {
+      const stripe = createStripeClient(environment);
+      if (immediate) {
+        await stripe.subscriptions.cancel(stripeSubId);
+      } else {
+        await stripe.subscriptions.update(stripeSubId, { cancel_at_period_end: true });
+      }
+    }
+
+    // Webhook will sync members.status, but also write immediately so admin UI
+    // reflects the change without waiting for Stripe round-trip.
+    if (immediate || !stripeSubId) {
+      await supabase
+        .from("members")
+        .update({ status: "cancelled", entries: 0, updated_at: new Date().toISOString() })
+        .eq("user_id", targetUserId);
+    }
+
+    return new Response(JSON.stringify({ ok: true, immediate, hadSubscription: !!stripeSubId }), {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  } catch (e) {
+    console.error("admin-cancel-member error:", e);
+    const message = e instanceof Error ? e.message : "Unknown error";
+    return new Response(JSON.stringify({ error: message }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+});
