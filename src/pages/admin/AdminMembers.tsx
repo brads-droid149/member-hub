@@ -241,19 +241,21 @@ export default function AdminMembers() {
                 </button>
               </TableHead>
               <TableHead className="text-right">Months Active</TableHead>
+              <TableHead>Status</TableHead>
               <TableHead>Joined</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-12">
+                <TableCell colSpan={10} className="text-center py-12">
                   <Loader2 className="h-5 w-5 animate-spin text-primary mx-auto" />
                 </TableCell>
               </TableRow>
             ) : filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-12 text-sm text-muted-foreground">
+                <TableCell colSpan={10} className="text-center py-12 text-sm text-muted-foreground">
                   {searchQuery.trim() ? "No members match your search." : "No members yet."}
                 </TableCell>
               </TableRow>
@@ -267,13 +269,54 @@ export default function AdminMembers() {
                   <TableCell className="text-sm text-muted-foreground">{r.state || "—"}</TableCell>
                   <TableCell className="text-right font-mono text-sm">{r.entries}</TableCell>
                   <TableCell className="text-right font-mono text-sm">{r.months_active}</TableCell>
+                  <TableCell>{statusBadge(r.status)}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">{formatDate(r.joined_at)}</TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-destructive hover:text-destructive"
+                      disabled={r.status === "cancelled"}
+                      onClick={() => setCancelTarget(r)}
+                    >
+                      <XCircle className="h-4 w-4 mr-1" />
+                      Cancel
+                    </Button>
+                  </TableCell>
                 </TableRow>
               ))
             )}
           </TableBody>
         </Table>
       </div>
+
+      <AlertDialog open={!!cancelTarget} onOpenChange={(open) => !open && setCancelTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancel this membership?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will immediately cancel the Stripe subscription for{" "}
+              <span className="font-medium text-foreground">
+                {cancelTarget?.full_name || cancelTarget?.email || cancelTarget?.user_id}
+              </span>
+              , set their status to cancelled, and reset their giveaway entries to 0. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={cancelling}>Keep membership</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={cancelling}
+              onClick={(e) => {
+                e.preventDefault();
+                handleCancel();
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {cancelling ? <Loader2 className="h-4 w-4 animate-spin" /> : "Cancel membership"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
