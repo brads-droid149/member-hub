@@ -221,7 +221,7 @@ export default function Home() {
             )}
             {active === "settings" && !profileLoading && (
               <SettingsSection
-                key={profile?.full_name ?? "settings"}
+                key={`${profile?.full_name ?? ""}|${profile?.phone ?? ""}|${profile?.state ?? ""}`}
                 userId={userId}
                 initialFullName={profile?.full_name ?? ""}
                 initialPhone={profile?.phone ?? ""}
