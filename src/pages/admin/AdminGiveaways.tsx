@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { getErrorMessage } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -117,8 +118,8 @@ export default function AdminGiveaways() {
       setSearch("");
       setWinnerDrawDate(undefined);
       await refreshMembers();
-    } catch (err: any) {
-      toast({ title: "Failed to record winner", description: err.message, variant: "destructive" });
+    } catch (err) {
+      toast({ title: "Failed to record winner", description: getErrorMessage(err), variant: "destructive" });
     } finally {
       setRecording(false);
       setConfirmOpen(false);
@@ -229,8 +230,8 @@ export default function AdminGiveaways() {
       toast({ title: "Giveaway saved", description: "Members will see this on their dashboard." });
       setTimeout(() => setSavedFlash(false), 2500);
       await loadActive();
-    } catch (err: any) {
-      toast({ title: "Save failed", description: err.message, variant: "destructive" });
+    } catch (err) {
+      toast({ title: "Save failed", description: getErrorMessage(err), variant: "destructive" });
     } finally {
       setSaving(false);
     }

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { getErrorMessage } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -176,8 +177,8 @@ export default function AdminPartners() {
 
       setDialogOpen(false);
       await fetchPartners();
-    } catch (err: any) {
-      toast({ title: "Save failed", description: err.message, variant: "destructive" });
+    } catch (err) {
+      toast({ title: "Save failed", description: getErrorMessage(err), variant: "destructive" });
     } finally {
       setSaving(false);
     }
