@@ -122,11 +122,19 @@ async function syncMember(opts: {
 // Renewals no longer mutate entries — the daily pg_cron handles monthly
 // credits uniformly for monthly and annual plans. We still ensure status
 // flips back to 'active' on a successful renewal payment.
-async function handleInvoicePaid(invoice: any) {
+async function handleInvoicePaid(invoice: Stripe.Invoice) {
   const reason = invoice.billing_reason;
   if (reason !== "subscription_cycle" && reason !== "subscription_update") return;
 
-  const subscriptionId = invoice.subscription || invoice.parent?.subscription_details?.subscription;
+  // `invoice.subscription` was removed in newer API versions in favor of
+  // `invoice.parent.subscription_details.subscription`. Support both shapes.
+  const legacySub = (invoice as unknown as { subscription?: string | Stripe.Subscription | null })
+    .subscription;
+  const parentSub = (invoice as unknown as {
+    parent?: { subscription_details?: { subscription?: string | Stripe.Subscription | null } };
+  }).parent?.subscription_details?.subscription;
+  const rawSub = legacySub ?? parentSub;
+  const subscriptionId = typeof rawSub === "string" ? rawSub : rawSub?.id;
   if (!subscriptionId) return;
 
   const supa = getSupabase();
