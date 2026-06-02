@@ -38,13 +38,16 @@ export default function Home() {
   const [partners, setPartners] = useState<Partner[] | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+
     const load = async () => {
       setProfileLoading(true);
       const {
         data: { user },
       } = await supabase.auth.getUser();
       if (!user) {
-        setProfileLoading(false);
+        if (!cancelled) setProfileLoading(false);
         return;
       }
 
@@ -53,8 +56,10 @@ export default function Home() {
         (user.user_metadata?.name as string | undefined) ||
         user.email?.split("@")[0] ||
         null;
-      setAuthName(metaName);
-      setUserId(user.id);
+      if (!cancelled) {
+        setAuthName(metaName);
+        setUserId(user.id);
+      }
 
       const [profileRes, memberRes, subRes] = await Promise.all([
         supabase.from("profiles").select("full_name, phone, state").eq("user_id", user.id).maybeSingle(),
@@ -69,20 +74,13 @@ export default function Home() {
           .maybeSingle(),
       ]);
 
+      if (cancelled) return;
       if (profileRes.data) setProfile(profileRes.data);
       if (memberRes.data) setMember(memberRes.data);
       if (subRes.data) setSubscription(subRes.data);
       setProfileLoading(false);
-    };
-    load();
 
-    // Realtime: keep members data fresh after Stripe portal actions
-    let channel: ReturnType<typeof supabase.channel> | null = null;
-    (async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return;
+      // Realtime: keep members data fresh after Stripe portal actions
       channel = supabase
         .channel(`home-member-${user.id}`)
         .on(
@@ -107,8 +105,11 @@ export default function Home() {
           }
         )
         .subscribe();
-    })();
+    };
+
+    load();
     return () => {
+      cancelled = true;
       if (channel) supabase.removeChannel(channel);
     };
   }, []);
