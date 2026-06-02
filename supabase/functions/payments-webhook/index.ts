@@ -191,7 +191,7 @@ async function handleSubscriptionUpsert(subscription: Stripe.Subscription, env: 
   await syncMember({ userId, subscription });
 }
 
-async function handleSubscriptionDeleted(subscription: any, env: StripeEnv) {
+async function handleSubscriptionDeleted(subscription: Stripe.Subscription, env: StripeEnv) {
   await getSupabase()
     .from("subscriptions")
     .update({
