@@ -25,6 +25,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getStripeEnvironment } from "@/lib/stripe";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { Switch } from "@/components/ui/switch";
 
 type Row = AdminMemberRow;
 
@@ -45,13 +46,14 @@ const csvEscape = (v: unknown) => {
 };
 
 export default function AdminMembers() {
-  const { members: rows, loading, refresh } = useAdminMembers();
+  const { members: rows, loading, refresh, setExempt } = useAdminMembers();
   const { toast } = useToast();
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>("asc");
   const [searchQuery, setSearchQuery] = useState("");
   const [cancelTarget, setCancelTarget] = useState<Row | null>(null);
   const [cancelling, setCancelling] = useState(false);
+  const [exemptPending, setExemptPending] = useState<Record<string, boolean>>({});
 
   const sorted = useMemo(() => {
     if (!sortKey) return rows;
@@ -164,6 +166,25 @@ export default function AdminMembers() {
     await refresh();
   };
 
+  const handleToggleExempt = async (row: Row, value: boolean) => {
+    setExemptPending((p) => ({ ...p, [row.user_id]: true }));
+    try {
+      await setExempt(row.user_id, value);
+      toast({
+        title: value ? "Excluded from draw" : "Included in draw",
+        description: row.full_name || row.email || row.user_id.slice(0, 6),
+      });
+    } catch {
+      // toast already shown in context
+    } finally {
+      setExemptPending((p) => {
+        const next = { ...p };
+        delete next[row.user_id];
+        return next;
+      });
+    }
+  };
+
   const statusBadge = (status: string | null) => {
     const s = status ?? "—";
     const tone =
@@ -242,6 +263,7 @@ export default function AdminMembers() {
               </TableHead>
               <TableHead className="text-right">Months Active</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead className="text-center">Exempt</TableHead>
               <TableHead>Joined</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -249,13 +271,13 @@ export default function AdminMembers() {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={10} className="text-center py-12">
+                <TableCell colSpan={11} className="text-center py-12">
                   <Loader2 className="h-5 w-5 animate-spin text-primary mx-auto" />
                 </TableCell>
               </TableRow>
             ) : filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={10} className="text-center py-12 text-sm text-muted-foreground">
+                <TableCell colSpan={11} className="text-center py-12 text-sm text-muted-foreground">
                   {searchQuery.trim() ? "No members match your search." : "No members yet."}
                 </TableCell>
               </TableRow>
@@ -270,6 +292,14 @@ export default function AdminMembers() {
                   <TableCell className="text-right font-mono text-sm">{r.entries}</TableCell>
                   <TableCell className="text-right font-mono text-sm">{r.months_active}</TableCell>
                   <TableCell>{statusBadge(r.status)}</TableCell>
+                  <TableCell className="text-center">
+                    <Switch
+                      checked={r.exempt_from_winning}
+                      disabled={!!exemptPending[r.user_id]}
+                      onCheckedChange={(v) => handleToggleExempt(r, v)}
+                      aria-label="Exempt from draw"
+                    />
+                  </TableCell>
                   <TableCell className="text-sm text-muted-foreground">{formatDate(r.joined_at)}</TableCell>
                   <TableCell className="text-right">
                     <Button
