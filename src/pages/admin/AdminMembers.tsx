@@ -45,10 +45,13 @@ const csvEscape = (v: unknown) => {
 };
 
 export default function AdminMembers() {
-  const { members: rows, loading } = useAdminMembers();
+  const { members: rows, loading, refresh } = useAdminMembers();
+  const { toast } = useToast();
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>("asc");
   const [searchQuery, setSearchQuery] = useState("");
+  const [cancelTarget, setCancelTarget] = useState<Row | null>(null);
+  const [cancelling, setCancelling] = useState(false);
 
   const sorted = useMemo(() => {
     if (!sortKey) return rows;
