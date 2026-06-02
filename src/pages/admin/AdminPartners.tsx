@@ -176,8 +176,8 @@ export default function AdminPartners() {
 
       setDialogOpen(false);
       await fetchPartners();
-    } catch (err: any) {
-      toast({ title: "Save failed", description: err.message, variant: "destructive" });
+    } catch (err) {
+      toast({ title: "Save failed", description: getErrorMessage(err), variant: "destructive" });
     } finally {
       setSaving(false);
     }
