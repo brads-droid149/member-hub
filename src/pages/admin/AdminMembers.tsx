@@ -31,25 +31,10 @@ const csvEscape = (v: unknown) => {
 };
 
 export default function AdminMembers() {
-  const { toast } = useToast();
-  const [rows, setRows] = useState<Row[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { members: rows, loading } = useAdminMembers();
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>("asc");
   const [searchQuery, setSearchQuery] = useState("");
-
-  useEffect(() => {
-    (async () => {
-      setLoading(true);
-      const { data, error } = await supabase.rpc("get_admin_members_overview");
-      if (error) {
-        toast({ title: "Failed to load members", description: error.message, variant: "destructive" });
-      } else if (data) {
-        setRows(data as Row[]);
-      }
-      setLoading(false);
-    })();
-  }, [toast]);
 
   const sorted = useMemo(() => {
     if (!sortKey) return rows;
