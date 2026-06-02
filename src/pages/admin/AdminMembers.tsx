@@ -9,8 +9,22 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Users, Loader2, ArrowUpDown, Download, Search } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Users, Loader2, ArrowUpDown, Download, Search, XCircle } from "lucide-react";
 import { useAdminMembers, type AdminMemberRow } from "@/contexts/AdminMembersContext";
+import { supabase } from "@/integrations/supabase/client";
+import { getStripeEnvironment } from "@/lib/stripe";
+import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 type Row = AdminMemberRow;
 
