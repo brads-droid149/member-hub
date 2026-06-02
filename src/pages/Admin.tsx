@@ -32,16 +32,18 @@ export default function Admin() {
 
       <h1 className="text-2xl font-display font-bold text-foreground">Admin Panel</h1>
 
-      <Tabs defaultValue="giveaways">
-        <TabsList>
-          <TabsTrigger value="giveaways">Giveaway Manager</TabsTrigger>
-          <TabsTrigger value="partners">Partner Manager</TabsTrigger>
-          <TabsTrigger value="members">Members</TabsTrigger>
-        </TabsList>
-        <TabsContent value="giveaways" className="mt-6"><AdminGiveaways /></TabsContent>
-        <TabsContent value="partners" className="mt-6"><AdminPartners /></TabsContent>
-        <TabsContent value="members" className="mt-6"><AdminMembers /></TabsContent>
-      </Tabs>
+      <AdminMembersProvider>
+        <Tabs defaultValue="giveaways">
+          <TabsList>
+            <TabsTrigger value="giveaways">Giveaway Manager</TabsTrigger>
+            <TabsTrigger value="partners">Partner Manager</TabsTrigger>
+            <TabsTrigger value="members">Members</TabsTrigger>
+          </TabsList>
+          <TabsContent value="giveaways" className="mt-6"><AdminGiveaways /></TabsContent>
+          <TabsContent value="partners" className="mt-6"><AdminPartners /></TabsContent>
+          <TabsContent value="members" className="mt-6"><AdminMembers /></TabsContent>
+        </Tabs>
+      </AdminMembersProvider>
     </div>
   );
 }
