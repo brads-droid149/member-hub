@@ -151,20 +151,25 @@ async function handleInvoicePaid(invoice: Stripe.Invoice) {
     .eq("user_id", sub.user_id);
 }
 
-async function handleSubscriptionUpsert(subscription: any, env: StripeEnv) {
+async function handleSubscriptionUpsert(subscription: Stripe.Subscription, env: StripeEnv) {
   const userId = subscription.metadata?.userId;
   if (!userId) {
     console.error("No userId in subscription metadata", subscription.id);
     return;
   }
 
-  const item = subscription.items?.data?.[0];
-  const priceId = item?.price?.lookup_key
-    || item?.price?.metadata?.lovable_external_id
-    || item?.price?.id;
-  const productId = item?.price?.product;
-  const periodStart = item?.current_period_start ?? subscription.current_period_start;
-  const periodEnd = item?.current_period_end ?? subscription.current_period_end;
+  const item = subscription.items?.data?.[0] as SubscriptionItemWithPeriod | undefined;
+  const price = item?.price;
+  const priceId = price?.lookup_key
+    || (price?.metadata as Record<string, string> | undefined)?.lovable_external_id
+    || price?.id;
+  const productId = typeof price?.product === "string" ? price.product : price?.product?.id;
+  const subWithPeriod = subscription as Stripe.Subscription & {
+    current_period_start?: number;
+    current_period_end?: number;
+  };
+  const periodStart = item?.current_period_start ?? subWithPeriod.current_period_start;
+  const periodEnd = item?.current_period_end ?? subWithPeriod.current_period_end;
 
   await getSupabase().from("subscriptions").upsert(
     {
