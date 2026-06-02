@@ -41,6 +41,13 @@ Deno.serve(async (req) => {
     const environment: StripeEnv = body.environment === "live" ? "live" : "sandbox";
     const returnUrl: string | undefined = body.returnUrl;
 
+    if (!isAllowedReturnUrl(returnUrl)) {
+      return new Response(JSON.stringify({ error: "Invalid returnUrl" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const { data: sub } = await supabase
       .from("subscriptions")
       .select("stripe_customer_id")
