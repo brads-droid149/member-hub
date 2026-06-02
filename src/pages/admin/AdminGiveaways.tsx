@@ -63,8 +63,9 @@ export default function AdminGiveaways() {
     setLoading(false);
   };
 
-  // Record winner state
-  const [members, setMembers] = useState<MemberRow[]>([]);
+  // Record winner state — member list is loaded once at the Admin parent level
+  // and shared across admin tabs via AdminMembersContext.
+  const { members, refresh: refreshMembers } = useAdminMembers();
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<MemberRow | null>(null);
   const [winnerPrize, setWinnerPrize] = useState("");
@@ -72,18 +73,8 @@ export default function AdminGiveaways() {
   const [recording, setRecording] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
 
-  const loadMembers = async () => {
-    const { data, error } = await supabase.rpc("get_admin_members_overview");
-    if (error) {
-      toast({ title: "Failed to load members", description: error.message, variant: "destructive" });
-    } else if (data) {
-      setMembers(data as MemberRow[]);
-    }
-  };
-
   useEffect(() => {
     loadActive();
-    loadMembers();
   }, []);
 
   useEffect(() => {
