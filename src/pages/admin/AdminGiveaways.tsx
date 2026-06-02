@@ -21,19 +21,11 @@ import { Upload, Check, Loader2, Trophy, Award, Search, CalendarIcon } from "luc
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import type { Tables } from "@/integrations/supabase/types";
+import { useAdminMembers, type AdminMemberRow } from "@/contexts/AdminMembersContext";
 
 type Giveaway = Tables<"giveaways">;
 
-type MemberRow = {
-  user_id: string;
-  full_name: string | null;
-  email: string | null;
-  phone: string | null;
-  state: string | null;
-  entries: number;
-  months_active: number;
-  joined_at: string;
-};
+type MemberRow = AdminMemberRow;
 
 const ACCEPTED = ["image/jpeg", "image/jpg", "image/png"];
 
@@ -71,8 +63,9 @@ export default function AdminGiveaways() {
     setLoading(false);
   };
 
-  // Record winner state
-  const [members, setMembers] = useState<MemberRow[]>([]);
+  // Record winner state — member list is loaded once at the Admin parent level
+  // and shared across admin tabs via AdminMembersContext.
+  const { members, refresh: refreshMembers } = useAdminMembers();
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<MemberRow | null>(null);
   const [winnerPrize, setWinnerPrize] = useState("");
@@ -80,18 +73,8 @@ export default function AdminGiveaways() {
   const [recording, setRecording] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
 
-  const loadMembers = async () => {
-    const { data, error } = await supabase.rpc("get_admin_members_overview");
-    if (error) {
-      toast({ title: "Failed to load members", description: error.message, variant: "destructive" });
-    } else if (data) {
-      setMembers(data as MemberRow[]);
-    }
-  };
-
   useEffect(() => {
     loadActive();
-    loadMembers();
   }, []);
 
   useEffect(() => {
@@ -133,7 +116,7 @@ export default function AdminGiveaways() {
       setSelected(null);
       setSearch("");
       setWinnerDrawDate(undefined);
-      await loadMembers();
+      await refreshMembers();
     } catch (err: any) {
       toast({ title: "Failed to record winner", description: err.message, variant: "destructive" });
     } finally {

@@ -1,5 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -10,19 +9,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useToast } from "@/hooks/use-toast";
 import { Users, Loader2, ArrowUpDown, Download, Search } from "lucide-react";
+import { useAdminMembers, type AdminMemberRow } from "@/contexts/AdminMembersContext";
 
-type Row = {
-  user_id: string;
-  full_name: string | null;
-  email: string | null;
-  phone: string | null;
-  state: string | null;
-  entries: number;
-  months_active: number;
-  joined_at: string;
-};
+type Row = AdminMemberRow;
 
 type SortKey = "entries";
 type SortDir = "asc" | "desc";
@@ -41,25 +31,10 @@ const csvEscape = (v: unknown) => {
 };
 
 export default function AdminMembers() {
-  const { toast } = useToast();
-  const [rows, setRows] = useState<Row[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { members: rows, loading } = useAdminMembers();
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>("asc");
   const [searchQuery, setSearchQuery] = useState("");
-
-  useEffect(() => {
-    (async () => {
-      setLoading(true);
-      const { data, error } = await supabase.rpc("get_admin_members_overview");
-      if (error) {
-        toast({ title: "Failed to load members", description: error.message, variant: "destructive" });
-      } else if (data) {
-        setRows(data as Row[]);
-      }
-      setLoading(false);
-    })();
-  }, [toast]);
 
   const sorted = useMemo(() => {
     if (!sortKey) return rows;
