@@ -137,7 +137,7 @@ export function OverviewSection({
               </>
             ) : (
               <>
-                <p className="text-9xl font-display font-bold text-primary leading-none">{entries}</p>
+                <p aria-label={`${entries} giveaway ${entries === 1 ? 'entry' : 'entries'}`} className="text-9xl font-display font-bold text-primary leading-none">{entries}</p>
                 <div className="text-xs text-muted-foreground max-w-xs mx-auto space-y-0.5">
                   <p>You earn +1 entry every month you stay active.</p>
                   <p>Entries reset if you cancel or win.</p>
