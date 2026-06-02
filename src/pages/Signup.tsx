@@ -14,8 +14,8 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { AU_STATES } from "@/lib/constants";
 
-const AU_STATES = ["NSW", "VIC", "QLD", "WA", "SA", "TAS", "ACT", "NT"] as const;
 
 // Validates Australian mobile in +61 format: +61 followed by 4 and 8 more digits.
 const isValidAuMobile = (val: string) => /^\+614\d{8}$/.test(val.replace(/\s+/g, ""));
