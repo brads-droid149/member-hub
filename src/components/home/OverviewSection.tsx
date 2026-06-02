@@ -94,7 +94,7 @@ export function OverviewSection({
               <div className="space-y-4">
                 <div className="w-full rounded-lg overflow-hidden border border-border">
                   {giveaway.prize_image_url ? (
-                    <img src={giveaway.prize_image_url} alt={giveaway.title} className="w-full h-auto block" />
+                    <img src={giveaway.prize_image_url} alt={giveaway.title} className="w-full h-auto block" loading="eager" fetchPriority="high" />
                   ) : (
                     <div className="w-full aspect-video bg-white flex items-center justify-center">
                       <span className="text-muted-foreground text-sm">Prize image</span>

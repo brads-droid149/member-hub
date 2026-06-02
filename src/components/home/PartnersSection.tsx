@@ -83,7 +83,7 @@ export function PartnersSection({ partners, setPartners }: PartnersSectionProps)
               <CardContent className="p-4 flex flex-col items-center text-center gap-3">
                 <div className="w-full aspect-[16/9] rounded-md bg-white border border-border flex items-center justify-center overflow-hidden">
                   {partner.logo_url ? (
-                    <img src={partner.logo_url} alt={partner.name} className="w-full h-full object-contain p-2" />
+                    <img src={partner.logo_url} alt={partner.name} className="w-full h-full object-contain p-2" loading="lazy" />
                   ) : (
                     <span className="text-xs text-muted-foreground">Logo</span>
                   )}
