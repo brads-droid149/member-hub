@@ -3,9 +3,9 @@ import { Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import type { Session } from "@supabase/supabase-js";
 
-type Access = "loading" | "allowed" | "no-session" | "no-membership";
+type Access = "loading" | "allowed" | "no-session" | "no-membership" | "not-admin";
 
-export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
+export default function ProtectedRoute({ children, adminOnly }: { children: React.ReactNode; adminOnly?: boolean }) {
   const [access, setAccess] = useState<Access>("loading");
 
   useEffect(() => {
