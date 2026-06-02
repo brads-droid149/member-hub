@@ -9,8 +9,22 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Users, Loader2, ArrowUpDown, Download, Search } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Users, Loader2, ArrowUpDown, Download, Search, XCircle } from "lucide-react";
 import { useAdminMembers, type AdminMemberRow } from "@/contexts/AdminMembersContext";
+import { supabase } from "@/integrations/supabase/client";
+import { getStripeEnvironment } from "@/lib/stripe";
+import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 type Row = AdminMemberRow;
 
@@ -31,10 +45,13 @@ const csvEscape = (v: unknown) => {
 };
 
 export default function AdminMembers() {
-  const { members: rows, loading } = useAdminMembers();
+  const { members: rows, loading, refresh } = useAdminMembers();
+  const { toast } = useToast();
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>("asc");
   const [searchQuery, setSearchQuery] = useState("");
+  const [cancelTarget, setCancelTarget] = useState<Row | null>(null);
+  const [cancelling, setCancelling] = useState(false);
 
   const sorted = useMemo(() => {
     if (!sortKey) return rows;
@@ -126,6 +143,46 @@ export default function AdminMembers() {
     triggerDownload(lines, `draw-export-${today()}.csv`);
   };
 
+  const handleCancel = async () => {
+    if (!cancelTarget) return;
+    setCancelling(true);
+    const { data, error } = await supabase.functions.invoke("admin-cancel-member", {
+      body: {
+        userId: cancelTarget.user_id,
+        environment: getStripeEnvironment(),
+        immediate: true,
+      },
+    });
+    setCancelling(false);
+    if (error || (data as { error?: string } | null)?.error) {
+      const msg = error?.message || (data as { error?: string } | null)?.error || "Failed to cancel";
+      toast({ title: "Cancel failed", description: msg, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Membership cancelled", description: cancelTarget.email ?? cancelTarget.user_id });
+    setCancelTarget(null);
+    await refresh();
+  };
+
+  const statusBadge = (status: string | null) => {
+    const s = status ?? "—";
+    const tone =
+      s === "active"
+        ? "bg-primary/10 text-primary border-primary/20"
+        : s === "past_due"
+          ? "bg-yellow-500/10 text-yellow-700 border-yellow-500/20"
+          : s === "paused"
+            ? "bg-muted text-muted-foreground border-border"
+            : s === "cancelled"
+              ? "bg-destructive/10 text-destructive border-destructive/20"
+              : "bg-muted text-muted-foreground border-border";
+    return (
+      <span className={cn("inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium capitalize", tone)}>
+        {s.replace("_", " ")}
+      </span>
+    );
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -184,19 +241,21 @@ export default function AdminMembers() {
                 </button>
               </TableHead>
               <TableHead className="text-right">Months Active</TableHead>
+              <TableHead>Status</TableHead>
               <TableHead>Joined</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-12">
+                <TableCell colSpan={10} className="text-center py-12">
                   <Loader2 className="h-5 w-5 animate-spin text-primary mx-auto" />
                 </TableCell>
               </TableRow>
             ) : filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-12 text-sm text-muted-foreground">
+                <TableCell colSpan={10} className="text-center py-12 text-sm text-muted-foreground">
                   {searchQuery.trim() ? "No members match your search." : "No members yet."}
                 </TableCell>
               </TableRow>
@@ -210,13 +269,54 @@ export default function AdminMembers() {
                   <TableCell className="text-sm text-muted-foreground">{r.state || "—"}</TableCell>
                   <TableCell className="text-right font-mono text-sm">{r.entries}</TableCell>
                   <TableCell className="text-right font-mono text-sm">{r.months_active}</TableCell>
+                  <TableCell>{statusBadge(r.status)}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">{formatDate(r.joined_at)}</TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-destructive hover:text-destructive"
+                      disabled={r.status === "cancelled"}
+                      onClick={() => setCancelTarget(r)}
+                    >
+                      <XCircle className="h-4 w-4 mr-1" />
+                      Cancel
+                    </Button>
+                  </TableCell>
                 </TableRow>
               ))
             )}
           </TableBody>
         </Table>
       </div>
+
+      <AlertDialog open={!!cancelTarget} onOpenChange={(open) => !open && setCancelTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancel this membership?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will immediately cancel the Stripe subscription for{" "}
+              <span className="font-medium text-foreground">
+                {cancelTarget?.full_name || cancelTarget?.email || cancelTarget?.user_id}
+              </span>
+              , set their status to cancelled, and reset their giveaway entries to 0. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={cancelling}>Keep membership</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={cancelling}
+              onClick={(e) => {
+                e.preventDefault();
+                handleCancel();
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {cancelling ? <Loader2 className="h-4 w-4 animate-spin" /> : "Cancel membership"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
