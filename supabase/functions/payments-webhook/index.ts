@@ -1,5 +1,15 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
+import Stripe from "https://esm.sh/stripe@22.0.2";
 import { type StripeEnv, verifyWebhook } from "../_shared/stripe.ts";
+
+// Stripe's typings put period fields on the subscription item starting with
+// the Basil (2025-03-31) API version. The installed SDK types still expose
+// them on Stripe.Subscription too, but TS doesn't know about the item-level
+// fields — extend locally so we get type safety on both shapes.
+type SubscriptionItemWithPeriod = Stripe.SubscriptionItem & {
+  current_period_start?: number;
+  current_period_end?: number;
+};
 
 let _supabase: any = null;
 function getSupabase() {
