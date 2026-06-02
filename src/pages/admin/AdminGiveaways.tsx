@@ -21,6 +21,7 @@ import { Upload, Check, Loader2, Trophy, Award, Search, CalendarIcon } from "luc
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import type { Tables } from "@/integrations/supabase/types";
+import { useAdminMembers, type AdminMemberRow } from "@/contexts/AdminMembersContext";
 
 type Giveaway = Tables<"giveaways">;
 
