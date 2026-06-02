@@ -54,9 +54,6 @@ export default function AdminMembers() {
   const [cancelTarget, setCancelTarget] = useState<Row | null>(null);
   const [cancelling, setCancelling] = useState(false);
   const [exemptPending, setExemptPending] = useState<Record<string, boolean>>({});
-  const [searchQuery, setSearchQuery] = useState("");
-  const [cancelTarget, setCancelTarget] = useState<Row | null>(null);
-  const [cancelling, setCancelling] = useState(false);
 
   const sorted = useMemo(() => {
     if (!sortKey) return rows;
