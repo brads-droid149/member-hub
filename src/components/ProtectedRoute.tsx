@@ -52,7 +52,7 @@ export default function ProtectedRoute({ children, adminOnly }: { children: Reac
       cancelled = true;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [adminOnly]);
 
   if (access === "loading") {
     return (
