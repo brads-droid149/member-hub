@@ -1,7 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { type StripeEnv, verifyWebhook } from "../_shared/stripe.ts";
 
-let _supabase: ReturnType<typeof createClient> | null = null;
+let _supabase: any = null;
 function getSupabase() {
   if (!_supabase) {
     _supabase = createClient(
@@ -10,6 +10,23 @@ function getSupabase() {
     );
   }
   return _supabase;
+}
+
+let _verifyWebhookFn: typeof verifyWebhook = verifyWebhook;
+
+// Test-only seam — allows unit tests to inject stubs without spinning up
+// real Supabase/Stripe clients. Not used in production.
+export function __setTestOverrides(opts: {
+  supabase?: any;
+  verifyWebhookFn?: typeof verifyWebhook;
+}) {
+  if (opts.supabase !== undefined) _supabase = opts.supabase;
+  if (opts.verifyWebhookFn !== undefined) _verifyWebhookFn = opts.verifyWebhookFn;
+}
+
+export function __resetTestOverrides() {
+  _supabase = null;
+  _verifyWebhookFn = verifyWebhook;
 }
 
 // Map Stripe subscription status -> Junkyard members.status.
