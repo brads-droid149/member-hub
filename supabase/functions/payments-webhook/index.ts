@@ -1,5 +1,15 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
+import Stripe from "https://esm.sh/stripe@22.0.2";
 import { type StripeEnv, verifyWebhook } from "../_shared/stripe.ts";
+
+// Stripe's typings put period fields on the subscription item starting with
+// the Basil (2025-03-31) API version. The installed SDK types still expose
+// them on Stripe.Subscription too, but TS doesn't know about the item-level
+// fields — extend locally so we get type safety on both shapes.
+type SubscriptionItemWithPeriod = Stripe.SubscriptionItem & {
+  current_period_start?: number;
+  current_period_end?: number;
+};
 
 let _supabase: any = null;
 function getSupabase() {
@@ -52,7 +62,7 @@ function mapMemberStatus(stripeStatus: string): string {
 
 async function syncMember(opts: {
   userId: string;
-  subscription: any;
+  subscription: Stripe.Subscription;
 }) {
   const supa = getSupabase();
   const { userId, subscription } = opts;
@@ -112,11 +122,19 @@ async function syncMember(opts: {
 // Renewals no longer mutate entries — the daily pg_cron handles monthly
 // credits uniformly for monthly and annual plans. We still ensure status
 // flips back to 'active' on a successful renewal payment.
-async function handleInvoicePaid(invoice: any) {
+async function handleInvoicePaid(invoice: Stripe.Invoice) {
   const reason = invoice.billing_reason;
   if (reason !== "subscription_cycle" && reason !== "subscription_update") return;
 
-  const subscriptionId = invoice.subscription || invoice.parent?.subscription_details?.subscription;
+  // `invoice.subscription` was removed in newer API versions in favor of
+  // `invoice.parent.subscription_details.subscription`. Support both shapes.
+  const legacySub = (invoice as unknown as { subscription?: string | Stripe.Subscription | null })
+    .subscription;
+  const parentSub = (invoice as unknown as {
+    parent?: { subscription_details?: { subscription?: string | Stripe.Subscription | null } };
+  }).parent?.subscription_details?.subscription;
+  const rawSub = legacySub ?? parentSub;
+  const subscriptionId = typeof rawSub === "string" ? rawSub : rawSub?.id;
   if (!subscriptionId) return;
 
   const supa = getSupabase();
@@ -133,20 +151,25 @@ async function handleInvoicePaid(invoice: any) {
     .eq("user_id", sub.user_id);
 }
 
-async function handleSubscriptionUpsert(subscription: any, env: StripeEnv) {
+async function handleSubscriptionUpsert(subscription: Stripe.Subscription, env: StripeEnv) {
   const userId = subscription.metadata?.userId;
   if (!userId) {
     console.error("No userId in subscription metadata", subscription.id);
     return;
   }
 
-  const item = subscription.items?.data?.[0];
-  const priceId = item?.price?.lookup_key
-    || item?.price?.metadata?.lovable_external_id
-    || item?.price?.id;
-  const productId = item?.price?.product;
-  const periodStart = item?.current_period_start ?? subscription.current_period_start;
-  const periodEnd = item?.current_period_end ?? subscription.current_period_end;
+  const item = subscription.items?.data?.[0] as SubscriptionItemWithPeriod | undefined;
+  const price = item?.price;
+  const priceId = price?.lookup_key
+    || (price?.metadata as Record<string, string> | undefined)?.lovable_external_id
+    || price?.id;
+  const productId = typeof price?.product === "string" ? price.product : price?.product?.id;
+  const subWithPeriod = subscription as Stripe.Subscription & {
+    current_period_start?: number;
+    current_period_end?: number;
+  };
+  const periodStart = item?.current_period_start ?? subWithPeriod.current_period_start;
+  const periodEnd = item?.current_period_end ?? subWithPeriod.current_period_end;
 
   await getSupabase().from("subscriptions").upsert(
     {
@@ -168,7 +191,7 @@ async function handleSubscriptionUpsert(subscription: any, env: StripeEnv) {
   await syncMember({ userId, subscription });
 }
 
-async function handleSubscriptionDeleted(subscription: any, env: StripeEnv) {
+async function handleSubscriptionDeleted(subscription: Stripe.Subscription, env: StripeEnv) {
   await getSupabase()
     .from("subscriptions")
     .update({
@@ -198,14 +221,14 @@ export async function handleWebhook(req: Request, env: StripeEnv) {
   switch (event.type) {
     case "customer.subscription.created":
     case "customer.subscription.updated":
-      await handleSubscriptionUpsert(event.data.object, env);
+      await handleSubscriptionUpsert(event.data.object as Stripe.Subscription, env);
       break;
     case "customer.subscription.deleted":
-      await handleSubscriptionDeleted(event.data.object, env);
+      await handleSubscriptionDeleted(event.data.object as Stripe.Subscription, env);
       break;
     case "invoice.paid":
     case "invoice.payment_succeeded":
-      await handleInvoicePaid(event.data.object);
+      await handleInvoicePaid(event.data.object as Stripe.Invoice);
       break;
     default:
       console.log("Unhandled event:", event.type);
