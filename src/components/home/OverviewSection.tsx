@@ -51,10 +51,11 @@ export function OverviewSection({
     }
     if (winners === null) {
       (async () => {
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from("past_winners")
           .select("*")
           .order("draw_date", { ascending: false, nullsFirst: false });
+        if (error) console.error("Failed to load past winners:", error);
         setWinners(data ?? []);
       })();
     }
