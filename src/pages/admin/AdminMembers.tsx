@@ -292,6 +292,14 @@ export default function AdminMembers() {
                   <TableCell className="text-right font-mono text-sm">{r.entries}</TableCell>
                   <TableCell className="text-right font-mono text-sm">{r.months_active}</TableCell>
                   <TableCell>{statusBadge(r.status)}</TableCell>
+                  <TableCell className="text-center">
+                    <Switch
+                      checked={r.exempt_from_winning}
+                      disabled={!!exemptPending[r.user_id]}
+                      onCheckedChange={(v) => handleToggleExempt(r, v)}
+                      aria-label="Exempt from draw"
+                    />
+                  </TableCell>
                   <TableCell className="text-sm text-muted-foreground">{formatDate(r.joined_at)}</TableCell>
                   <TableCell className="text-right">
                     <Button
