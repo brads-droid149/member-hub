@@ -183,6 +183,7 @@ export default function AdminMembers() {
         return next;
       });
     }
+  };
 
   const statusBadge = (status: string | null) => {
     const s = status ?? "—";
