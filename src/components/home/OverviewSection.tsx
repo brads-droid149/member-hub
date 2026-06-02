@@ -38,12 +38,13 @@ export function OverviewSection({
   useEffect(() => {
     if (!giveawayLoaded) {
       (async () => {
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from("giveaways")
           .select("*")
           .eq("is_active", true)
           .limit(1)
           .maybeSingle();
+        if (error) console.error("Failed to load giveaway:", error);
         setGiveaway(data ?? null);
         setGiveawayLoaded(true);
       })();
