@@ -143,6 +143,46 @@ export default function AdminMembers() {
     triggerDownload(lines, `draw-export-${today()}.csv`);
   };
 
+  const handleCancel = async () => {
+    if (!cancelTarget) return;
+    setCancelling(true);
+    const { data, error } = await supabase.functions.invoke("admin-cancel-member", {
+      body: {
+        userId: cancelTarget.user_id,
+        environment: getStripeEnvironment(),
+        immediate: true,
+      },
+    });
+    setCancelling(false);
+    if (error || (data as { error?: string } | null)?.error) {
+      const msg = error?.message || (data as { error?: string } | null)?.error || "Failed to cancel";
+      toast({ title: "Cancel failed", description: msg, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Membership cancelled", description: cancelTarget.email ?? cancelTarget.user_id });
+    setCancelTarget(null);
+    await refresh();
+  };
+
+  const statusBadge = (status: string | null) => {
+    const s = status ?? "—";
+    const tone =
+      s === "active"
+        ? "bg-primary/10 text-primary border-primary/20"
+        : s === "past_due"
+          ? "bg-yellow-500/10 text-yellow-700 border-yellow-500/20"
+          : s === "paused"
+            ? "bg-muted text-muted-foreground border-border"
+            : s === "cancelled"
+              ? "bg-destructive/10 text-destructive border-destructive/20"
+              : "bg-muted text-muted-foreground border-border";
+    return (
+      <span className={cn("inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium capitalize", tone)}>
+        {s.replace("_", " ")}
+      </span>
+    );
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4 flex-wrap">
