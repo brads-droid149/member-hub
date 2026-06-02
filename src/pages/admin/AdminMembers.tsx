@@ -116,8 +116,11 @@ export default function AdminMembers() {
   const downloadDrawExport = () => {
     const lines = [["ID", "Full Name", "State"].join(",")];
     for (const r of sorted) {
+      // Skip members flagged as exempt (e.g. staff/admin) from prize draws.
+      if (r.exempt_from_winning) continue;
       const count = Math.max(0, Math.floor(r.entries));
-      const row = [r.user_id.slice(0, 6), r.full_name ?? "", r.state ?? ""].map(csvEscape).join(",");
+      // Use the full UUID — a 6-char prefix can collide across members.
+      const row = [r.user_id, r.full_name ?? "", r.state ?? ""].map(csvEscape).join(",");
       for (let i = 0; i < count; i++) lines.push(row);
     }
     triggerDownload(lines, `draw-export-${today()}.csv`);

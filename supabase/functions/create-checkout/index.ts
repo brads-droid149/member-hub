@@ -68,7 +68,13 @@ async function createCheckoutSession(options: {
     mode: isRecurring ? "subscription" : "payment",
     ui_mode: "embedded_page",
     return_url: options.returnUrl,
-    ...(customerId && { customer: customerId }),
+    // GST/tax: Stripe calculates and collects Australian GST at checkout.
+    // Requires the customer's address — collect at checkout and write it back.
+    automatic_tax: { enabled: true },
+    ...(customerId && {
+      customer: customerId,
+      customer_update: { address: "auto", name: "auto" },
+    }),
     ...(options.userId && {
       metadata: { userId: options.userId },
       ...(isRecurring && { subscription_data: { metadata: { userId: options.userId } } }),
