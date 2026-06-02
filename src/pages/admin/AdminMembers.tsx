@@ -166,6 +166,24 @@ export default function AdminMembers() {
     await refresh();
   };
 
+  const handleToggleExempt = async (row: Row, value: boolean) => {
+    setExemptPending((p) => ({ ...p, [row.user_id]: true }));
+    try {
+      await setExempt(row.user_id, value);
+      toast({
+        title: value ? "Excluded from draw" : "Included in draw",
+        description: row.full_name || row.email || row.user_id.slice(0, 6),
+      });
+    } catch {
+      // toast already shown in context
+    } finally {
+      setExemptPending((p) => {
+        const next = { ...p };
+        delete next[row.user_id];
+        return next;
+      });
+    }
+
   const statusBadge = (status: string | null) => {
     const s = status ?? "—";
     const tone =
