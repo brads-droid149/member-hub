@@ -25,16 +25,7 @@ import { useAdminMembers, type AdminMemberRow } from "@/contexts/AdminMembersCon
 
 type Giveaway = Tables<"giveaways">;
 
-type MemberRow = {
-  user_id: string;
-  full_name: string | null;
-  email: string | null;
-  phone: string | null;
-  state: string | null;
-  entries: number;
-  months_active: number;
-  joined_at: string;
-};
+type MemberRow = AdminMemberRow;
 
 const ACCEPTED = ["image/jpeg", "image/jpg", "image/png"];
 
