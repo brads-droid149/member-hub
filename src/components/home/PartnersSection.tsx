@@ -22,10 +22,7 @@ export function PartnersSection({ partners, setPartners }: PartnersSectionProps)
       (async () => {
         const { data } = await supabase.from("partners").select("*").order("name");
         if (data) {
-          const sorted = [...data].sort((a, b) =>
-            a.name.localeCompare(b.name, undefined, { sensitivity: "base" })
-          );
-          setPartners(sorted);
+          setPartners(data);
         } else {
           setPartners([]);
         }
