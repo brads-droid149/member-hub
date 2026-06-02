@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { LayoutGrid, Tag, Trophy, Settings as SettingsIcon, Shield, LogOut } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import {
@@ -13,7 +14,6 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { supabase } from "@/integrations/supabase/client";
-import { useAdmin } from "@/hooks/use-admin";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 export type SectionId = "overview" | "partners" | "winners" | "settings";
