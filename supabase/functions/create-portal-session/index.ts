@@ -2,6 +2,20 @@ import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { type StripeEnv, createStripeClient } from "../_shared/stripe.ts";
 
+const ALLOWED_ORIGINS = [
+  "https://members.junkyardsurf.com.au",
+  "https://id-preview--1e6b66b5-43de-4635-a973-ff3a00d82e29.lovable.app",
+];
+
+function isAllowedReturnUrl(url: string | undefined): boolean {
+  if (!url) return true;
+  try {
+    return ALLOWED_ORIGINS.some((o) => new URL(url).origin === o);
+  } catch {
+    return false;
+  }
+}
+
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
