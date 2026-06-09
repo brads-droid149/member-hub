@@ -92,14 +92,6 @@ export default function AdminMembers() {
   const [cancelTarget, setCancelTarget] = useState<Row | null>(null);
   const [cancelling, setCancelling] = useState(false);
 
-  // Edit stats state
-  const [editMonths, setEditMonths] = useState(0);
-  const [editEntries, setEditEntries] = useState(0);
-  const [savingStats, setSavingStats] = useState(false);
-
-  // Is-exempt action state
-  const [isExemptPending, setIsExemptPending] = useState(false);
-
   const sorted = useMemo(() => {
     if (!sortKey) return rows;
     const copy = [...rows];
