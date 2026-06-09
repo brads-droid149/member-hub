@@ -3,9 +3,7 @@
 import { writeFileSync } from "fs";
 import { resolve } from "path";
 
-// TODO: replace with your project URL once a custom domain is wired up
-// (target: members.junkyardsurf.com.au).
-const BASE_URL = "";
+const BASE_URL = "https://members.junkyardsurf.com.au";
 
 interface SitemapEntry {
   path: string;
