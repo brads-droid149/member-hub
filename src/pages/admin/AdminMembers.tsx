@@ -35,8 +35,8 @@ import {
   Search,
   XCircle,
   Eye,
-  RotateCcw,
   ShieldCheck,
+  Pencil,
 } from "lucide-react";
 import { useAdminMembers, type AdminMemberRow } from "@/contexts/AdminMembersContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -104,10 +104,10 @@ export default function AdminMembers() {
   const [cancelTarget, setCancelTarget] = useState<Row | null>(null);
   const [cancelling, setCancelling] = useState(false);
 
-  // Reinstate form state
-  const [reinstateMonths, setReinstateMonths] = useState(1);
-  const [reinstateEntries, setReinstateEntries] = useState(1);
-  const [reinstating, setReinstating] = useState(false);
+  // Edit stats state
+  const [editMonths, setEditMonths] = useState(0);
+  const [editEntries, setEditEntries] = useState(0);
+  const [savingStats, setSavingStats] = useState(false);
 
   // Is-exempt action state
   const [isExemptPending, setIsExemptPending] = useState(false);
@@ -208,8 +208,8 @@ export default function AdminMembers() {
 
   const openMember = (r: Row) => {
     setSelected(r);
-    setReinstateMonths(1);
-    setReinstateEntries(1);
+    setEditMonths(r.months_active);
+    setEditEntries(r.entries);
   };
 
   const handleCancel = async () => {
@@ -233,23 +233,23 @@ export default function AdminMembers() {
     await refresh();
   };
 
-  const handleReinstate = async () => {
+  const handleSaveStats = async () => {
     if (!currentSelected) return;
-    setReinstating(true);
-    const { data, error } = await supabase.functions.invoke("admin-reinstate-member", {
+    setSavingStats(true);
+    const { data, error } = await supabase.functions.invoke("admin-update-member", {
       body: {
         userId: currentSelected.user_id,
-        monthsActive: reinstateMonths,
-        entries: reinstateEntries,
+        monthsActive: editMonths,
+        entries: editEntries,
       },
     });
-    setReinstating(false);
+    setSavingStats(false);
     if (error || (data as { error?: string } | null)?.error) {
-      const msg = error?.message || (data as { error?: string } | null)?.error || "Failed to reinstate";
-      toast({ title: "Reinstate failed", description: msg, variant: "destructive" });
+      const msg = error?.message || (data as { error?: string } | null)?.error || "Failed to update";
+      toast({ title: "Update failed", description: msg, variant: "destructive" });
       return;
     }
-    toast({ title: "Member reinstated", description: currentSelected.email ?? currentSelected.user_id });
+    toast({ title: "Member stats updated", description: currentSelected.email ?? currentSelected.user_id });
     await refresh();
   };
 
@@ -289,7 +289,6 @@ export default function AdminMembers() {
   };
 
   const s = currentSelected;
-  const canReinstate = s?.status === "cancelled" || s?.status === "paused";
   const canCancel = s?.status === "active" || s?.status === "past_due";
 
   return (
@@ -463,40 +462,40 @@ export default function AdminMembers() {
                   </div>
                 </div>
 
-                {/* Reinstate */}
-                {canReinstate && (
+                {/* Edit Member Stats */}
+                {s.status === "active" && (
                   <div className="rounded-lg border border-border p-4 space-y-3">
                     <h3 className="font-semibold text-foreground flex items-center gap-2">
-                      <RotateCcw className="h-4 w-4 text-primary" />
-                      Reinstate Member
+                      <Pencil className="h-4 w-4 text-primary" />
+                      Edit Member Stats
                     </h3>
                     <p className="text-xs text-muted-foreground">
-                      Adjust for long-standing members reinstated due to payment issues or accidental cancellation.
+                      Manually adjust months active and entries for this member.
                     </p>
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1">
-                        <Label htmlFor="reinstate-months" className="text-xs">Months Active</Label>
+                        <Label htmlFor="edit-months" className="text-xs">Months Active</Label>
                         <Input
-                          id="reinstate-months"
+                          id="edit-months"
                           type="number"
                           min={0}
-                          value={reinstateMonths}
-                          onChange={(e) => setReinstateMonths(Math.max(0, Number(e.target.value) || 0))}
+                          value={editMonths}
+                          onChange={(e) => setEditMonths(Math.max(0, Number(e.target.value) || 0))}
                         />
                       </div>
                       <div className="space-y-1">
-                        <Label htmlFor="reinstate-entries" className="text-xs">Entries</Label>
+                        <Label htmlFor="edit-entries" className="text-xs">Entries</Label>
                         <Input
-                          id="reinstate-entries"
+                          id="edit-entries"
                           type="number"
                           min={0}
-                          value={reinstateEntries}
-                          onChange={(e) => setReinstateEntries(Math.max(0, Number(e.target.value) || 0))}
+                          value={editEntries}
+                          onChange={(e) => setEditEntries(Math.max(0, Number(e.target.value) || 0))}
                         />
                       </div>
                     </div>
-                    <Button onClick={handleReinstate} disabled={reinstating} className="w-full">
-                      {reinstating ? <Loader2 className="h-4 w-4 animate-spin" /> : "Reinstate Member"}
+                    <Button onClick={handleSaveStats} disabled={savingStats} className="w-full">
+                      {savingStats ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save"}
                     </Button>
                   </div>
                 )}
