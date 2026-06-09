@@ -188,8 +188,6 @@ export default function AdminMembers() {
 
   const openMember = (r: Row) => {
     setSelected(r);
-    setEditMonths(r.months_active);
-    setEditEntries(r.entries);
   };
 
   const handleCancel = async () => {
@@ -213,14 +211,17 @@ export default function AdminMembers() {
     await refresh();
   };
 
-  const handleSaveStats = async () => {
+  const [savingStats, setSavingStats] = useState(false);
+  const [isExemptPending, setIsExemptPending] = useState(false);
+
+  const handleSaveStats = async (months: number, entries: number) => {
     if (!currentSelected) return;
     setSavingStats(true);
     const { data, error } = await supabase.functions.invoke("admin-update-member", {
       body: {
         userId: currentSelected.user_id,
-        monthsActive: editMonths,
-        entries: editEntries,
+        monthsActive: months,
+        entries,
       },
     });
     setSavingStats(false);
@@ -268,8 +269,6 @@ export default function AdminMembers() {
     }
   };
 
-  const s = currentSelected;
-  const canCancel = s?.status === "active" || s?.status === "past_due";
 
   return (
     <div className="space-y-6">
