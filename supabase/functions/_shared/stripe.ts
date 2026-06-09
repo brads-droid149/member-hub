@@ -23,7 +23,7 @@ export function createStripeClient(env: StripeEnv): Stripe {
 
   return new Stripe(connectionApiKey, {
     apiVersion: "2026-03-25.dahlia",
-    httpClient: Stripe.createFetchHttpClient(((url: any, init?: RequestInit) => {
+    httpClient: Stripe.createFetchHttpClient(((url: string | URL, init?: RequestInit) => {
       const gatewayUrl = url.toString().replace("https://api.stripe.com", GATEWAY_STRIPE_BASE);
       return fetch(gatewayUrl, {
         ...init,
@@ -40,7 +40,7 @@ export function createStripeClient(env: StripeEnv): Stripe {
 export async function verifyWebhook(
   req: Request,
   env: StripeEnv,
-): Promise<{ type: string; data: { object: any } }> {
+): Promise<Stripe.Event> {
   const signature = req.headers.get("stripe-signature");
   const body = await req.text();
   const secret = env === "sandbox"
