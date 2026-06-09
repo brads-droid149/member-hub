@@ -93,7 +93,7 @@ export default function AdminPartners() {
       description: p.description ?? "",
       discount_code: p.discount_code,
       logo_url: p.logo_url,
-      website_url: (p as any).website_url ?? "",
+      website_url: p.website_url ?? "",
     });
     setLogoPreview(p.logo_url);
     setPendingLogo(null);
