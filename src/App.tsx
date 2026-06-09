@@ -15,11 +15,8 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import { PaymentTestModeBanner } from "./components/PaymentTestModeBanner";
 import NotFound from "./pages/NotFound";
 
-const queryClient = new QueryClient();
-
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
+  <TooltipProvider>
       <Toaster />
       <Sonner />
       <BrowserRouter>
