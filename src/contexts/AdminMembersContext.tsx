@@ -13,6 +13,7 @@ export type AdminMemberRow = {
   months_active: number;
   joined_at: string;
   exempt_from_winning: boolean;
+  is_exempt: boolean;
 };
 
 type Ctx = {
@@ -20,6 +21,7 @@ type Ctx = {
   loading: boolean;
   refresh: () => Promise<void>;
   setExempt: (userId: string, value: boolean) => Promise<void>;
+  setIsExempt: (userId: string, value: boolean) => Promise<void>;
 };
 
 const AdminMembersContext = createContext<Ctx | null>(null);
