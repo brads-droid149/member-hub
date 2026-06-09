@@ -40,8 +40,8 @@ Deno.serve(async (req) => {
 
     const body = await req.json().catch(() => ({}));
     const targetUserId: string | undefined = body.userId;
-    const monthsActive = Number.isFinite(body.monthsActive) ? Math.max(0, Math.floor(body.monthsActive)) : 1;
-    const entries = Number.isFinite(body.entries) ? Math.max(0, Math.floor(body.entries)) : 1;
+    const monthsActive = Number.isFinite(body.monthsActive) ? Math.max(0, Math.floor(body.monthsActive)) : undefined;
+    const entries = Number.isFinite(body.entries) ? Math.max(0, Math.floor(body.entries)) : undefined;
 
     if (!targetUserId || !/^[a-f0-9-]{36}$/i.test(targetUserId)) {
       return new Response(JSON.stringify({ error: "Invalid userId" }), {
@@ -50,16 +50,20 @@ Deno.serve(async (req) => {
       });
     }
 
+    const updateData: Record<string, unknown> = {};
+    if (monthsActive !== undefined) updateData.months_active = monthsActive;
+    if (entries !== undefined) updateData.entries = entries;
+    if (Object.keys(updateData).length === 0) {
+      return new Response(JSON.stringify({ error: "No fields to update" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    updateData.updated_at = new Date().toISOString();
+
     const { error: updateError } = await supabase
       .from("members")
-      .update({
-        status: "active",
-        months_active: monthsActive,
-        entries: entries,
-        past_due_since: null,
-        last_entry_credited_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
+      .update(updateData)
       .eq("user_id", targetUserId);
 
     if (updateError) {
@@ -74,7 +78,7 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
-    console.error("admin-reinstate-member error:", e);
+    console.error("admin-update-member error:", e);
     const message = e instanceof Error ? e.message : "Unknown error";
     return new Response(JSON.stringify({ error: message }), {
       status: 500,
