@@ -54,7 +54,7 @@ function mapMemberStatus(stripeStatus: string): string {
     case "incomplete_expired":
       return "cancelled";
     case "paused":
-      return "paused";
+      return "cancelled";
     default:
       return stripeStatus;
   }
@@ -88,7 +88,7 @@ async function syncMember(opts: {
     });
   } else {
     const isReactivation =
-      ["cancelled", "paused"].includes(existing.status) && memberStatus === "active";
+      existing.status === "cancelled" && memberStatus === "active";
 
     const update: Record<string, unknown> = {
       stripe_customer_id: subscription.customer,
