@@ -11,7 +11,7 @@ type SubscriptionItemWithPeriod = Stripe.SubscriptionItem & {
   current_period_end?: number;
 };
 
-let _supabase: any = null;
+let _supabase: ReturnType<typeof createClient> | null = null;
 function getSupabase() {
   if (!_supabase) {
     _supabase = createClient(

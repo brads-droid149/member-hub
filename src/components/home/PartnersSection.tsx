@@ -32,10 +32,14 @@ export function PartnersSection({ partners, setPartners }: PartnersSectionProps)
   }, []);
 
   const handleCopy = async (code: string, id: string) => {
-    await navigator.clipboard.writeText(code);
-    setCopied(id);
-    toast({ title: "Copied!", description: `${code} copied to clipboard` });
-    setTimeout(() => setCopied(null), 2000);
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopied(id);
+      toast({ title: "Copied!", description: `${code} copied to clipboard` });
+      setTimeout(() => setCopied(null), 2000);
+    } catch {
+      toast({ title: "Could not copy", description: "Please copy the code manually", variant: "destructive" });
+    }
   };
 
   const loading = partners === null;
