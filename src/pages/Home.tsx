@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Helmet } from "react-helmet-async";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -70,6 +71,12 @@ export default function Home() {
 
   return (
     <SidebarProvider>
+      <Helmet>
+        <title>Member Dashboard — Junkyard Surf Club</title>
+        <meta name="description" content="Your Junkyard Surf Club member dashboard: current giveaway, entries, past winners and partner perks." />
+        <link rel="canonical" href="/" />
+        <meta name="robots" content="noindex" />
+      </Helmet>
       <div className="min-h-screen flex w-full bg-background">
         <AppSidebar active={active} onSelect={setActive} />
 

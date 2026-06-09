@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -126,6 +127,16 @@ export default function Signup() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <Helmet>
+        <title>Join Junkyard Surf Club — Sign Up</title>
+        <meta name="description" content="Sign up for Junkyard Surf Club and start earning monthly giveaway entries plus access to partner discounts across Australia." />
+        <link rel="canonical" href="/signup" />
+        <meta property="og:title" content="Join Junkyard Surf Club — Sign Up" />
+        <meta property="og:description" content="Sign up to earn monthly giveaway entries and unlock partner discounts." />
+        <meta property="og:url" content="/signup" />
+        <meta property="og:type" content="website" />
+      </Helmet>
+      <h1 className="sr-only">Sign up for Junkyard Surf Club</h1>
       <Card className="w-full max-w-md border-border">
         <CardHeader className="text-center">
           <CardTitle className="text-3xl font-display tracking-tight text-foreground">
