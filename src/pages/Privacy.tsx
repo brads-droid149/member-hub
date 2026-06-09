@@ -1,6 +1,17 @@
+import { Helmet } from "react-helmet-async";
+
 export default function Privacy() {
   return (
     <div className="min-h-screen bg-background p-6">
+      <Helmet>
+        <title>Privacy Policy — Junkyard Surf Club</title>
+        <meta name="description" content="How Junkyard Surf Club collects, uses and protects member personal information including name, email, mobile and state." />
+        <link rel="canonical" href="/privacy" />
+        <meta property="og:title" content="Privacy Policy — Junkyard Surf Club" />
+        <meta property="og:description" content="How Junkyard Surf Club handles your personal information." />
+        <meta property="og:url" content="/privacy" />
+        <meta property="og:type" content="website" />
+      </Helmet>
       <div className="mx-auto max-w-2xl space-y-6">
         <h1 className="text-3xl font-display tracking-tight text-foreground">Privacy Policy</h1>
         <p className="text-muted-foreground">Last updated: May 2026</p>

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -48,6 +49,13 @@ export default function ResetPassword() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <Helmet>
+        <title>Reset Password — Junkyard Surf Club</title>
+        <meta name="description" content="Set a new password for your Junkyard Surf Club member account." />
+        <link rel="canonical" href="/reset-password" />
+        <meta name="robots" content="noindex" />
+      </Helmet>
+      <h1 className="sr-only">Reset your Junkyard Surf Club password</h1>
       <Card className="w-full max-w-md border-border">
         <CardHeader className="text-center">
           <CardTitle className="text-3xl font-display tracking-tight text-foreground">

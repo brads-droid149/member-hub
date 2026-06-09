@@ -1,6 +1,17 @@
+import { Helmet } from "react-helmet-async";
+
 export default function Terms() {
   return (
     <div className="min-h-screen bg-background p-6">
+      <Helmet>
+        <title>Terms & Conditions — Junkyard Surf Club</title>
+        <meta name="description" content="Membership, giveaway and cancellation terms for Junkyard Surf Club members." />
+        <link rel="canonical" href="/terms" />
+        <meta property="og:title" content="Terms & Conditions — Junkyard Surf Club" />
+        <meta property="og:description" content="Membership, giveaway and cancellation terms." />
+        <meta property="og:url" content="/terms" />
+        <meta property="og:type" content="website" />
+      </Helmet>
       <div className="mx-auto max-w-2xl space-y-6">
         <h1 className="text-3xl font-display tracking-tight text-foreground">Terms & Conditions</h1>
         <p className="text-muted-foreground">Last updated: May 2026</p>

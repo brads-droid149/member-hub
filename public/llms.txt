@@ -1,0 +1,12 @@
+# Junkyard Surf Club
+
+> Membership club for Australian surfers — monthly surf gear giveaways and exclusive partner discounts.
+
+Junkyard Surf Club is a paid membership program. Members earn one giveaway entry per active month (entries compound until they win or cancel) and unlock discounts with partner surf brands and shops across Australia.
+
+## Pages
+
+- [Home](/): Overview of the club, current giveaway and member benefits.
+- [Sign Up](/signup): Create a member account and choose a membership plan.
+- [Terms & Conditions](/terms): Membership, giveaway and cancellation terms.
+- [Privacy Policy](/privacy): How member data is collected, used and protected.
