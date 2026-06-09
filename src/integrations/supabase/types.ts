@@ -137,6 +137,7 @@ export type Database = {
           entries: number
           exempt_from_winning: boolean
           id: string
+          is_exempt: boolean
           last_entry_credited_at: string
           months_active: number
           past_due_since: string | null
@@ -151,6 +152,7 @@ export type Database = {
           entries?: number
           exempt_from_winning?: boolean
           id?: string
+          is_exempt?: boolean
           last_entry_credited_at?: string
           months_active?: number
           past_due_since?: string | null
@@ -165,6 +167,7 @@ export type Database = {
           entries?: number
           exempt_from_winning?: boolean
           id?: string
+          is_exempt?: boolean
           last_entry_credited_at?: string
           months_active?: number
           past_due_since?: string | null
@@ -386,6 +389,7 @@ export type Database = {
           entries: number
           exempt_from_winning: boolean
           full_name: string
+          is_exempt: boolean
           joined_at: string
           months_active: number
           phone: string
