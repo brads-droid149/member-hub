@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Table,
   TableBody,
@@ -19,7 +20,24 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Users, Loader2, ArrowUpDown, Download, Search, XCircle } from "lucide-react";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import {
+  Users,
+  Loader2,
+  ArrowUpDown,
+  Download,
+  Search,
+  XCircle,
+  Eye,
+  RotateCcw,
+  ShieldCheck,
+} from "lucide-react";
 import { useAdminMembers, type AdminMemberRow } from "@/contexts/AdminMembersContext";
 import { supabase } from "@/integrations/supabase/client";
 import { getStripeEnvironment } from "@/lib/stripe";
@@ -45,15 +63,54 @@ const csvEscape = (v: unknown) => {
   return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 };
 
+const statusBadge = (status: string | null) => {
+  const s = status ?? "—";
+  const tone =
+    s === "active"
+      ? "bg-primary/10 text-primary border-primary/20"
+      : s === "past_due"
+        ? "bg-yellow-500/10 text-yellow-700 border-yellow-500/20"
+        : s === "paused"
+          ? "bg-muted text-muted-foreground border-border"
+          : s === "cancelled"
+            ? "bg-destructive/10 text-destructive border-destructive/20"
+            : "bg-muted text-muted-foreground border-border";
+  return (
+    <span className={cn("inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium capitalize", tone)}>
+      {s.replace("_", " ")}
+    </span>
+  );
+};
+
+const exemptBadge = () => (
+  <span className="inline-flex items-center rounded-full border border-accent/30 bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent-foreground">
+    <ShieldCheck className="h-3 w-3 mr-1" />
+    Exempt
+  </span>
+);
+
 export default function AdminMembers() {
-  const { members: rows, loading, refresh, setExempt } = useAdminMembers();
+  const { members: rows, loading, refresh, setExempt, setIsExempt } = useAdminMembers();
   const { toast } = useToast();
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>("asc");
   const [searchQuery, setSearchQuery] = useState("");
+  const [exemptPending, setExemptPending] = useState<Record<string, boolean>>({});
+
+  // Detail panel state
+  const [selected, setSelected] = useState<Row | null>(null);
+
+  // Cancel dialog state
   const [cancelTarget, setCancelTarget] = useState<Row | null>(null);
   const [cancelling, setCancelling] = useState(false);
-  const [exemptPending, setExemptPending] = useState<Record<string, boolean>>({});
+
+  // Reinstate form state
+  const [reinstateMonths, setReinstateMonths] = useState(1);
+  const [reinstateEntries, setReinstateEntries] = useState(1);
+  const [reinstating, setReinstating] = useState(false);
+
+  // Is-exempt action state
+  const [isExemptPending, setIsExemptPending] = useState(false);
 
   const sorted = useMemo(() => {
     if (!sortKey) return rows;
@@ -78,6 +135,12 @@ export default function AdminMembers() {
       return shortId.includes(q) || fullName.includes(q) || email.includes(q);
     });
   }, [sorted, searchQuery]);
+
+  // Re-sync the selected row from latest fetched data
+  const currentSelected = useMemo(
+    () => (selected ? rows.find((r) => r.user_id === selected.user_id) ?? selected : null),
+    [selected, rows],
+  );
 
   const toggleSort = (key: SortKey) => {
     if (sortKey === key) {
@@ -135,14 +198,18 @@ export default function AdminMembers() {
   const downloadDrawExport = () => {
     const lines = [["ID", "Full Name", "State"].join(",")];
     for (const r of sorted) {
-      // Skip members flagged as exempt (e.g. staff/admin) from prize draws.
       if (r.exempt_from_winning) continue;
       const count = Math.max(0, Math.floor(r.entries));
-      // Use the full UUID — a 6-char prefix can collide across members.
       const row = [r.user_id, r.full_name ?? "", r.state ?? ""].map(csvEscape).join(",");
       for (let i = 0; i < count; i++) lines.push(row);
     }
     triggerDownload(lines, `draw-export-${today()}.csv`);
+  };
+
+  const openMember = (r: Row) => {
+    setSelected(r);
+    setReinstateMonths(1);
+    setReinstateEntries(1);
   };
 
   const handleCancel = async () => {
@@ -166,6 +233,42 @@ export default function AdminMembers() {
     await refresh();
   };
 
+  const handleReinstate = async () => {
+    if (!currentSelected) return;
+    setReinstating(true);
+    const { data, error } = await supabase.functions.invoke("admin-reinstate-member", {
+      body: {
+        userId: currentSelected.user_id,
+        monthsActive: reinstateMonths,
+        entries: reinstateEntries,
+      },
+    });
+    setReinstating(false);
+    if (error || (data as { error?: string } | null)?.error) {
+      const msg = error?.message || (data as { error?: string } | null)?.error || "Failed to reinstate";
+      toast({ title: "Reinstate failed", description: msg, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Member reinstated", description: currentSelected.email ?? currentSelected.user_id });
+    await refresh();
+  };
+
+  const handleToggleIsExempt = async (value: boolean) => {
+    if (!currentSelected) return;
+    setIsExemptPending(true);
+    try {
+      await setIsExempt(currentSelected.user_id, value);
+      toast({
+        title: value ? "Marked as exempt" : "Exempt removed",
+        description: currentSelected.full_name || currentSelected.email || currentSelected.user_id.slice(0, 6),
+      });
+    } catch {
+      // toast shown in context
+    } finally {
+      setIsExemptPending(false);
+    }
+  };
+
   const handleToggleExempt = async (row: Row, value: boolean) => {
     setExemptPending((p) => ({ ...p, [row.user_id]: true }));
     try {
@@ -175,7 +278,7 @@ export default function AdminMembers() {
         description: row.full_name || row.email || row.user_id.slice(0, 6),
       });
     } catch {
-      // toast already shown in context
+      // toast shown in context
     } finally {
       setExemptPending((p) => {
         const next = { ...p };
@@ -185,24 +288,9 @@ export default function AdminMembers() {
     }
   };
 
-  const statusBadge = (status: string | null) => {
-    const s = status ?? "—";
-    const tone =
-      s === "active"
-        ? "bg-primary/10 text-primary border-primary/20"
-        : s === "past_due"
-          ? "bg-yellow-500/10 text-yellow-700 border-yellow-500/20"
-          : s === "paused"
-            ? "bg-muted text-muted-foreground border-border"
-            : s === "cancelled"
-              ? "bg-destructive/10 text-destructive border-destructive/20"
-              : "bg-muted text-muted-foreground border-border";
-    return (
-      <span className={cn("inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium capitalize", tone)}>
-        {s.replace("_", " ")}
-      </span>
-    );
-  };
+  const s = currentSelected;
+  const canReinstate = s?.status === "cancelled" || s?.status === "paused";
+  const canCancel = s?.status === "active" || s?.status === "past_due";
 
   return (
     <div className="space-y-6">
@@ -263,7 +351,7 @@ export default function AdminMembers() {
               </TableHead>
               <TableHead className="text-right">Months Active</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead className="text-center">Exempt</TableHead>
+              <TableHead className="text-center">Draw Exempt</TableHead>
               <TableHead>Joined</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -291,7 +379,12 @@ export default function AdminMembers() {
                   <TableCell className="text-sm text-muted-foreground">{r.state || "—"}</TableCell>
                   <TableCell className="text-right font-mono text-sm">{r.entries}</TableCell>
                   <TableCell className="text-right font-mono text-sm">{r.months_active}</TableCell>
-                  <TableCell>{statusBadge(r.status)}</TableCell>
+                  <TableCell>
+                    <div className="flex flex-col items-start gap-1">
+                      {statusBadge(r.status)}
+                      {r.is_exempt && exemptBadge()}
+                    </div>
+                  </TableCell>
                   <TableCell className="text-center">
                     <Switch
                       checked={r.exempt_from_winning}
@@ -302,15 +395,9 @@ export default function AdminMembers() {
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">{formatDate(r.joined_at)}</TableCell>
                   <TableCell className="text-right">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="text-destructive hover:text-destructive"
-                      disabled={r.status === "cancelled"}
-                      onClick={() => setCancelTarget(r)}
-                    >
-                      <XCircle className="h-4 w-4 mr-1" />
-                      Cancel
+                    <Button size="sm" variant="ghost" onClick={() => openMember(r)}>
+                      <Eye className="h-4 w-4 mr-1" />
+                      View
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -319,6 +406,146 @@ export default function AdminMembers() {
           </TableBody>
         </Table>
       </div>
+
+      {/* Member detail slide-over */}
+      <Sheet open={!!selected} onOpenChange={(open) => !open && setSelected(null)}>
+        <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
+          {s && (
+            <>
+              <SheetHeader>
+                <SheetTitle className="flex items-center gap-2">
+                  {s.full_name || s.email || s.user_id.slice(0, 6)}
+                </SheetTitle>
+                <SheetDescription>Member detail and admin actions.</SheetDescription>
+              </SheetHeader>
+
+              <div className="mt-6 space-y-6">
+                {/* Status badges */}
+                <div className="flex flex-wrap gap-2">
+                  {statusBadge(s.status)}
+                  {s.is_exempt && exemptBadge()}
+                  {s.exempt_from_winning && (
+                    <span className="inline-flex items-center rounded-full border border-border bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                      Draw exempt
+                    </span>
+                  )}
+                </div>
+
+                {/* Member info */}
+                <div className="rounded-lg border border-border p-4 space-y-2 text-sm">
+                  <div className="grid grid-cols-3 gap-2">
+                    <span className="text-muted-foreground">Email</span>
+                    <span className="col-span-2 text-foreground break-all">{s.email || "—"}</span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <span className="text-muted-foreground">Phone</span>
+                    <span className="col-span-2 text-foreground">{s.phone || "—"}</span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <span className="text-muted-foreground">State</span>
+                    <span className="col-span-2 text-foreground">{s.state || "—"}</span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <span className="text-muted-foreground">Joined</span>
+                    <span className="col-span-2 text-foreground">{formatDate(s.joined_at)}</span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <span className="text-muted-foreground">Months Active</span>
+                    <span className="col-span-2 font-mono text-foreground">{s.months_active}</span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <span className="text-muted-foreground">Entries</span>
+                    <span className="col-span-2 font-mono text-foreground">{s.entries}</span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <span className="text-muted-foreground">User ID</span>
+                    <span className="col-span-2 font-mono text-xs text-muted-foreground break-all">{s.user_id}</span>
+                  </div>
+                </div>
+
+                {/* Reinstate */}
+                {canReinstate && (
+                  <div className="rounded-lg border border-border p-4 space-y-3">
+                    <h3 className="font-semibold text-foreground flex items-center gap-2">
+                      <RotateCcw className="h-4 w-4 text-primary" />
+                      Reinstate Member
+                    </h3>
+                    <p className="text-xs text-muted-foreground">
+                      Adjust for long-standing members reinstated due to payment issues or accidental cancellation.
+                    </p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <Label htmlFor="reinstate-months" className="text-xs">Months Active</Label>
+                        <Input
+                          id="reinstate-months"
+                          type="number"
+                          min={0}
+                          value={reinstateMonths}
+                          onChange={(e) => setReinstateMonths(Math.max(0, Number(e.target.value) || 0))}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label htmlFor="reinstate-entries" className="text-xs">Entries</Label>
+                        <Input
+                          id="reinstate-entries"
+                          type="number"
+                          min={0}
+                          value={reinstateEntries}
+                          onChange={(e) => setReinstateEntries(Math.max(0, Number(e.target.value) || 0))}
+                        />
+                      </div>
+                    </div>
+                    <Button onClick={handleReinstate} disabled={reinstating} className="w-full">
+                      {reinstating ? <Loader2 className="h-4 w-4 animate-spin" /> : "Reinstate Member"}
+                    </Button>
+                  </div>
+                )}
+
+                {/* Cancel */}
+                {canCancel && (
+                  <div className="rounded-lg border border-border p-4 space-y-3">
+                    <h3 className="font-semibold text-foreground flex items-center gap-2">
+                      <XCircle className="h-4 w-4 text-destructive" />
+                      Cancel Member
+                    </h3>
+                    <p className="text-xs text-muted-foreground">
+                      Immediately cancels the Stripe subscription, sets status to cancelled, and resets entries to 0.
+                    </p>
+                    <Button
+                      variant="destructive"
+                      className="w-full"
+                      onClick={() => setCancelTarget(s)}
+                    >
+                      Cancel Membership
+                    </Button>
+                  </div>
+                )}
+
+                {/* Exempt */}
+                <div className="rounded-lg border border-border p-4 space-y-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <h3 className="font-semibold text-foreground flex items-center gap-2">
+                        <ShieldCheck className="h-4 w-4 text-primary" />
+                        Billing Exempt
+                      </h3>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Exempt members (e.g. staff, media, competition winners) retain active status without an active Stripe subscription.
+                      </p>
+                    </div>
+                    <Switch
+                      checked={s.is_exempt}
+                      disabled={isExemptPending}
+                      onCheckedChange={handleToggleIsExempt}
+                      aria-label="Billing exempt"
+                    />
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+        </SheetContent>
+      </Sheet>
 
       <AlertDialog open={!!cancelTarget} onOpenChange={(open) => !open && setCancelTarget(null)}>
         <AlertDialogContent>
