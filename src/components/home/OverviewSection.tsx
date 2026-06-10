@@ -89,22 +89,29 @@ export function OverviewSection({
           </CardHeader>
           <CardContent>
             {giveawayLoading ? (
-              <Skeleton className="w-full aspect-video rounded-lg" />
+              <div className="lg:flex lg:flex-row lg:items-center gap-6">
+                <Skeleton className="w-full aspect-[4/5] md:max-w-xs md:mx-auto lg:w-64 lg:mx-0 rounded-lg" />
+                <div className="mt-4 lg:mt-0 lg:flex-1 space-y-3">
+                  <Skeleton className="h-6 w-3/4 mx-auto lg:mx-0" />
+                  <Skeleton className="h-4 w-1/2 mx-auto lg:mx-0" />
+                  <Skeleton className="h-16 w-24 mx-auto lg:mx-0" />
+                </div>
+              </div>
             ) : giveaway ? (
-              <div className="space-y-4">
-                <div className="w-full rounded-lg overflow-hidden border border-border">
+              <div className="lg:flex lg:flex-row lg:items-center gap-6">
+                <div className="w-full aspect-[4/5] md:max-w-xs md:mx-auto lg:w-64 lg:aspect-[4/5] lg:mx-0 lg:flex-shrink-0 rounded-lg overflow-hidden border border-border">
                   {giveaway.prize_image_url ? (
-                    <img src={giveaway.prize_image_url} alt={giveaway.title} className="w-full h-auto block" loading="eager" fetchPriority="high" />
+                    <img src={giveaway.prize_image_url} alt={giveaway.title} className="w-full h-full object-cover object-center rounded-lg" loading="eager" fetchPriority="high" />
                   ) : (
-                    <div className="w-full aspect-video bg-white flex items-center justify-center">
+                    <div className="w-full h-full bg-white flex items-center justify-center">
                       <span className="text-muted-foreground text-sm">Prize image</span>
                     </div>
                   )}
                 </div>
-                <div>
-                  <h3 className="font-display font-semibold text-foreground">{giveaway.title}</h3>
+                <div className="mt-4 lg:mt-0 lg:flex-1 lg:flex lg:flex-col lg:items-center lg:justify-center lg:pl-6 space-y-2">
+                  <h3 className="font-display font-semibold text-foreground text-center lg:text-left">{giveaway.title}</h3>
                   {giveaway.draw_date && (
-                    <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                    <p className="text-sm text-muted-foreground flex items-center justify-center lg:justify-start gap-1">
                       <Calendar className="h-3 w-3" />
                       Draw:{" "}
                       {new Date(giveaway.draw_date).toLocaleDateString("en-AU", {
@@ -114,6 +121,10 @@ export function OverviewSection({
                       })}
                     </p>
                   )}
+                  <div className="pt-2 text-center lg:text-left">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Your entries this draw</p>
+                    <p className="text-6xl font-display font-bold text-primary leading-none">{entries}</p>
+                  </div>
                 </div>
               </div>
             ) : (
@@ -122,7 +133,7 @@ export function OverviewSection({
           </CardContent>
         </Card>
 
-        <Card className="flex flex-col h-full">
+        <Card className="flex flex-col h-full lg:hidden">
           <CardHeader className="flex flex-col space-y-1.5 p-6 py-[15px]">
             <CardTitle className="text-lg font-display">Your Entries This Draw</CardTitle>
           </CardHeader>
