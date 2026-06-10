@@ -141,14 +141,14 @@ export default function AdminGiveaways() {
     const img = new Image();
     img.onload = () => {
       const ratio = img.width / img.height;
-      const targetRatio = 4 / 5;
+      const targetRatio = 16 / 9;
       const ratioOk = Math.abs(ratio - targetRatio) < 0.02;
-      const sizeOk = img.width >= 1080 && img.height >= 1350;
+      const sizeOk = img.width >= 1280 && img.height >= 720;
 
       if (!ratioOk) {
         toast({
           title: "Wrong aspect ratio",
-          description: `Image must be 4:5 portrait. Yours is ${img.width}×${img.height} (${ratio.toFixed(2)}:1).`,
+          description: `Image must be 16:9. Yours is ${img.width}×${img.height} (${ratio.toFixed(2)}:1).`,
           variant: "destructive",
         });
         URL.revokeObjectURL(objectUrl);
@@ -157,7 +157,7 @@ export default function AdminGiveaways() {
       if (!sizeOk) {
         toast({
           title: "Resolution too low",
-          description: `Minimum 1080×1350px. Yours is ${img.width}×${img.height}.`,
+          description: `Minimum 1280×720px. Yours is ${img.width}×${img.height}.`,
           variant: "destructive",
         });
         URL.revokeObjectURL(objectUrl);
@@ -264,10 +264,9 @@ export default function AdminGiveaways() {
           <form onSubmit={handleSave} className="space-y-6">
             {/* Image upload */}
             <div className="space-y-2">
-              <Label>Prize Image (JPG or PNG, 4:5 portrait, ideal 1080×1350px)</Label>
-              <p className="text-xs text-muted-foreground">This crops cleanly across all screen sizes.</p>
+              <Label>Prize Image (JPG or PNG, 16:9, min 1280×720px)</Label>
               <div className="flex flex-col sm:flex-row gap-4 items-start">
-                <div className="w-full sm:w-64 aspect-[4/5] rounded-lg border border-border bg-white overflow-hidden flex items-center justify-center">
+                <div className="w-full sm:w-64 aspect-video rounded-lg border border-border bg-white overflow-hidden flex items-center justify-center">
                   {previewUrl ? (
                     <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
                   ) : (
