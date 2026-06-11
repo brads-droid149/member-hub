@@ -79,8 +79,8 @@ export function OverviewSection({
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card className="md:col-span-2">
+      <div className="flex flex-col lg:flex-row gap-6">
+        <Card className="lg:w-1/2">
           <CardHeader>
             <CardTitle className="text-lg font-display flex items-center gap-2">
               <Trophy className="h-5 w-5 text-primary" />
@@ -92,7 +92,7 @@ export function OverviewSection({
               <Skeleton className="w-full aspect-video rounded-lg" />
             ) : giveaway ? (
               <div className="space-y-4">
-                <div className="aspect-[4/5] w-full max-h-96 overflow-hidden rounded-lg">
+                <div className="max-w-sm mx-auto aspect-[4/5] w-full overflow-hidden rounded-lg">
                   {giveaway.prize_image_url ? (
                     <img src={giveaway.prize_image_url} alt={giveaway.title} className="object-cover object-center w-full h-full" loading="eager" fetchPriority="high" />
                   ) : (
@@ -122,6 +122,7 @@ export function OverviewSection({
           </CardContent>
         </Card>
 
+        <div className="flex flex-col gap-6 lg:w-1/2">
         <Card className="flex flex-col h-full">
           <CardHeader className="flex flex-col space-y-1.5 p-6 py-[15px]">
             <CardTitle className="text-lg font-display">Your Entries This Draw</CardTitle>
@@ -199,6 +200,7 @@ export function OverviewSection({
             )}
           </CardContent>
         </Card>
+        </div>
       </div>
     </section>
   );
