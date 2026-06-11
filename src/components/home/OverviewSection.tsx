@@ -122,6 +122,7 @@ export function OverviewSection({
           </CardContent>
         </Card>
 
+        <div className="flex flex-col gap-6 lg:w-1/2">
         <Card className="flex flex-col h-full">
           <CardHeader className="flex flex-col space-y-1.5 p-6 py-[15px]">
             <CardTitle className="text-lg font-display">Your Entries This Draw</CardTitle>
