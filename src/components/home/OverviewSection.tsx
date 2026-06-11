@@ -92,7 +92,7 @@ export function OverviewSection({
               <Skeleton className="w-full aspect-video rounded-lg" />
             ) : giveaway ? (
               <div className="space-y-4">
-                <div className="aspect-[4/5] w-full overflow-hidden rounded-lg">
+                <div className="aspect-[4/5] w-full max-h-96 overflow-hidden rounded-lg">
                   {giveaway.prize_image_url ? (
                     <img src={giveaway.prize_image_url} alt={giveaway.title} className="object-cover object-center w-full h-full" loading="eager" fetchPriority="high" />
                   ) : (
