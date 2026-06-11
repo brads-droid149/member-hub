@@ -200,6 +200,7 @@ export function OverviewSection({
             )}
           </CardContent>
         </Card>
+        </div>
       </div>
     </section>
   );
