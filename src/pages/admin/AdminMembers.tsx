@@ -271,7 +271,7 @@ export default function AdminMembers() {
                   <TableCell className="text-right font-mono text-sm">{r.months_active}</TableCell>
                   <TableCell>
                     <div className="flex flex-col items-start gap-1">
-                      {statusBadge(r.status)}
+                      <MemberStatusBadge status={r.status} />
                       {r.is_exempt && exemptBadge()}
                     </div>
                   </TableCell>

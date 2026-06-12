@@ -80,7 +80,7 @@ export function MemberDetailPanel({
             <div className="mt-6 space-y-6">
               {/* Status badges */}
               <div className="flex flex-wrap gap-2">
-                {statusBadge(s.status)}
+                <MemberStatusBadge status={s.status} />
                 {s.is_exempt && exemptBadge()}
                 {s.exempt_from_winning && (
                   <span className="inline-flex items-center rounded-full border border-border bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
