@@ -180,11 +180,11 @@ export default function AdminMembers() {
             <Download className="h-4 w-4 mr-1.5" />
             Download Members CSV
           </Button>
-          <Button variant="outline" onClick={downloadEmailList} disabled={loading || rows.length === 0}>
+          <Button variant="outline" onClick={() => exportEmailList(sortedMembers)} disabled={loading || rows.length === 0}>
             <Download className="h-4 w-4 mr-1.5" />
             Email List
           </Button>
-          <Button variant="outline" onClick={downloadDrawExport} disabled={loading || rows.length === 0}>
+          <Button variant="outline" onClick={() => exportDrawList(sortedMembers)} disabled={loading || rows.length === 0}>
             <Download className="h-4 w-4 mr-1.5" />
             Draw Export
           </Button>
