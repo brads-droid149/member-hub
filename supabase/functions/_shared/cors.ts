@@ -18,6 +18,19 @@ export function isAllowedOrigin(origin: string | null): boolean {
   }
 }
 
+// Allow the production domain, any Lovable preview domain, and localhost.
+// Used to prevent open-redirect attacks via user-supplied return URLs.
+export function isAllowedReturnUrl(url: string | undefined): boolean {
+  if (!url) return true;
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== "https:" && parsed.protocol !== "http:") return false;
+    return isAllowedOrigin(`${parsed.protocol}//${parsed.host}`);
+  } catch {
+    return false;
+  }
+}
+
 export function getCorsHeaders(req: Request): Record<string, string> {
   const origin = req.headers.get("origin");
   return {
