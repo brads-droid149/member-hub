@@ -32,25 +32,13 @@ import { useAdminMembers, type AdminMemberRow } from "@/contexts/AdminMembersCon
 import { supabase } from "@/integrations/supabase/client";
 import { getStripeEnvironment } from "@/lib/stripe";
 import { useToast } from "@/hooks/use-toast";
-import { cn } from "@/lib/utils";
+import { cn, formatDate, csvEscape, today, triggerDownload, exportMembersCSV } from "@/lib/utils";
 import { Switch } from "@/components/ui/switch";
 import { MemberDetailPanel } from "@/components/admin/MemberDetailPanel";
 import { useMemberTable } from "@/hooks/use-member-table";
 
 type Row = AdminMemberRow;
 
-const formatDate = (iso: string) => {
-  const d = new Date(iso);
-  const dd = String(d.getDate()).padStart(2, "0");
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const yyyy = d.getFullYear();
-  return `${dd}/${mm}/${yyyy}`;
-};
-
-const csvEscape = (v: unknown) => {
-  const s = v === null || v === undefined ? "" : String(v);
-  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-};
 
 const statusBadge = (status: string | null) => {
   const s = status ?? "—";
@@ -105,41 +93,6 @@ export default function AdminMembers() {
     [selected, rows],
   );
 
-  const triggerDownload = (lines: string[], filename: string) => {
-    const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
-  const today = () => new Date().toISOString().slice(0, 10);
-
-  const downloadCsv = () => {
-    const headers = ["ID", "Full Name", "Email", "Mobile", "State", "Entries", "Months Active", "Joined"];
-    const lines = [headers.join(",")];
-    for (const r of sortedMembers) {
-      lines.push(
-        [
-          r.user_id.slice(0, 6),
-          r.full_name ?? "",
-          r.email ?? "",
-          r.phone ?? "",
-          r.state ?? "",
-          r.entries,
-          r.months_active,
-          formatDate(r.joined_at),
-        ]
-          .map(csvEscape)
-          .join(","),
-      );
-    }
-    triggerDownload(lines, `members-${today()}.csv`);
-  };
 
   const downloadEmailList = () => {
     const lines = [["Full Name", "Email"].join(",")];
@@ -257,7 +210,7 @@ export default function AdminMembers() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button onClick={downloadCsv} disabled={loading || rows.length === 0}>
+          <Button onClick={() => exportMembersCSV(sortedMembers)} disabled={loading || rows.length === 0}>
             <Download className="h-4 w-4 mr-1.5" />
             Download Members CSV
           </Button>
