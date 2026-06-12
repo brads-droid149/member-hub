@@ -7,7 +7,7 @@ import { StripeEmbeddedCheckoutForm } from "@/components/StripeEmbeddedCheckout"
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-type State = "loading" | "needs-subscribe" | "allowed" | "no-session";
+type State = "loading" | "needs-verify" | "needs-subscribe" | "allowed" | "no-session";
 type Plan = "monthly" | "yearly";
 
 const PLANS: Record<Plan, { priceId: string; price: string; cadence: string; sub: string; badge?: string }> = {
@@ -41,11 +41,16 @@ export default function Subscribe() {
       if (!session) return setState("no-session");
       setUser({ id: session.user.id, email: session.user.email ?? undefined });
 
+      // Block paid checkout until the email is verified — prevents
+      // members paying with a typo'd address they can't receive on.
+      const isVerified = !!session.user.email_confirmed_at;
+
       const { data: isAdmin } = await supabase.rpc("has_role", {
         _user_id: session.user.id,
         _role: "admin",
       });
       if (isAdmin) return setState("allowed");
+      if (!isVerified) return setState("needs-verify");
 
       const { data: member } = await supabase
         .from("members")
