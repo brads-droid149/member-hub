@@ -62,7 +62,7 @@ export default function AdminMembers() {
     setSortDir,
     toggleSort,
   } = useMemberTable(rows);
-  const [exemptPending, setExemptPending] = useState<Record<string, boolean>>({});
+  const [exemptFromWinningPending, setExemptFromWinningPending] = useState(false);
 
   // Detail panel state
   const [selected, setSelected] = useState<Row | null>(null);
