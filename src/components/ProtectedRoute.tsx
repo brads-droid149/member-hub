@@ -51,10 +51,16 @@ export default function ProtectedRoute({ children, adminOnly }: { children: Reac
 
       const { data: member } = await supabase
         .from("members")
-        .select("id, status")
+        .select("id, status, is_exempt")
         .eq("user_id", userId)
         .maybeSingle();
       if (cancelled) return;
+      // is_exempt = comped/staff member who keeps access regardless of
+      // billing status (no Stripe subscription required).
+      if (member?.is_exempt) {
+        setAccess("allowed");
+        return;
+      }
       // Allow access while payment is being retried (past_due). Home shows
       // a dunning banner; the daily cron will move them to 'cancelled'
       // after 7 days of failed retries, which then trips no-membership.

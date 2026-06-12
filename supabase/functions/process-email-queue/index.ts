@@ -280,6 +280,28 @@ Deno.serve(async (req) => {
         }
       }
 
+      // Suppression check (transactional only — auth flows like password
+      // reset must still go through even if the user previously opted out
+      // of marketing/billing emails).
+      if (queue === 'transactional_emails' && payload?.to && typeof payload.to === 'string') {
+        const { data: suppressed } = await supabase
+          .from('suppressed_emails')
+          .select('id')
+          .eq('email', payload.to.toLowerCase())
+          .maybeSingle()
+        if (suppressed) {
+          console.warn('Skipping suppressed recipient', { queue, msg_id: msg.msg_id, to: payload.to })
+          await supabase.from('email_send_log').insert({
+            message_id: payload.message_id,
+            template_name: payload.label || queue,
+            recipient_email: payload.to,
+            status: 'suppressed',
+          })
+          await supabase.rpc('delete_email', { queue_name: queue, message_id: msg.msg_id })
+          continue
+        }
+      }
+
       try {
         await sendLovableEmail(
           {
