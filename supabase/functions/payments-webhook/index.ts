@@ -1,6 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import Stripe from "https://esm.sh/stripe@22.0.2";
-import { type StripeEnv, verifyWebhook } from "../_shared/stripe.ts";
+import { type StripeEnv, verifyWebhook, createStripeClient } from "../_shared/stripe.ts";
+import { sendBillingEmail, brevoMarkCancelled } from "../_shared/billing-emails.ts";
 
 // Stripe's typings put period fields on the subscription item starting with
 // the Basil (2025-03-31) API version. The installed SDK types still expose
@@ -51,6 +52,11 @@ function mapMemberStatus(stripeStatus: string): string {
   switch (stripeStatus) {
     case "active":
     case "trialing":
+    // 'incomplete' = first payment pending (e.g. 3DS in progress). Per
+    // product decision we grant access immediately; if the payment never
+    // completes Stripe will transition to incomplete_expired (mapped to
+    // cancelled below) within ~23h.
+    case "incomplete":
       return "active";
     case "past_due":
       return "past_due";
@@ -64,7 +70,12 @@ function mapMemberStatus(stripeStatus: string): string {
       // it the same as cancellation (access revoked, entries reset).
       return "cancelled";
     default:
-      return stripeStatus;
+      // Defensive: log unknown statuses and fall back to past_due so the
+      // member retains access until we can investigate (rather than
+      // violating the members_status_check constraint and 400-ing the
+      // webhook, which Stripe would then retry forever).
+      console.warn("mapMemberStatus: unknown Stripe status", stripeStatus);
+      return "past_due";
   }
 }
 
@@ -202,13 +213,34 @@ async function handleInvoicePaid(invoice: Stripe.Invoice, env: StripeEnv) {
     .from("members")
     .update({ status: "active", past_due_since: null, updated_at: new Date().toISOString() })
     .eq("user_id", userId);
+
+  // Renewal receipt — fire-and-forget. Only on subscription_cycle (true
+  // renewal), not subscription_update (proration / mid-cycle change).
+  if (reason === "subscription_cycle") {
+    const amount = (invoice.amount_paid ?? 0) / 100;
+    const currency = (invoice.currency ?? "aud").toUpperCase();
+    const amountFormatted = `${currency} ${amount.toFixed(2)}`;
+    const invoiceDate = new Date((invoice.created ?? Date.now() / 1000) * 1000).toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" });
+    const subEnd = (invoice.lines?.data?.[0]?.period?.end ?? 0) * 1000;
+    const nextBillingDate = subEnd ? new Date(subEnd).toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" }) : undefined;
+    await sendBillingEmail({
+      userId,
+      template: {
+        kind: "receipt",
+        amountFormatted,
+        invoiceDate,
+        invoiceNumber: invoice.number ?? undefined,
+        invoiceUrl: invoice.hosted_invoice_url ?? undefined,
+        nextBillingDate,
+      },
+    });
+  }
 }
 
 async function handleInvoicePaymentFailed(invoice: Stripe.Invoice, env: StripeEnv) {
   const userId = await userIdFromInvoice(invoice, env);
   if (!userId) return;
   // Mark past_due immediately; the daily cron auto-cancels after 7 days.
-  // Use .is() to only set past_due_since if it's not already tracked.
   const supa = getSupabase();
   const { data: existing } = await supa
     .from("members")
@@ -222,6 +254,25 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice, env: StripeEn
   };
   if (!existing.past_due_since) update.past_due_since = new Date().toISOString();
   await supa.from("members").update(update).eq("user_id", userId);
+
+  // Generate a one-shot Billing Portal link so the dunning email's CTA
+  // takes the member straight to "update card" without needing to log in
+  // first. Falls back to dashboard URL if portal creation fails.
+  let portalUrl = "https://members.junkyardsurf.com.au/";
+  try {
+    const customerId = typeof invoice.customer === "string" ? invoice.customer : invoice.customer?.id;
+    if (customerId) {
+      const stripe = createStripeClient(env);
+      const portal = await stripe.billingPortal.sessions.create({
+        customer: customerId,
+        return_url: "https://members.junkyardsurf.com.au/",
+      });
+      portalUrl = portal.url;
+    }
+  } catch (e) {
+    console.error("dunning portal session create failed", e);
+  }
+  await sendBillingEmail({ userId, template: { kind: "dunning", portalUrl } });
 }
 
 async function handleSubscriptionUpsert(subscription: Stripe.Subscription, env: StripeEnv) {
@@ -276,8 +327,17 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription, env:
 
   const userId = subscription.metadata?.userId;
   if (userId) {
+    // Check whether the member was already cancelled — if so, skip the
+    // email (admin-cancel-member / delete-account already sent one).
+    const supa = getSupabase();
+    const { data: prior } = await supa
+      .from("members")
+      .select("status")
+      .eq("user_id", userId)
+      .maybeSingle();
+
     // Cancellation -> revoke access and reset entries to 0 per club rules.
-    await getSupabase()
+    await supa
       .from("members")
       .update({
         status: "cancelled",
@@ -285,6 +345,16 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription, env:
         updated_at: new Date().toISOString(),
       })
       .eq("user_id", userId);
+
+    const wasAlreadyCancelled = (prior as { status?: string } | null)?.status === "cancelled";
+    if (!wasAlreadyCancelled) {
+      // 'portal' covers Billing Portal cancellations and any other
+      // Stripe-driven cancel that wasn't routed through admin-cancel.
+      await sendBillingEmail({ userId, template: { kind: "cancelled", reason: "portal" } });
+      const { data: userResp } = await supa.auth.admin.getUserById(userId);
+      const email = (userResp as { user?: { email?: string } } | null)?.user?.email;
+      if (email) await brevoMarkCancelled(email);
+    }
   }
 }
 
