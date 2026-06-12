@@ -1,6 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import Stripe from "https://esm.sh/stripe@22.0.2";
-import { type StripeEnv, verifyWebhook } from "../_shared/stripe.ts";
+import { type StripeEnv, verifyWebhook, createStripeClient } from "../_shared/stripe.ts";
+import { sendBillingEmail, brevoMarkCancelled } from "../_shared/billing-emails.ts";
 
 // Stripe's typings put period fields on the subscription item starting with
 // the Basil (2025-03-31) API version. The installed SDK types still expose
@@ -51,6 +52,11 @@ function mapMemberStatus(stripeStatus: string): string {
   switch (stripeStatus) {
     case "active":
     case "trialing":
+    // 'incomplete' = first payment pending (e.g. 3DS in progress). Per
+    // product decision we grant access immediately; if the payment never
+    // completes Stripe will transition to incomplete_expired (mapped to
+    // cancelled below) within ~23h.
+    case "incomplete":
       return "active";
     case "past_due":
       return "past_due";
@@ -64,7 +70,12 @@ function mapMemberStatus(stripeStatus: string): string {
       // it the same as cancellation (access revoked, entries reset).
       return "cancelled";
     default:
-      return stripeStatus;
+      // Defensive: log unknown statuses and fall back to past_due so the
+      // member retains access until we can investigate (rather than
+      // violating the members_status_check constraint and 400-ing the
+      // webhook, which Stripe would then retry forever).
+      console.warn("mapMemberStatus: unknown Stripe status", stripeStatus);
+      return "past_due";
   }
 }
 
