@@ -92,6 +92,19 @@ export default function AdminMembers() {
   } = useMemberTable(rows);
   const [exemptPending, setExemptPending] = useState<Record<string, boolean>>({});
 
+  // Detail panel state
+  const [selected, setSelected] = useState<Row | null>(null);
+
+  // Cancel dialog state
+  const [cancelTarget, setCancelTarget] = useState<Row | null>(null);
+  const [cancelling, setCancelling] = useState(false);
+
+  // Re-sync the selected row from latest fetched data
+  const currentSelected = useMemo(
+    () => (selected ? rows.find((r) => r.user_id === selected.user_id) ?? selected : null),
+    [selected, rows],
+  );
+
   const triggerDownload = (lines: string[], filename: string) => {
     const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
