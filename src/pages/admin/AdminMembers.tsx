@@ -255,14 +255,6 @@ export default function AdminMembers() {
                       {r.is_exempt && exemptBadge()}
                     </div>
                   </TableCell>
-                  <TableCell className="text-center">
-                    <Switch
-                      checked={r.exempt_from_winning}
-                      disabled={!!exemptPending[r.user_id]}
-                      onCheckedChange={(v) => handleToggleExempt(r, v)}
-                      aria-label="Exempt from draw"
-                    />
-                  </TableCell>
                   <TableCell className="text-sm text-muted-foreground">{formatDate(r.joined_at)}</TableCell>
                   <TableCell className="text-right">
                     <Button size="sm" variant="ghost" onClick={() => openMember(r)}>
