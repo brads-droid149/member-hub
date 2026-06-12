@@ -13,3 +13,9 @@ project_id = "zsnhpkqisxwkfaurwcmu"
     verify_jwt = false
   [functions.process-email-queue]
     verify_jwt = true
+  [functions.process-stale-past-due]
+    verify_jwt = true
+  [functions.handle-email-unsubscribe]
+    verify_jwt = false
+  [functions.delete-account]
+    verify_jwt = false
