@@ -16,11 +16,16 @@ export function WinnersSection({ winners, setWinners }: WinnersSectionProps) {
   useEffect(() => {
     if (winners === null) {
       (async () => {
-        const { data } = await supabase
-          .from("past_winners")
-          .select("*")
-          .order("draw_date", { ascending: false, nullsFirst: false });
-        setWinners(data ?? []);
+        try {
+          const { data, error } = await supabase
+            .from("past_winners")
+            .select("*")
+            .order("draw_date", { ascending: false, nullsFirst: false });
+          if (error) console.error("Failed to load winners:", error);
+          setWinners(data ?? []);
+        } catch (err) {
+          console.error("Unexpected error loading winners:", err);
+        }
       })();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
