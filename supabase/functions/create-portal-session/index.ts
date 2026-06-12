@@ -1,25 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { type StripeEnv, createStripeClient } from "../_shared/stripe.ts";
-import { getCorsHeaders } from "../_shared/cors.ts";
-
-// Allow the production domain, any Lovable preview domain (*.lovable.app),
-// and localhost for dev. Anything else is rejected.
-function isAllowedReturnUrl(url: string | undefined): boolean {
-  if (!url) return true;
-  try {
-    const parsed = new URL(url);
-    if (parsed.protocol !== "https:" && parsed.protocol !== "http:") return false;
-    const host = parsed.hostname;
-    if (host === "members.junkyardsurf.com.au") return true;
-    if (host === "localhost" || host === "127.0.0.1") return true;
-    if (host.endsWith(".lovable.app")) return true;
-    if (host.endsWith(".lovableproject.com")) return true;
-    if (host.endsWith(".lovable.dev")) return true;
-    return false;
-  } catch {
-    return false;
-  }
-}
+import { getCorsHeaders, isAllowedReturnUrl } from "../_shared/cors.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,

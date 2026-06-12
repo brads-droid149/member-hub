@@ -1,6 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { type StripeEnv, createStripeClient } from "../_shared/stripe.ts";
-import { getCorsHeaders } from "../_shared/cors.ts";
+import { getCorsHeaders, isAllowedReturnUrl } from "../_shared/cors.ts";
 
 const supabaseAdmin = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -109,6 +109,12 @@ Deno.serve(async (req) => {
 
     const body = await req.json();
     const env: StripeEnv = body.environment === "live" ? "live" : "sandbox";
+    if (!isAllowedReturnUrl(body.returnUrl)) {
+      return new Response(JSON.stringify({ error: "Invalid returnUrl" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
     const clientSecret = await createCheckoutSession({
       priceId: body.priceId,
       quantity: body.quantity,
