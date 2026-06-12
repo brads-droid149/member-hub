@@ -93,6 +93,33 @@ export default function Subscribe() {
     navigate("/login", { replace: true });
   };
 
+  if (state === "needs-verify") {
+    const handleResend = async () => {
+      if (!user?.email) return;
+      const { error } = await supabase.auth.resend({ type: "signup", email: user.email });
+      if (error) alert(error.message);
+      else alert("Verification email re-sent. Check your inbox.");
+    };
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background px-4 py-10">
+        <Card className="w-full max-w-md border-border/50">
+          <CardContent className="p-8 flex flex-col items-center text-center gap-4">
+            <div className="text-2xl font-bold tracking-tight">
+              Junkyard Surf <span className="text-primary">Club</span>
+            </div>
+            <h1 className="text-2xl font-bold">Verify your email</h1>
+            <p className="text-muted-foreground">
+              We sent a confirmation link to <span className="font-medium">{user?.email}</span>.
+              Click it to activate your account before subscribing.
+            </p>
+            <Button className="w-full" onClick={handleResend}>Resend verification email</Button>
+            <Button variant="ghost" className="w-full" onClick={handleSignOut}>Sign out</Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   if (showCheckout && user) {
     const selected = PLANS[plan];
     return (
