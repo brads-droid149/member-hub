@@ -222,7 +222,7 @@ export default function AdminMembers() {
               </TableHead>
               <TableHead className="text-right">Months Active</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead className="text-center">Draw Exempt</TableHead>
+              <TableHead>Joined</TableHead>
               <TableHead>Joined</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
