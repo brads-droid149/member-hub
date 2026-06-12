@@ -272,8 +272,10 @@ export default function AdminMembers() {
         onClose={() => setSelected(null)}
         onCancel={() => currentSelected && setCancelTarget(currentSelected)}
         onToggleIsExempt={handleToggleIsExempt}
+        onToggleExemptFromWinning={handleToggleExemptFromWinning}
         onSaveStats={handleSaveStats}
         isExemptPending={isExemptPending}
+        exemptFromWinningPending={exemptFromWinningPending}
         savingStats={savingStats}
       />
 
