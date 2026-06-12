@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import AdminGiveaways from "./admin/AdminGiveaways";
 import AdminPartners from "./admin/AdminPartners";
 import AdminMembers from "./admin/AdminMembers";
+import AdminBanners from "./admin/AdminBanners";
 import { AdminMembersProvider } from "@/contexts/AdminMembersContext";
 
 export default function Admin() {
@@ -24,10 +25,12 @@ export default function Admin() {
           <TabsList>
             <TabsTrigger value="giveaways">Giveaway Manager</TabsTrigger>
             <TabsTrigger value="partners">Partner Manager</TabsTrigger>
+            <TabsTrigger value="banners">Banner Manager</TabsTrigger>
             <TabsTrigger value="members">Members</TabsTrigger>
           </TabsList>
           <TabsContent value="giveaways" className="mt-6"><AdminGiveaways /></TabsContent>
           <TabsContent value="partners" className="mt-6"><AdminPartners /></TabsContent>
+          <TabsContent value="banners" className="mt-6"><AdminBanners /></TabsContent>
           <TabsContent value="members" className="mt-6"><AdminMembers /></TabsContent>
         </Tabs>
       </AdminMembersProvider>

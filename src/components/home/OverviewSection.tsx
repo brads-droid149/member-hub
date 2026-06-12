@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Trophy, Calendar } from "lucide-react";
@@ -7,6 +7,7 @@ import type { Tables } from "@/integrations/supabase/types";
 
 type Giveaway = Tables<"giveaways">;
 type Winner = Tables<"past_winners">;
+type Banner = Tables<"banners">;
 
 interface OverviewSectionProps {
   firstName: string;
@@ -35,6 +36,8 @@ export function OverviewSection({
   setWinners,
   onSeeAllWinners,
 }: OverviewSectionProps) {
+  const [banner, setBanner] = useState<Banner | null>(null);
+
   useEffect(() => {
     if (!giveawayLoaded) {
       (async () => {
@@ -59,6 +62,17 @@ export function OverviewSection({
         setWinners(data ?? []);
       })();
     }
+    (async () => {
+      const { data, error } = await supabase
+        .from("banners")
+        .select("*")
+        .eq("is_active", true)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) console.error("Failed to load banner:", error);
+      setBanner(data ?? null);
+    })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -202,6 +216,31 @@ export function OverviewSection({
         </Card>
         </div>
       </div>
+
+      {banner && (
+        banner.link_url ? (
+          <a
+            href={banner.link_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block w-full hover:opacity-90 transition-opacity"
+          >
+            <img
+              src={banner.image_url}
+              alt="Promotional banner"
+              className="w-full aspect-[16/5] object-cover object-center rounded-lg"
+              loading="lazy"
+            />
+          </a>
+        ) : (
+          <img
+            src={banner.image_url}
+            alt="Promotional banner"
+            className="w-full aspect-[16/5] object-cover object-center rounded-lg"
+            loading="lazy"
+          />
+        )
+      )}
     </section>
   );
 }
