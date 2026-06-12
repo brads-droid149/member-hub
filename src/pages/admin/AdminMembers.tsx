@@ -122,7 +122,7 @@ export default function AdminMembers() {
   const downloadCsv = () => {
     const headers = ["ID", "Full Name", "Email", "Mobile", "State", "Entries", "Months Active", "Joined"];
     const lines = [headers.join(",")];
-    for (const r of sorted) {
+    for (const r of sortedMembers) {
       lines.push(
         [
           r.user_id.slice(0, 6),
@@ -143,7 +143,7 @@ export default function AdminMembers() {
 
   const downloadEmailList = () => {
     const lines = [["Full Name", "Email"].join(",")];
-    for (const r of sorted) {
+    for (const r of sortedMembers) {
       lines.push([r.full_name ?? "", r.email ?? ""].map(csvEscape).join(","));
     }
     triggerDownload(lines, `email-list-${today()}.csv`);
@@ -151,7 +151,7 @@ export default function AdminMembers() {
 
   const downloadDrawExport = () => {
     const lines = [["ID", "Full Name", "State"].join(",")];
-    for (const r of sorted) {
+    for (const r of sortedMembers) {
       if (r.exempt_from_winning) continue;
       const count = Math.max(0, Math.floor(r.entries));
       const row = [r.user_id, r.full_name ?? "", r.state ?? ""].map(csvEscape).join(",");
@@ -315,14 +315,14 @@ export default function AdminMembers() {
                   <Loader2 className="h-5 w-5 animate-spin text-primary mx-auto" />
                 </TableCell>
               </TableRow>
-            ) : filtered.length === 0 ? (
+            ) : sortedRows.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={11} className="text-center py-12 text-sm text-muted-foreground">
                   {searchQuery.trim() ? "No members match your search." : "No members yet."}
                 </TableCell>
               </TableRow>
             ) : (
-              filtered.map((r) => (
+              sortedRows.map((r) => (
                 <TableRow key={r.user_id}>
                   <TableCell className="font-mono text-xs text-muted-foreground">{r.user_id.slice(0, 6)}</TableCell>
                   <TableCell className="font-medium text-foreground">{r.full_name || "—"}</TableCell>
