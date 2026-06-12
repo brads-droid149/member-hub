@@ -33,6 +33,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getStripeEnvironment } from "@/lib/stripe";
 import { useToast } from "@/hooks/use-toast";
 import { cn, formatDate, csvEscape, today, triggerDownload, exportMembersCSV } from "@/lib/utils";
+import { MemberStatusBadge } from "@/components/admin/MemberStatusBadge";
 import { Switch } from "@/components/ui/switch";
 import { MemberDetailPanel } from "@/components/admin/MemberDetailPanel";
 import { useMemberTable } from "@/hooks/use-member-table";
@@ -40,22 +41,6 @@ import { useMemberTable } from "@/hooks/use-member-table";
 type Row = AdminMemberRow;
 
 
-const statusBadge = (status: string | null) => {
-  const s = status ?? "—";
-  const tone =
-    s === "active"
-      ? "bg-primary/10 text-primary border-primary/20"
-      : s === "past_due"
-        ? "bg-yellow-500/10 text-yellow-700 border-yellow-500/20"
-        : s === "cancelled"
-          ? "bg-destructive/10 text-destructive border-destructive/20"
-            : "bg-muted text-muted-foreground border-border";
-  return (
-    <span className={cn("inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium capitalize", tone)}>
-      {s.replace("_", " ")}
-    </span>
-  );
-};
 
 const exemptBadge = () => (
   <span className="inline-flex items-center rounded-full border border-accent/30 bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent-foreground">
@@ -286,7 +271,7 @@ export default function AdminMembers() {
                   <TableCell className="text-right font-mono text-sm">{r.months_active}</TableCell>
                   <TableCell>
                     <div className="flex flex-col items-start gap-1">
-                      {statusBadge(r.status)}
+                      <MemberStatusBadge status={r.status} />
                       {r.is_exempt && exemptBadge()}
                     </div>
                   </TableCell>
