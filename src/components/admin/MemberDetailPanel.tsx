@@ -50,8 +50,10 @@ export function MemberDetailPanel({
   onClose,
   onCancel,
   onToggleIsExempt,
+  onToggleExemptFromWinning,
   onSaveStats,
   isExemptPending,
+  exemptFromWinningPending,
   savingStats,
 }: MemberDetailPanelProps) {
   const [editMonths, setEditMonths] = useState(0);
