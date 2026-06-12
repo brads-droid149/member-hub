@@ -36,6 +36,8 @@ export function OverviewSection({
   setWinners,
   onSeeAllWinners,
 }: OverviewSectionProps) {
+  const [banner, setBanner] = useState<Banner | null>(null);
+
   useEffect(() => {
     if (!giveawayLoaded) {
       (async () => {
@@ -60,6 +62,17 @@ export function OverviewSection({
         setWinners(data ?? []);
       })();
     }
+    (async () => {
+      const { data, error } = await supabase
+        .from("banners")
+        .select("*")
+        .eq("is_active", true)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) console.error("Failed to load banner:", error);
+      setBanner(data ?? null);
+    })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
