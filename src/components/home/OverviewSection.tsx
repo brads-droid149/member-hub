@@ -216,6 +216,31 @@ export function OverviewSection({
         </Card>
         </div>
       </div>
+
+      {banner && (
+        banner.link_url ? (
+          <a
+            href={banner.link_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block w-full hover:opacity-90 transition-opacity"
+          >
+            <img
+              src={banner.image_url}
+              alt="Promotional banner"
+              className="w-full aspect-[16/5] object-cover object-center rounded-lg"
+              loading="lazy"
+            />
+          </a>
+        ) : (
+          <img
+            src={banner.image_url}
+            alt="Promotional banner"
+            className="w-full aspect-[16/5] object-cover object-center rounded-lg"
+            loading="lazy"
+          />
+        )
+      )}
     </section>
   );
 }
