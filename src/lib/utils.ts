@@ -63,3 +63,22 @@ export function exportMembersCSV(members: AdminMemberRow[]) {
   triggerDownload(lines, `members-${today()}.csv`);
 }
 
+export function exportEmailList(members: AdminMemberRow[]) {
+  const lines = [["Full Name", "Email"].join(",")];
+  for (const r of members) {
+    lines.push([r.full_name ?? "", r.email ?? ""].map(csvEscape).join(","));
+  }
+  triggerDownload(lines, `email-list-${today()}.csv`);
+}
+
+export function exportDrawList(members: AdminMemberRow[]) {
+  const lines = [["ID", "Full Name", "State"].join(",")];
+  for (const r of members) {
+    if (r.exempt_from_winning) continue;
+    const count = Math.max(0, Math.floor(r.entries));
+    const row = [r.user_id, r.full_name ?? "", r.state ?? ""].map(csvEscape).join(",");
+    for (let i = 0; i < count; i++) lines.push(row);
+  }
+  triggerDownload(lines, `draw-export-${today()}.csv`);
+}
+

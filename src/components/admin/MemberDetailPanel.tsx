@@ -21,8 +21,10 @@ interface MemberDetailPanelProps {
   onClose: () => void;
   onCancel: () => void;
   onToggleIsExempt: (value: boolean) => Promise<void>;
+  onToggleExemptFromWinning: (value: boolean) => Promise<void>;
   onSaveStats: (months: number, entries: number) => Promise<void>;
   isExemptPending: boolean;
+  exemptFromWinningPending: boolean;
   savingStats: boolean;
 }
 
@@ -48,8 +50,10 @@ export function MemberDetailPanel({
   onClose,
   onCancel,
   onToggleIsExempt,
+  onToggleExemptFromWinning,
   onSaveStats,
   isExemptPending,
+  exemptFromWinningPending,
   savingStats,
 }: MemberDetailPanelProps) {
   const [editMonths, setEditMonths] = useState(0);
@@ -179,13 +183,13 @@ export function MemberDetailPanel({
                 </div>
               )}
 
-              {/* Exempt */}
-              <div className="rounded-lg border border-border p-4 space-y-3">
+              {/* Exempt toggles */}
+              <div className="rounded-lg border border-border p-4 space-y-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <h3 className="font-semibold text-foreground flex items-center gap-2">
                       <ShieldCheck className="h-4 w-4 text-primary" />
-                      Billing Exempt
+                      Exempt from Billing
                     </h3>
                     <p className="text-xs text-muted-foreground mt-1">
                       Exempt members (e.g. staff, media, competition winners) retain active status without an active Stripe subscription.
@@ -195,7 +199,24 @@ export function MemberDetailPanel({
                     checked={s.is_exempt}
                     disabled={isExemptPending}
                     onCheckedChange={onToggleIsExempt}
-                    aria-label="Billing exempt"
+                    aria-label="Exempt from billing"
+                  />
+                </div>
+                <div className="flex items-start justify-between gap-3 border-t border-border pt-4">
+                  <div>
+                    <h3 className="font-semibold text-foreground flex items-center gap-2">
+                      <ShieldCheck className="h-4 w-4 text-primary" />
+                      Exempt from Draw
+                    </h3>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Exclude this member from winning the giveaway draw. Their entries will be skipped in the draw export.
+                    </p>
+                  </div>
+                  <Switch
+                    checked={s.exempt_from_winning}
+                    disabled={exemptFromWinningPending}
+                    onCheckedChange={onToggleExemptFromWinning}
+                    aria-label="Exempt from draw"
                   />
                 </div>
               </div>

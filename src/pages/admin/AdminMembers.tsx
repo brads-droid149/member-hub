@@ -32,9 +32,8 @@ import { useAdminMembers, type AdminMemberRow } from "@/contexts/AdminMembersCon
 import { supabase } from "@/integrations/supabase/client";
 import { getStripeEnvironment } from "@/lib/stripe";
 import { useToast } from "@/hooks/use-toast";
-import { cn, formatDate, csvEscape, today, triggerDownload, exportMembersCSV } from "@/lib/utils";
+import { cn, formatDate, exportMembersCSV, exportEmailList, exportDrawList } from "@/lib/utils";
 import { MemberStatusBadge } from "@/components/admin/MemberStatusBadge";
-import { Switch } from "@/components/ui/switch";
 import { MemberDetailPanel } from "@/components/admin/MemberDetailPanel";
 import { useMemberTable } from "@/hooks/use-member-table";
 
@@ -63,7 +62,7 @@ export default function AdminMembers() {
     setSortDir,
     toggleSort,
   } = useMemberTable(rows);
-  const [exemptPending, setExemptPending] = useState<Record<string, boolean>>({});
+  const [exemptFromWinningPending, setExemptFromWinningPending] = useState(false);
 
   // Detail panel state
   const [selected, setSelected] = useState<Row | null>(null);
@@ -79,24 +78,6 @@ export default function AdminMembers() {
   );
 
 
-  const downloadEmailList = () => {
-    const lines = [["Full Name", "Email"].join(",")];
-    for (const r of sortedMembers) {
-      lines.push([r.full_name ?? "", r.email ?? ""].map(csvEscape).join(","));
-    }
-    triggerDownload(lines, `email-list-${today()}.csv`);
-  };
-
-  const downloadDrawExport = () => {
-    const lines = [["ID", "Full Name", "State"].join(",")];
-    for (const r of sortedMembers) {
-      if (r.exempt_from_winning) continue;
-      const count = Math.max(0, Math.floor(r.entries));
-      const row = [r.user_id, r.full_name ?? "", r.state ?? ""].map(csvEscape).join(",");
-      for (let i = 0; i < count; i++) lines.push(row);
-    }
-    triggerDownload(lines, `draw-export-${today()}.csv`);
-  };
 
   const openMember = (r: Row) => {
     setSelected(r);
@@ -162,22 +143,19 @@ export default function AdminMembers() {
     }
   };
 
-  const handleToggleExempt = async (row: Row, value: boolean) => {
-    setExemptPending((p) => ({ ...p, [row.user_id]: true }));
+  const handleToggleExemptFromWinning = async (value: boolean) => {
+    if (!currentSelected) return;
+    setExemptFromWinningPending(true);
     try {
-      await setExempt(row.user_id, value);
+      await setExempt(currentSelected.user_id, value);
       toast({
         title: value ? "Excluded from draw" : "Included in draw",
-        description: row.full_name || row.email || row.user_id.slice(0, 6),
+        description: currentSelected.full_name || currentSelected.email || currentSelected.user_id.slice(0, 6),
       });
     } catch {
       // toast shown in context
     } finally {
-      setExemptPending((p) => {
-        const next = { ...p };
-        delete next[row.user_id];
-        return next;
-      });
+      setExemptFromWinningPending(false);
     }
   };
 
@@ -199,11 +177,11 @@ export default function AdminMembers() {
             <Download className="h-4 w-4 mr-1.5" />
             Download Members CSV
           </Button>
-          <Button variant="outline" onClick={downloadEmailList} disabled={loading || rows.length === 0}>
+          <Button variant="outline" onClick={() => exportEmailList(sortedMembers)} disabled={loading || rows.length === 0}>
             <Download className="h-4 w-4 mr-1.5" />
             Email List
           </Button>
-          <Button variant="outline" onClick={downloadDrawExport} disabled={loading || rows.length === 0}>
+          <Button variant="outline" onClick={() => exportDrawList(sortedMembers)} disabled={loading || rows.length === 0}>
             <Download className="h-4 w-4 mr-1.5" />
             Draw Export
           </Button>
@@ -241,7 +219,6 @@ export default function AdminMembers() {
               </TableHead>
               <TableHead className="text-right">Months Active</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead className="text-center">Draw Exempt</TableHead>
               <TableHead>Joined</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -249,13 +226,13 @@ export default function AdminMembers() {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={11} className="text-center py-12">
+                <TableCell colSpan={10} className="text-center py-12">
                   <Loader2 className="h-5 w-5 animate-spin text-primary mx-auto" />
                 </TableCell>
               </TableRow>
             ) : sortedRows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={11} className="text-center py-12 text-sm text-muted-foreground">
+                <TableCell colSpan={10} className="text-center py-12 text-sm text-muted-foreground">
                   {searchQuery.trim() ? "No members match your search." : "No members yet."}
                 </TableCell>
               </TableRow>
@@ -274,14 +251,6 @@ export default function AdminMembers() {
                       <MemberStatusBadge status={r.status} />
                       {r.is_exempt && exemptBadge()}
                     </div>
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <Switch
-                      checked={r.exempt_from_winning}
-                      disabled={!!exemptPending[r.user_id]}
-                      onCheckedChange={(v) => handleToggleExempt(r, v)}
-                      aria-label="Exempt from draw"
-                    />
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">{formatDate(r.joined_at)}</TableCell>
                   <TableCell className="text-right">
@@ -303,8 +272,10 @@ export default function AdminMembers() {
         onClose={() => setSelected(null)}
         onCancel={() => currentSelected && setCancelTarget(currentSelected)}
         onToggleIsExempt={handleToggleIsExempt}
+        onToggleExemptFromWinning={handleToggleExemptFromWinning}
         onSaveStats={handleSaveStats}
         isExemptPending={isExemptPending}
+        exemptFromWinningPending={exemptFromWinningPending}
         savingStats={savingStats}
       />
 
