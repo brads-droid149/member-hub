@@ -1,6 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { type StripeEnv, createStripeClient } from "../_shared/stripe.ts";
-import { getCorsHeaders } from "../_shared/cors.ts";
+import { getCorsHeaders, isAllowedReturnUrl } from "../_shared/cors.ts";
 
 const supabaseAdmin = createClient(
   Deno.env.get("SUPABASE_URL")!,
