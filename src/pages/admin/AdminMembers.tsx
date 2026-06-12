@@ -143,22 +143,19 @@ export default function AdminMembers() {
     }
   };
 
-  const handleToggleExempt = async (row: Row, value: boolean) => {
-    setExemptPending((p) => ({ ...p, [row.user_id]: true }));
+  const handleToggleExemptFromWinning = async (value: boolean) => {
+    if (!currentSelected) return;
+    setExemptFromWinningPending(true);
     try {
-      await setExempt(row.user_id, value);
+      await setExempt(currentSelected.user_id, value);
       toast({
         title: value ? "Excluded from draw" : "Included in draw",
-        description: row.full_name || row.email || row.user_id.slice(0, 6),
+        description: currentSelected.full_name || currentSelected.email || currentSelected.user_id.slice(0, 6),
       });
     } catch {
       // toast shown in context
     } finally {
-      setExemptPending((p) => {
-        const next = { ...p };
-        delete next[row.user_id];
-        return next;
-      });
+      setExemptFromWinningPending(false);
     }
   };
 
