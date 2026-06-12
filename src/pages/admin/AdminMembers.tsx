@@ -232,7 +232,7 @@ export default function AdminMembers() {
               </TableRow>
             ) : sortedRows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={11} className="text-center py-12 text-sm text-muted-foreground">
+                <TableCell colSpan={10} className="text-center py-12 text-sm text-muted-foreground">
                   {searchQuery.trim() ? "No members match your search." : "No members yet."}
                 </TableCell>
               </TableRow>
