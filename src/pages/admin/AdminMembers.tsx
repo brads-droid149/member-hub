@@ -79,56 +79,18 @@ const exemptBadge = () => (
 export default function AdminMembers() {
   const { members: rows, loading, refresh, setExempt, setIsExempt } = useAdminMembers();
   const { toast } = useToast();
-  const [sortKey, setSortKey] = useState<SortKey | null>(null);
-  const [sortDir, setSortDir] = useState<SortDir>("asc");
-  const [searchQuery, setSearchQuery] = useState("");
+  const {
+    sortedMembers,
+    sortedRows,
+    searchQuery,
+    setSearchQuery,
+    sortKey,
+    setSortKey,
+    sortDir,
+    setSortDir,
+    toggleSort,
+  } = useMemberTable(rows);
   const [exemptPending, setExemptPending] = useState<Record<string, boolean>>({});
-
-  // Detail panel state
-  const [selected, setSelected] = useState<Row | null>(null);
-
-  // Cancel dialog state
-  const [cancelTarget, setCancelTarget] = useState<Row | null>(null);
-  const [cancelling, setCancelling] = useState(false);
-
-  const sorted = useMemo(() => {
-    if (!sortKey) return rows;
-    const copy = [...rows];
-    copy.sort((a, b) => {
-      const av = a[sortKey] ?? 0;
-      const bv = b[sortKey] ?? 0;
-      if (av < bv) return sortDir === "asc" ? -1 : 1;
-      if (av > bv) return sortDir === "asc" ? 1 : -1;
-      return 0;
-    });
-    return copy;
-  }, [rows, sortKey, sortDir]);
-
-  const filtered = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
-    if (!q) return sorted;
-    return sorted.filter((r) => {
-      const shortId = r.user_id.slice(0, 6).toLowerCase();
-      const fullName = (r.full_name ?? "").toLowerCase();
-      const email = (r.email ?? "").toLowerCase();
-      return shortId.includes(q) || fullName.includes(q) || email.includes(q);
-    });
-  }, [sorted, searchQuery]);
-
-  // Re-sync the selected row from latest fetched data
-  const currentSelected = useMemo(
-    () => (selected ? rows.find((r) => r.user_id === selected.user_id) ?? selected : null),
-    [selected, rows],
-  );
-
-  const toggleSort = (key: SortKey) => {
-    if (sortKey === key) {
-      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
-    } else {
-      setSortKey(key);
-      setSortDir("asc");
-    }
-  };
 
   const triggerDownload = (lines: string[], filename: string) => {
     const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8;" });
