@@ -1,9 +1,30 @@
+// Email queue processor.
+//
+// Why a queue at all: outbound email (signup confirmations, password resets,
+// receipts, giveaway-winner notifications) must NOT be sent inline from a
+// user request or DB trigger. The provider can rate-limit us (429), be
+// temporarily down, or simply be slow — none of which should block a
+// checkout or auth flow. Instead, producers enqueue a message onto a PGMQ
+// queue and this worker drains the queue on a schedule (pg_cron).
+//
+// Why PGMQ (Postgres Message Queue) specifically:
+//   - lives in the same Postgres we already run, no extra infra
+//   - gives us visibility-timeout semantics (a claimed message is hidden
+//     for `vt` seconds; if the worker crashes mid-send, the message
+//     re-appears and another invocation retries it)
+//   - read_ct counter + DLQ tables come for free
+//
+// Two queues, processed in priority order:
+//   1. auth_emails          (signup / password reset — time sensitive, short TTL)
+//   2. transactional_emails (receipts, winner notifications — longer TTL)
 import { sendLovableEmail } from 'npm:@lovable.dev/email-js'
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
 const MAX_RETRIES = 5
 const DEFAULT_BATCH_SIZE = 10
 const DEFAULT_SEND_DELAY_MS = 200
+// Auth emails (magic links etc.) expire fast on the user side, so we
+// refuse to send anything older than 15 min. Receipts are fine for an hour.
 const DEFAULT_AUTH_TTL_MINUTES = 15
 const DEFAULT_TRANSACTIONAL_TTL_MINUTES = 60
 
@@ -192,13 +213,23 @@ Deno.serve(async (req) => {
     for (let i = 0; i < messages.length; i++) {
       const msg = messages[i]
       const payload = msg.message
+      // Retry budget — count of REAL send failures from email_send_log.
+      // We deliberately don't use pgmq's msg.read_ct here: read_ct ticks up
+      // every time a message is claimed in a batch, even if we never
+      // attempted to send it (e.g. a 429 stopped the batch early). Using
+      // read_ct would prematurely DLQ healthy messages. We only fall back
+      // to read_ct for legacy messages with no message_id.
       const failedAttempts =
         payload?.message_id && typeof payload.message_id === 'string'
           ? (failedAttemptsByMessageId.get(payload.message_id) ?? 0)
           : msg.read_ct ?? 0
 
-      // Drop expired messages (TTL exceeded).
-      // payload.queued_at is always set at enqueue time.
+      // TTL: drop messages older than the queue's max age. A magic link
+      // sent an hour after the user clicked "send reset" is worse than no
+      // email at all (it'll confuse the user, the underlying token may
+      // already be expired). We move expired messages to the DLQ rather
+      // than delete so we have an audit trail of what we dropped and why.
+      // payload.queued_at is always stamped by the producer at enqueue time.
       const queuedAt = payload.queued_at
       if (queuedAt) {
         const ageMs = Date.now() - new Date(queuedAt).getTime()
@@ -215,7 +246,9 @@ Deno.serve(async (req) => {
         }
       }
 
-      // Move to DLQ if max failed send attempts reached.
+      // Retry logic: after MAX_RETRIES real send failures (logged as
+      // status='failed' in email_send_log), the message is parked in the
+      // DLQ for manual inspection rather than being retried forever.
       if (failedAttempts >= MAX_RETRIES) {
         await moveToDlq(supabase, queue, msg, `Max retries (${MAX_RETRIES}) exceeded (attempted ${failedAttempts} times)`)
         continue

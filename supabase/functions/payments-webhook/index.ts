@@ -39,9 +39,14 @@ export function __resetTestOverrides() {
   _verifyWebhookFn = verifyWebhook;
 }
 
-// Map Stripe subscription status -> Junkyard members.status.
-// 'active' / 'trialing' / 'past_due' all grant portal access (past_due shows
-// a dunning banner). 'canceled' or 'unpaid' revoke access.
+// Map Stripe's ~8 subscription statuses down to the THREE values the
+// Junkyard app actually understands on members.status:
+//   - 'active'    -> full portal access, entries accrue
+//   - 'past_due'  -> still has access, UI shows a dunning banner, daily
+//                    cron will auto-cancel after 7 days if not resolved
+//   - 'cancelled' -> access revoked, entries reset to 0
+// Anything else flows through unchanged (defensive — shouldn't happen in
+// practice, but avoids silently dropping a status we haven't accounted for).
 function mapMemberStatus(stripeStatus: string): string {
   switch (stripeStatus) {
     case "active":
@@ -54,12 +59,22 @@ function mapMemberStatus(stripeStatus: string): string {
     case "incomplete_expired":
       return "cancelled";
     case "paused":
+      // Junkyard does not offer a "paused" tier — pausing in the Stripe
+      // Billing Portal means the customer stops being billed, so we treat
+      // it the same as cancellation (access revoked, entries reset).
       return "cancelled";
     default:
       return stripeStatus;
   }
 }
 
+// Shared writer for the public.members row. Both the subscription event
+// handlers (create/update) and reactivation paths funnel through here so
+// there's exactly one place that knows the members-row contract:
+//   - first-time member: seed months_active=1, entries=1, anchor the
+//     monthly credit cron
+//   - reactivation (cancelled -> active): reset counters back to 1
+//   - past_due transitions: stamp/clear past_due_since for the auto-cancel cron
 async function syncMember(opts: {
   userId: string;
   subscription: Stripe.Subscription;
@@ -167,8 +182,19 @@ async function userIdFromInvoice(invoice: Stripe.Invoice, env: StripeEnv): Promi
   return null;
 }
 
+// We listen to BOTH customer.subscription.* AND invoice.* events because
+// they cover different lifecycle moments:
+//   - subscription.created/updated -> status transitions (new sub, cancel,
+//     plan change, cancel_at_period_end toggle). syncMember writes status.
+//   - invoice.paid                 -> a renewal payment actually cleared.
+//     This is what flips a past_due member back to active after Stripe
+//     successfully retries their card. Subscription events alone don't
+//     reliably fire on every successful retry, so we anchor reactivation
+//     on the invoice instead.
 async function handleInvoicePaid(invoice: Stripe.Invoice, env: StripeEnv) {
   const reason = invoice.billing_reason;
+  // Only renewals and mid-cycle updates re-activate. The very first
+  // invoice (subscription_create) is already handled by syncMember.
   if (reason !== "subscription_cycle" && reason !== "subscription_update") return;
   const userId = await userIdFromInvoice(invoice, env);
   if (!userId) return;
