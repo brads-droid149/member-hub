@@ -35,11 +35,9 @@ import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { Switch } from "@/components/ui/switch";
 import { MemberDetailPanel } from "@/components/admin/MemberDetailPanel";
+import { useMemberTable } from "@/hooks/use-member-table";
 
 type Row = AdminMemberRow;
-
-type SortKey = "entries";
-type SortDir = "asc" | "desc";
 
 const formatDate = (iso: string) => {
   const d = new Date(iso);
