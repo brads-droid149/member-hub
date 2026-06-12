@@ -35,6 +35,7 @@ export function SettingsSection({
   onManageSubscription,
 }: SettingsSectionProps) {
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const [pFullName, setPFullName] = useState(initialFullName);
   const [pPhone, setPPhone] = useState(initialPhone);
@@ -44,6 +45,28 @@ export function SettingsSection({
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [savingPassword, setSavingPassword] = useState(false);
+
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDeleteAccount = async () => {
+    setDeleting(true);
+    const { data: { session } } = await supabase.auth.getSession();
+    const { data, error } = await supabase.functions.invoke("delete-account", {
+      body: { environment: "sandbox" },
+      headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : undefined,
+    });
+    setDeleting(false);
+    if (error || (data as { error?: string })?.error) {
+      toast({
+        title: "Could not delete account",
+        description: error?.message ?? (data as { error?: string })?.error ?? "Unknown error",
+        variant: "destructive",
+      });
+      return;
+    }
+    await supabase.auth.signOut();
+    navigate("/login", { replace: true });
+  };
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
