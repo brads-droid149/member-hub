@@ -1,6 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { type StripeEnv, createStripeClient } from "../_shared/stripe.ts";
 import { getCorsHeaders } from "../_shared/cors.ts";
+import { sendBillingEmail, brevoMarkCancelled } from "../_shared/billing-emails.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -89,6 +90,15 @@ Deno.serve(async (req) => {
         .update({ status: "cancelled", entries: 0, updated_at: new Date().toISOString() })
         .eq("user_id", targetUserId);
     }
+
+    // Notify the cancelled member + flip Brevo marketing flag. Best-effort.
+    await sendBillingEmail({
+      userId: targetUserId,
+      template: { kind: "cancelled", reason: "admin" },
+    });
+    const { data: userResp } = await supabase.auth.admin.getUserById(targetUserId);
+    const targetEmail = userResp?.user?.email;
+    if (targetEmail) await brevoMarkCancelled(targetEmail);
 
     return new Response(JSON.stringify({ ok: true, immediate, hadSubscription: !!stripeSubId }), {
       status: 200,

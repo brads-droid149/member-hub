@@ -4,10 +4,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { CreditCard, Settings as SettingsIcon, User, KeyRound } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { CreditCard, Settings as SettingsIcon, User, KeyRound, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { AU_STATES } from "@/lib/constants";
+import { useNavigate } from "react-router-dom";
 const PHONE_RE = /^\+614\d{8}$/;
 
 interface SettingsSectionProps {
@@ -30,6 +35,7 @@ export function SettingsSection({
   onManageSubscription,
 }: SettingsSectionProps) {
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const [pFullName, setPFullName] = useState(initialFullName);
   const [pPhone, setPPhone] = useState(initialPhone);
@@ -39,6 +45,28 @@ export function SettingsSection({
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [savingPassword, setSavingPassword] = useState(false);
+
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDeleteAccount = async () => {
+    setDeleting(true);
+    const { data: { session } } = await supabase.auth.getSession();
+    const { data, error } = await supabase.functions.invoke("delete-account", {
+      body: { environment: "sandbox" },
+      headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : undefined,
+    });
+    setDeleting(false);
+    if (error || (data as { error?: string })?.error) {
+      toast({
+        title: "Could not delete account",
+        description: error?.message ?? (data as { error?: string })?.error ?? "Unknown error",
+        variant: "destructive",
+      });
+      return;
+    }
+    await supabase.auth.signOut();
+    navigate("/login", { replace: true });
+  };
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -206,6 +234,36 @@ export function SettingsSection({
           </AccordionContent>
         </AccordionItem>
       </Accordion>
+
+      <div className="pt-2">
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="ghost" className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10">
+              <Trash2 className="h-5 w-5 mr-2" />
+              Delete account
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete your account?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This cancels your subscription immediately and permanently removes
+                your profile, membership and entries. This cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDeleteAccount}
+                disabled={deleting}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {deleting ? "Deleting…" : "Delete account"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
     </section>
   );
 }

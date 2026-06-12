@@ -7,7 +7,7 @@ import { StripeEmbeddedCheckoutForm } from "@/components/StripeEmbeddedCheckout"
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-type State = "loading" | "needs-subscribe" | "allowed" | "no-session";
+type State = "loading" | "needs-verify" | "needs-subscribe" | "allowed" | "no-session";
 type Plan = "monthly" | "yearly";
 
 const PLANS: Record<Plan, { priceId: string; price: string; cadence: string; sub: string; badge?: string }> = {
@@ -41,11 +41,16 @@ export default function Subscribe() {
       if (!session) return setState("no-session");
       setUser({ id: session.user.id, email: session.user.email ?? undefined });
 
+      // Block paid checkout until the email is verified — prevents
+      // members paying with a typo'd address they can't receive on.
+      const isVerified = !!session.user.email_confirmed_at;
+
       const { data: isAdmin } = await supabase.rpc("has_role", {
         _user_id: session.user.id,
         _role: "admin",
       });
       if (isAdmin) return setState("allowed");
+      if (!isVerified) return setState("needs-verify");
 
       const { data: member } = await supabase
         .from("members")
@@ -87,6 +92,33 @@ export default function Subscribe() {
     await supabase.auth.signOut();
     navigate("/login", { replace: true });
   };
+
+  if (state === "needs-verify") {
+    const handleResend = async () => {
+      if (!user?.email) return;
+      const { error } = await supabase.auth.resend({ type: "signup", email: user.email });
+      if (error) alert(error.message);
+      else alert("Verification email re-sent. Check your inbox.");
+    };
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background px-4 py-10">
+        <Card className="w-full max-w-md border-border/50">
+          <CardContent className="p-8 flex flex-col items-center text-center gap-4">
+            <div className="text-2xl font-bold tracking-tight">
+              Junkyard Surf <span className="text-primary">Club</span>
+            </div>
+            <h1 className="text-2xl font-bold">Verify your email</h1>
+            <p className="text-muted-foreground">
+              We sent a confirmation link to <span className="font-medium">{user?.email}</span>.
+              Click it to activate your account before subscribing.
+            </p>
+            <Button className="w-full" onClick={handleResend}>Resend verification email</Button>
+            <Button variant="ghost" className="w-full" onClick={handleSignOut}>Sign out</Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (showCheckout && user) {
     const selected = PLANS[plan];
