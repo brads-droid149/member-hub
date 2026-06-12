@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import AdminGiveaways from "./admin/AdminGiveaways";
 import AdminPartners from "./admin/AdminPartners";
 import AdminMembers from "./admin/AdminMembers";
+import AdminBanners from "./admin/AdminBanners";
 import { AdminMembersProvider } from "@/contexts/AdminMembersContext";
 
 export default function Admin() {
