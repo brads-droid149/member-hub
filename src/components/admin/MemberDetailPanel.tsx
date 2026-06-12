@@ -21,8 +21,10 @@ interface MemberDetailPanelProps {
   onClose: () => void;
   onCancel: () => void;
   onToggleIsExempt: (value: boolean) => Promise<void>;
+  onToggleExemptFromWinning: (value: boolean) => Promise<void>;
   onSaveStats: (months: number, entries: number) => Promise<void>;
   isExemptPending: boolean;
+  exemptFromWinningPending: boolean;
   savingStats: boolean;
 }
 
