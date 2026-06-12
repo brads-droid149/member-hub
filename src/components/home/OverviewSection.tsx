@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Trophy, Calendar } from "lucide-react";
@@ -7,6 +7,7 @@ import type { Tables } from "@/integrations/supabase/types";
 
 type Giveaway = Tables<"giveaways">;
 type Winner = Tables<"past_winners">;
+type Banner = Tables<"banners">;
 
 interface OverviewSectionProps {
   firstName: string;
