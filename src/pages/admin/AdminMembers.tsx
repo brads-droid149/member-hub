@@ -35,11 +35,9 @@ import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { Switch } from "@/components/ui/switch";
 import { MemberDetailPanel } from "@/components/admin/MemberDetailPanel";
+import { useMemberTable } from "@/hooks/use-member-table";
 
 type Row = AdminMemberRow;
-
-type SortKey = "entries";
-type SortDir = "asc" | "desc";
 
 const formatDate = (iso: string) => {
   const d = new Date(iso);
@@ -81,9 +79,17 @@ const exemptBadge = () => (
 export default function AdminMembers() {
   const { members: rows, loading, refresh, setExempt, setIsExempt } = useAdminMembers();
   const { toast } = useToast();
-  const [sortKey, setSortKey] = useState<SortKey | null>(null);
-  const [sortDir, setSortDir] = useState<SortDir>("asc");
-  const [searchQuery, setSearchQuery] = useState("");
+  const {
+    sortedMembers,
+    sortedRows,
+    searchQuery,
+    setSearchQuery,
+    sortKey,
+    setSortKey,
+    sortDir,
+    setSortDir,
+    toggleSort,
+  } = useMemberTable(rows);
   const [exemptPending, setExemptPending] = useState<Record<string, boolean>>({});
 
   // Detail panel state
@@ -93,44 +99,11 @@ export default function AdminMembers() {
   const [cancelTarget, setCancelTarget] = useState<Row | null>(null);
   const [cancelling, setCancelling] = useState(false);
 
-  const sorted = useMemo(() => {
-    if (!sortKey) return rows;
-    const copy = [...rows];
-    copy.sort((a, b) => {
-      const av = a[sortKey] ?? 0;
-      const bv = b[sortKey] ?? 0;
-      if (av < bv) return sortDir === "asc" ? -1 : 1;
-      if (av > bv) return sortDir === "asc" ? 1 : -1;
-      return 0;
-    });
-    return copy;
-  }, [rows, sortKey, sortDir]);
-
-  const filtered = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
-    if (!q) return sorted;
-    return sorted.filter((r) => {
-      const shortId = r.user_id.slice(0, 6).toLowerCase();
-      const fullName = (r.full_name ?? "").toLowerCase();
-      const email = (r.email ?? "").toLowerCase();
-      return shortId.includes(q) || fullName.includes(q) || email.includes(q);
-    });
-  }, [sorted, searchQuery]);
-
   // Re-sync the selected row from latest fetched data
   const currentSelected = useMemo(
     () => (selected ? rows.find((r) => r.user_id === selected.user_id) ?? selected : null),
     [selected, rows],
   );
-
-  const toggleSort = (key: SortKey) => {
-    if (sortKey === key) {
-      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
-    } else {
-      setSortKey(key);
-      setSortDir("asc");
-    }
-  };
 
   const triggerDownload = (lines: string[], filename: string) => {
     const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8;" });
@@ -149,7 +122,7 @@ export default function AdminMembers() {
   const downloadCsv = () => {
     const headers = ["ID", "Full Name", "Email", "Mobile", "State", "Entries", "Months Active", "Joined"];
     const lines = [headers.join(",")];
-    for (const r of sorted) {
+    for (const r of sortedMembers) {
       lines.push(
         [
           r.user_id.slice(0, 6),
@@ -170,7 +143,7 @@ export default function AdminMembers() {
 
   const downloadEmailList = () => {
     const lines = [["Full Name", "Email"].join(",")];
-    for (const r of sorted) {
+    for (const r of sortedMembers) {
       lines.push([r.full_name ?? "", r.email ?? ""].map(csvEscape).join(","));
     }
     triggerDownload(lines, `email-list-${today()}.csv`);
@@ -178,7 +151,7 @@ export default function AdminMembers() {
 
   const downloadDrawExport = () => {
     const lines = [["ID", "Full Name", "State"].join(",")];
-    for (const r of sorted) {
+    for (const r of sortedMembers) {
       if (r.exempt_from_winning) continue;
       const count = Math.max(0, Math.floor(r.entries));
       const row = [r.user_id, r.full_name ?? "", r.state ?? ""].map(csvEscape).join(",");
@@ -342,14 +315,14 @@ export default function AdminMembers() {
                   <Loader2 className="h-5 w-5 animate-spin text-primary mx-auto" />
                 </TableCell>
               </TableRow>
-            ) : filtered.length === 0 ? (
+            ) : sortedRows.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={11} className="text-center py-12 text-sm text-muted-foreground">
                   {searchQuery.trim() ? "No members match your search." : "No members yet."}
                 </TableCell>
               </TableRow>
             ) : (
-              filtered.map((r) => (
+              sortedRows.map((r) => (
                 <TableRow key={r.user_id}>
                   <TableCell className="font-mono text-xs text-muted-foreground">{r.user_id.slice(0, 6)}</TableCell>
                   <TableCell className="font-medium text-foreground">{r.full_name || "—"}</TableCell>
