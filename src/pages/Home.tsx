@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { Helmet } from "react-helmet-async";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { SidebarProvider, useSidebar } from "@/components/ui/sidebar";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Menu } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { getStripeEnvironment } from "@/lib/stripe";
@@ -18,6 +18,20 @@ import { SettingsSection } from "@/components/home/SettingsSection";
 type Giveaway = Tables<"giveaways">;
 type Winner = Tables<"past_winners">;
 type Partner = Tables<"partners">;
+
+function MobileSidebarTrigger() {
+  const { toggleSidebar } = useSidebar();
+  return (
+    <button
+      type="button"
+      onClick={toggleSidebar}
+      className="bg-primary/10 border border-primary/20 rounded-md p-2 flex items-center justify-center"
+      aria-label="Toggle sidebar"
+    >
+      <Menu className="h-5 w-5 text-primary" />
+    </button>
+  );
+}
 
 export default function Home() {
   const { toast } = useToast();
@@ -82,7 +96,7 @@ export default function Home() {
 
         <div className="flex-1 flex flex-col min-w-0">
           <header className="md:hidden sticky top-0 z-30 h-12 flex items-center border-b border-border bg-background/80 backdrop-blur-md px-3">
-            <SidebarTrigger />
+            <MobileSidebarTrigger />
             <h2 className="ml-2 text-sm font-display font-bold text-foreground tracking-tight">
               Junkyard Surf Club
             </h2>
