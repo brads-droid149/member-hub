@@ -1,0 +1,1 @@
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS brevo_synced boolean NOT NULL DEFAULT false;
