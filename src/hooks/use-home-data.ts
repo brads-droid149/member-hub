@@ -64,7 +64,7 @@ export function useHomeData() {
       // so running them sequentially would just add ~2x round-trip latency
       // to first paint of the Home screen for no benefit.
       const [profileRes, memberRes, subRes] = await Promise.all([
-        supabase.from("profiles").select("full_name, phone, state").eq("user_id", user.id).maybeSingle(),
+        supabase.from("profiles").select("full_name, phone, state, brevo_synced").eq("user_id", user.id).maybeSingle(),
         supabase.from("members").select("months_active, entries, status").eq("user_id", user.id).maybeSingle(),
         supabase
           .from("subscriptions")
@@ -77,7 +77,38 @@ export function useHomeData() {
       ]);
 
       if (cancelled) return;
-      if (profileRes.data) setProfile(profileRes.data);
+      if (profileRes.data) {
+        const { brevo_synced, ...rest } = profileRes.data as typeof profileRes.data & { brevo_synced?: boolean };
+        setProfile(rest);
+
+        // One-time Brevo sync: signup can't do this (no session yet when
+        // email confirmation is on), so we run it on the first authenticated
+        // Home load and persist the flag so it never runs again.
+        if (!brevo_synced && user.email) {
+          const marketingOptIn = Boolean(user.user_metadata?.marketing_opt_in);
+          supabase.functions
+            .invoke("brevo-sync-contact", {
+              body: {
+                email: user.email,
+                full_name: rest.full_name ?? undefined,
+                phone: rest.phone ?? undefined,
+                state: rest.state ?? undefined,
+                marketing_opt_in: marketingOptIn,
+              },
+            })
+            .then(async ({ error }) => {
+              if (error) {
+                console.error("Brevo sync failed:", error);
+                return;
+              }
+              await supabase
+                .from("profiles")
+                .update({ brevo_synced: true })
+                .eq("user_id", user.id);
+            })
+            .catch((err) => console.error("Brevo sync failed:", err));
+        }
+      }
       if (memberRes.data) setMember(memberRes.data);
       if (subRes.data) setSubscription(subRes.data);
       setProfileLoading(false);

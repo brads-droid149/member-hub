@@ -101,20 +101,8 @@ export default function Signup() {
       return;
     }
 
-    // Sync contact to Brevo (non-blocking — don't fail signup if it errors)
-    try {
-      await supabase.functions.invoke("brevo-sync-contact", {
-        body: {
-          email: email.trim(),
-          full_name: fullName.trim(),
-          phone: trimmedMobile,
-          state,
-          marketing_opt_in: marketingOptIn,
-        },
-      });
-    } catch (err) {
-      console.error("Brevo sync failed:", err);
-    }
+    // Brevo sync happens on first Home load once the user has a confirmed
+    // session — calling it here would 401 when email confirmation is on.
 
     if (data.session) {
       navigate("/subscribe");
