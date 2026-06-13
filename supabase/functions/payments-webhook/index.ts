@@ -248,31 +248,36 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice, env: StripeEn
     .eq("user_id", userId)
     .maybeSingle();
   if (!existing) return;
+  const isFirstFailure = !existing.past_due_since;
   const update: Record<string, unknown> = {
     status: "past_due",
     updated_at: new Date().toISOString(),
   };
-  if (!existing.past_due_since) update.past_due_since = new Date().toISOString();
+  if (isFirstFailure) update.past_due_since = new Date().toISOString();
   await supa.from("members").update(update).eq("user_id", userId);
 
-  // Generate a one-shot Billing Portal link so the dunning email's CTA
-  // takes the member straight to "update card" without needing to log in
-  // first. Falls back to dashboard URL if portal creation fails.
-  let portalUrl = "https://members.junkyardsurf.com.au/";
-  try {
-    const customerId = typeof invoice.customer === "string" ? invoice.customer : invoice.customer?.id;
-    if (customerId) {
-      const stripe = createStripeClient(env);
-      const portal = await stripe.billingPortal.sessions.create({
-        customer: customerId,
-        return_url: "https://members.junkyardsurf.com.au/",
-      });
-      portalUrl = portal.url;
+  // Only send a dunning email on the first payment failure in this billing
+  // cycle. Subsequent retry failures still update status but stay silent.
+  if (isFirstFailure) {
+    // Generate a one-shot Billing Portal link so the dunning email's CTA
+    // takes the member straight to "update card" without needing to log in
+    // first. Falls back to dashboard URL if portal creation fails.
+    let portalUrl = "https://members.junkyardsurf.com.au/";
+    try {
+      const customerId = typeof invoice.customer === "string" ? invoice.customer : invoice.customer?.id;
+      if (customerId) {
+        const stripe = createStripeClient(env);
+        const portal = await stripe.billingPortal.sessions.create({
+          customer: customerId,
+          return_url: "https://members.junkyardsurf.com.au/",
+        });
+        portalUrl = portal.url;
+      }
+    } catch (e) {
+      console.error("dunning portal session create failed", e);
     }
-  } catch (e) {
-    console.error("dunning portal session create failed", e);
+    await sendBillingEmail({ userId, template: { kind: "dunning", portalUrl } });
   }
-  await sendBillingEmail({ userId, template: { kind: "dunning", portalUrl } });
 }
 
 async function handleSubscriptionUpsert(subscription: Stripe.Subscription, env: StripeEnv) {
