@@ -117,11 +117,9 @@ export default function Signup() {
     }
 
     if (data.session) {
-      toast({ title: "Welcome to the Club!", description: "Choose your membership to get started." });
       navigate("/subscribe");
     } else {
-      toast({ title: "Welcome to the Club!", description: "Check your email to confirm your account, then sign in to choose your membership." });
-      navigate("/login");
+      navigate("/check-email");
     }
   };
 
