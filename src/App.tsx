@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import CheckEmail from "./pages/CheckEmail";
 import Subscribe from "./pages/Subscribe";
 import Unsubscribe from "./pages/Unsubscribe";
 import ResetPassword from "./pages/ResetPassword";
@@ -25,6 +26,7 @@ const App = () => (
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
+          <Route path="/check-email" element={<CheckEmail />} />
           <Route path="/subscribe" element={<Subscribe />} />
           <Route path="/unsubscribe" element={<Unsubscribe />} />
           <Route path="/reset-password" element={<ResetPassword />} />
