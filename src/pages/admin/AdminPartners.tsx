@@ -242,9 +242,9 @@ export default function AdminPartners() {
               partners.map((p) => (
                 <TableRow key={p.id}>
                   <TableCell>
-                    <div className="w-10 h-10 rounded-full bg-white border border-border overflow-hidden flex items-center justify-center">
+                    <div className="w-20 aspect-[16/9] rounded bg-white border border-border overflow-hidden flex items-center justify-center">
                       {p.logo_url ? (
-                        <img src={p.logo_url} alt={p.name} className="w-full h-full object-cover" loading="lazy" />
+                        <img src={p.logo_url} alt={p.name} className="object-contain p-1 w-full h-full" loading="lazy" />
                       ) : (
                         <span className="text-[10px] text-muted-foreground">N/A</span>
                       )}
