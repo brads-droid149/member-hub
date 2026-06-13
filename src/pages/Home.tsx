@@ -19,6 +19,20 @@ type Giveaway = Tables<"giveaways">;
 type Winner = Tables<"past_winners">;
 type Partner = Tables<"partners">;
 
+function MobileSidebarTrigger() {
+  const { toggleSidebar } = useSidebar();
+  return (
+    <button
+      type="button"
+      onClick={toggleSidebar}
+      className="bg-primary/10 border border-primary/20 rounded-md p-2 flex items-center justify-center"
+      aria-label="Toggle sidebar"
+    >
+      <Menu className="h-5 w-5 text-primary" />
+    </button>
+  );
+}
+
 export default function Home() {
   const { toast } = useToast();
   const { userId, authName, profile, setProfile, member, subscription, profileLoading } = useHomeData();
