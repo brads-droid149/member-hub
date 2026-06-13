@@ -1,0 +1,1 @@
+ALTER TABLE public.giveaways ADD COLUMN terms_url text;
