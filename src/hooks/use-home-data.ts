@@ -73,7 +73,7 @@ export function useHomeData() {
           .eq("environment", getStripeEnvironment())
           .order("created_at", { ascending: false })
           .limit(1)
-          .maybeSingle();,
+          .maybeSingle(),
       ]);
 
       if (cancelled) return;
