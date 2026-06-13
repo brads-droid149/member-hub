@@ -293,9 +293,9 @@ export default function AdminPartners() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-full bg-white border border-border overflow-hidden flex items-center justify-center shrink-0">
+              <div className="w-48 aspect-[16/9] rounded-md bg-white border border-border overflow-hidden flex items-center justify-center shrink-0">
                 {logoPreview ? (
-                  <img src={logoPreview} alt="Logo preview" className="w-full h-full object-cover" />
+                  <img src={logoPreview} alt="Logo preview" className="object-contain p-2 w-full h-full" />
                 ) : (
                   <span className="text-[10px] text-muted-foreground">Logo</span>
                 )}
