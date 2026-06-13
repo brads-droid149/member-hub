@@ -36,6 +36,7 @@ export default function AdminGiveaways() {
   const [current, setCurrent] = useState<Giveaway | null>(null);
   const [title, setTitle] = useState("");
   const [drawDate, setDrawDate] = useState("");
+  const [termsUrl, setTermsUrl] = useState("");
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
@@ -57,6 +58,7 @@ export default function AdminGiveaways() {
       setCurrent(data);
       setTitle(data.title);
       setDrawDate(data.draw_date ?? "");
+      setTermsUrl(data.terms_url ?? "");
       setImageUrl(data.prize_image_url);
       setPreviewUrl(data.prize_image_url);
     }
@@ -206,6 +208,7 @@ export default function AdminGiveaways() {
           .update({
             title: title.trim(),
             draw_date: drawDate || null,
+            terms_url: termsUrl.trim() || null,
             prize_image_url: finalImageUrl,
             is_active: true,
           })
@@ -217,6 +220,7 @@ export default function AdminGiveaways() {
         const { error } = await supabase.from("giveaways").insert({
           title: title.trim(),
           draw_date: drawDate || null,
+          terms_url: termsUrl.trim() || null,
           prize_image_url: finalImageUrl,
           is_active: true,
         });
@@ -314,6 +318,17 @@ export default function AdminGiveaways() {
                   onChange={(e) => setDrawDate(e.target.value)}
                 />
               </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="g-terms">Terms & Conditions URL (optional)</Label>
+              <Input
+                id="g-terms"
+                type="url"
+                value={termsUrl}
+                onChange={(e) => setTermsUrl(e.target.value)}
+                placeholder="https://junkyardsurf.com.au/giveaway-terms"
+              />
             </div>
 
             <div className="flex items-center gap-3">

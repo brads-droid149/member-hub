@@ -128,6 +128,16 @@ export function OverviewSection({
                       })}
                     </p>
                   )}
+                  {giveaway.terms_url && (
+                    <a
+                      href={giveaway.terms_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-primary hover:underline mt-1 inline-block"
+                    >
+                      Terms & Conditions
+                    </a>
+                  )}
                 </div>
               </div>
             ) : (
