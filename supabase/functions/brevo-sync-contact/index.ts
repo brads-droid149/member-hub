@@ -78,17 +78,37 @@ Deno.serve(async (req) => {
     };
     if (marketing_opt_in && listIds) payload.listIds = listIds;
 
-    const response = await fetch(`${GATEWAY_URL}/contacts`, {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${LOVABLE_API_KEY}`,
-        "X-Connection-Api-Key": BREVO_API_KEY,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    });
+    const callBrevo = (body: Record<string, unknown>) =>
+      fetch(`${GATEWAY_URL}/contacts`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${LOVABLE_API_KEY}`,
+          "X-Connection-Api-Key": BREVO_API_KEY,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+      });
 
-    const data = await response.json().catch(() => ({}));
+    let response = await callBrevo(payload);
+    let data = await response.json().catch(() => ({} as Record<string, unknown>));
+
+    // Brevo enforces SMS uniqueness across contacts. If the same phone is
+    // already on another contact, drop the SMS attribute and retry so the
+    // sync still completes for the rest of the fields.
+    const isDupSms =
+      response.status === 400 &&
+      (data as { code?: string })?.code === "duplicate_parameter" &&
+      ((data as { metadata?: { duplicate_identifiers?: string[] } })?.metadata?.duplicate_identifiers ?? []).includes("SMS");
+
+    if (isDupSms) {
+      console.warn("Brevo SMS duplicate — retrying without SMS attribute");
+      const retryAttrs = { ...(payload.attributes as Record<string, unknown>) };
+      delete retryAttrs.SMS;
+      const retryPayload = { ...payload, attributes: retryAttrs };
+      response = await callBrevo(retryPayload);
+      data = await response.json().catch(() => ({} as Record<string, unknown>));
+    }
+
     if (!response.ok) {
       console.error("Brevo API error", response.status, data);
       throw new Error(`Brevo API failed [${response.status}]: ${JSON.stringify(data)}`);
