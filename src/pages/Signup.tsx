@@ -208,13 +208,13 @@ export default function Signup() {
               />
               <Label htmlFor="terms" className="text-sm font-normal leading-relaxed cursor-pointer">
                 I agree to the{" "}
-                <Link to="/terms" target="_blank" className="text-primary hover:underline">
+                <a href="https://www.junkyardsurf.com.au/legal/club-terms-and-conditions" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
                   Terms & Conditions
-                </Link>{" "}
+                </a>{" "}
                 and{" "}
-                <Link to="/privacy" target="_blank" className="text-primary hover:underline">
+                <a href="https://www.junkyardsurf.com.au/legal/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
                   Privacy Policy
-                </Link>
+                </a>
               </Label>
             </div>
 

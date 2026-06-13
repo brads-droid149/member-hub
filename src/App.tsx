@@ -11,8 +11,6 @@ import ResetPassword from "./pages/ResetPassword";
 import Home from "./pages/Home";
 import Admin from "./pages/Admin";
 import CheckoutReturn from "./pages/CheckoutReturn";
-import Terms from "./pages/Terms";
-import Privacy from "./pages/Privacy";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { PaymentTestModeBanner } from "./components/PaymentTestModeBanner";
 import NotFound from "./pages/NotFound";
@@ -30,8 +28,6 @@ const App = () => (
           <Route path="/subscribe" element={<Subscribe />} />
           <Route path="/unsubscribe" element={<Unsubscribe />} />
           <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/terms" element={<Terms />} />
-          <Route path="/privacy" element={<Privacy />} />
           <Route path="/checkout/return" element={<CheckoutReturn />} />
           <Route
             path="/"
