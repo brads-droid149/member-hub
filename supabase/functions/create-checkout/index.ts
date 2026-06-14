@@ -68,12 +68,19 @@ async function createCheckoutSession(options: {
   // transaction-level support for buyers in ~80 countries (+3.5%/txn).
   // Note: `managed_payments` conflicts with `automatic_tax`, `customer_update`,
   // `tax_id_collection`, and several other fields — do not add them here.
+  //
+  // adaptive_pricing.enabled=false locks Stripe Adaptive Pricing OFF at the
+  // Session level regardless of the Dashboard toggle, so a buyer in (say)
+  // the US is always charged A$5 AUD — never a converted USD equivalent.
+  // Combined with the Price having no currency_options, there is no path
+  // for a non-AUD charge to occur.
   const session = await stripe.checkout.sessions.create({
     line_items: [{ price: stripePrice.id, quantity: options.quantity || 1 }],
     mode: isRecurring ? "subscription" : "payment",
     ui_mode: "embedded_page",
     return_url: options.returnUrl,
     managed_payments: { enabled: true },
+    adaptive_pricing: { enabled: false },
     ...(customerId && { customer: customerId }),
     ...(options.userId && {
       metadata: { userId: options.userId, managed_payments: "true" },
