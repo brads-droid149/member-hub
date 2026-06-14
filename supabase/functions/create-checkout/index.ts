@@ -63,23 +63,23 @@ async function createCheckoutSession(options: {
       })
     : undefined;
 
+  // Full compliance handling: Stripe acts as merchant of record and handles
+  // tax calculation/collection/filing/remittance, fraud, disputes, and
+  // transaction-level support for buyers in ~80 countries (+3.5%/txn).
+  // Note: `managed_payments` conflicts with `automatic_tax`, `customer_update`,
+  // `tax_id_collection`, and several other fields — do not add them here.
   const session = await stripe.checkout.sessions.create({
     line_items: [{ price: stripePrice.id, quantity: options.quantity || 1 }],
     mode: isRecurring ? "subscription" : "payment",
     ui_mode: "embedded_page",
     return_url: options.returnUrl,
-    // GST/tax: Stripe calculates and collects Australian GST at checkout.
-    // Requires the customer's address — collect at checkout and write it back.
-    automatic_tax: { enabled: true },
-    ...(customerId && {
-      customer: customerId,
-      customer_update: { address: "auto", name: "auto" },
-    }),
+    managed_payments: { enabled: true },
+    ...(customerId && { customer: customerId }),
     ...(options.userId && {
-      metadata: { userId: options.userId },
+      metadata: { userId: options.userId, managed_payments: "true" },
       ...(isRecurring && { subscription_data: { metadata: { userId: options.userId } } }),
     }),
-  });
+  } as any);
 
   return session.client_secret;
 }
