@@ -61,6 +61,17 @@ Deno.serve(async (req) => {
       continue
     }
 
+    // 2b. Keep subscriptions row in sync so has_active_subscription() RLS
+    // does not still grant access until current_period_end passes.
+    const { error: subErr } = await supabase
+      .from('subscriptions')
+      .update({ status: 'canceled', updated_at: new Date().toISOString() })
+      .eq('user_id', userId)
+      .eq('status', 'past_due')
+    if (subErr) {
+      console.error('subscriptions sync failed', { userId, error: subErr })
+    }
+
     // 3. Notify the member and update Brevo. Both are best-effort.
     await sendBillingEmail({
       userId,
