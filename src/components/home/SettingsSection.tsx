@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { AU_STATES } from "@/lib/constants";
 import { useNavigate } from "react-router-dom";
+import { getStripeEnvironment } from "@/lib/stripe";
 const PHONE_RE = /^\+614\d{8}$/;
 
 interface SettingsSectionProps {
@@ -52,7 +53,7 @@ export function SettingsSection({
     setDeleting(true);
     const { data: { session } } = await supabase.auth.getSession();
     const { data, error } = await supabase.functions.invoke("delete-account", {
-      body: { environment: "sandbox" },
+      body: { environment: getStripeEnvironment() },
       headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : undefined,
     });
     setDeleting(false);
