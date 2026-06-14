@@ -92,13 +92,19 @@ Deno.serve(async (req) => {
     }
 
     // Notify the cancelled member + flip Brevo marketing flag. Best-effort.
-    await sendBillingEmail({
-      userId: targetUserId,
-      template: { kind: "cancelled", reason: "admin" },
-    });
-    const { data: userResp } = await supabase.auth.admin.getUserById(targetUserId);
-    const targetEmail = userResp?.user?.email;
-    if (targetEmail) await brevoMarkCancelled(targetEmail);
+    // For cancel-at-period-end (immediate=false), defer the email until
+    // Stripe fires subscription.deleted at the actual end date — the
+    // webhook (handleSubscriptionDeleted) sends it then so the member's
+    // experience matches the email.
+    if (immediate || !stripeSubId) {
+      await sendBillingEmail({
+        userId: targetUserId,
+        template: { kind: "cancelled", reason: "admin" },
+      });
+      const { data: userResp } = await supabase.auth.admin.getUserById(targetUserId);
+      const targetEmail = userResp?.user?.email;
+      if (targetEmail) await brevoMarkCancelled(targetEmail);
+    }
 
     return new Response(JSON.stringify({ ok: true, immediate, hadSubscription: !!stripeSubId }), {
       status: 200,
