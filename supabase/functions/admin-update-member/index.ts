@@ -41,8 +41,8 @@ Deno.serve(async (req) => {
 
     const body = await req.json().catch(() => ({}));
     const targetUserId: string | undefined = body.userId;
-    const monthsActive = Number.isFinite(body.monthsActive) ? Math.max(0, Math.floor(body.monthsActive)) : undefined;
-    const entries = Number.isFinite(body.entries) ? Math.max(0, Math.floor(body.entries)) : undefined;
+    const monthsActive = Number.isFinite(body.monthsActive) ? Math.min(10000, Math.max(0, Math.floor(body.monthsActive))) : undefined;
+    const entries = Number.isFinite(body.entries) ? Math.min(10000, Math.max(0, Math.floor(body.entries))) : undefined;
 
     if (!targetUserId || !/^[a-f0-9-]{36}$/i.test(targetUserId)) {
       return new Response(JSON.stringify({ error: "Invalid userId" }), {
