@@ -307,6 +307,24 @@ export type Database = {
         }
         Relationships: []
       }
+      stripe_webhook_events: {
+        Row: {
+          created_at: string
+          event_id: string
+          event_type: string
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          event_type: string
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          event_type?: string
+        }
+        Relationships: []
+      }
       subscriptions: {
         Row: {
           cancel_at_period_end: boolean | null
