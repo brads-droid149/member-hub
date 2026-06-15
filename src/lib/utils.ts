@@ -21,7 +21,13 @@ export function formatDate(iso: string) {
 }
 
 export function csvEscape(v: unknown) {
-  const s = v === null || v === undefined ? "" : String(v);
+  let s = v === null || v === undefined ? "" : String(v);
+  // Defend against CSV formula injection: prepend a single quote so
+  // Excel/Sheets treats values starting with =, +, -, or @ as plain text.
+  // Example: csvEscape('=cmd|...')  ->  "'=cmd|..."
+  if (/^[=+\-@]/.test(s)) {
+    s = "'" + s;
+  }
   return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
 
