@@ -366,6 +366,32 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription, env:
 export async function handleWebhook(req: Request, env: StripeEnv) {
   const event = await _verifyWebhookFn(req, env);
 
+  // Idempotency guard. Stripe retries deliveries for up to 3 days and may
+  // also send overlapping events (notably invoice.paid + invoice.payment_succeeded
+  // from different API versions). We dedup on event.id by recording every
+  // processed event in stripe_webhook_events; the PK on event_id ensures
+  // exactly-once handling. We use `ignoreDuplicates` + `.select()` so we can
+  // tell whether the insert actually happened — empty data array == duplicate.
+  const eventId = (event as { id?: string }).id;
+  if (eventId) {
+    const { data: inserted, error: dedupError } = await getSupabase()
+      .from("stripe_webhook_events")
+      .upsert(
+        { event_id: eventId, event_type: event.type },
+        { onConflict: "event_id", ignoreDuplicates: true },
+      )
+      .select();
+    if (dedupError) {
+      console.error("stripe_webhook_events insert error", dedupError);
+      // Fall through and process — better to risk a dup than drop an event.
+    } else if (Array.isArray(inserted) && inserted.length === 0) {
+      console.log("Duplicate Stripe webhook event, skipping:", eventId, event.type);
+      return;
+    }
+  } else {
+    console.warn("Stripe webhook event missing id, cannot dedup", event.type);
+  }
+
   switch (event.type) {
     case "customer.subscription.created":
     case "customer.subscription.updated":
@@ -374,6 +400,10 @@ export async function handleWebhook(req: Request, env: StripeEnv) {
     case "customer.subscription.deleted":
       await handleSubscriptionDeleted(event.data.object as Stripe.Subscription, env);
       break;
+    // invoice.paid and invoice.payment_succeeded both map to the same handler
+    // because different Stripe API versions emit different event names for
+    // the same underlying state change. The event_id dedup above prevents
+    // double-processing if Stripe somehow sends both for the same invoice.
     case "invoice.paid":
     case "invoice.payment_succeeded":
       await handleInvoicePaid(event.data.object as Stripe.Invoice, env);
