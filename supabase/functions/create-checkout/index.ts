@@ -121,7 +121,10 @@ Deno.serve(async (req) => {
     const clientSecret = await createCheckoutSession({
       priceId: body.priceId,
       quantity: body.quantity,
-      customerEmail: body.customerEmail,
+      // Always use the authenticated user's email from the JWT — never trust
+      // a client-supplied email, which could let an attacker attach their
+      // checkout session to another user's Stripe customer record.
+      customerEmail: user.email,
       userId: user.id,
       returnUrl: body.returnUrl,
       environment: env,
