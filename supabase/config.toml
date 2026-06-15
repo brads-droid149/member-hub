@@ -19,3 +19,5 @@ project_id = "zsnhpkqisxwkfaurwcmu"
     verify_jwt = false
   [functions.delete-account]
     verify_jwt = false
+  [functions._diag-stripe]
+    verify_jwt = false
