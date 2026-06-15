@@ -9,6 +9,7 @@ type Call = { table: string; op: string; args: any };
 
 function makeStubSupabase(opts: { existingMember?: any } = {}) {
   const calls: Call[] = [];
+  const seenEventIds = new Set<string>();
   const subQueryResult = { data: { user_id: "user-123" }, error: null };
   const memberQueryResult = {
     data: opts.existingMember ?? null,
@@ -19,10 +20,22 @@ function makeStubSupabase(opts: { existingMember?: any } = {}) {
     from(table: string) {
       const chain: any = {
         _table: table,
-        select() { return chain; },
+        select() {
+          // Default no-op select; upsert builds its own selectable result below.
+          return chain;
+        },
         eq() { return chain; },
-        upsert(args: any) {
+        upsert(args: any, _opts?: any) {
           calls.push({ table, op: "upsert", args });
+          // Dedup table: simulate ignoreDuplicates by returning [] on repeats.
+          if (table === "stripe_webhook_events") {
+            const isDup = seenEventIds.has(args.event_id);
+            seenEventIds.add(args.event_id);
+            const data = isDup ? [] : [{ event_id: args.event_id }];
+            const result: any = Promise.resolve({ data, error: null });
+            result.select = () => Promise.resolve({ data, error: null });
+            return result;
+          }
           return Promise.resolve({ error: null });
         },
         insert(args: any) {
@@ -31,7 +44,6 @@ function makeStubSupabase(opts: { existingMember?: any } = {}) {
         },
         update(args: any) {
           calls.push({ table, op: "update", args });
-          // update().eq() chain still needs to be awaitable
           const after: any = {
             eq() { return after; },
             then(onFulfilled: any) {
@@ -65,6 +77,7 @@ Deno.test("subscription.created creates active member with one entry", async () 
   __setTestOverrides({
     supabase: client,
     verifyWebhookFn: async () => ({
+      id: "evt_create_1",
       type: "customer.subscription.created",
       data: {
         object: {
@@ -92,6 +105,7 @@ Deno.test("subscription.deleted sets member cancelled and zeros entries", async 
   __setTestOverrides({
     supabase: client,
     verifyWebhookFn: async () => ({
+      id: "evt_delete_1",
       type: "customer.subscription.deleted",
       data: {
         object: {
@@ -121,4 +135,58 @@ Deno.test("invalid signature surfaces an error from verifyWebhook", async () => 
     threw = true;
   }
   assertEquals(threw, true);
+});
+
+Deno.test("duplicate event.id is deduped — second delivery is a no-op", async () => {
+  const { client, calls } = makeStubSupabase();
+  const event = {
+    id: "evt_dup_1",
+    type: "customer.subscription.created",
+    data: {
+      object: {
+        id: "sub_dup",
+        customer: "cus_dup",
+        status: "active",
+        metadata: { userId: "user-123" },
+        items: { data: [{ price: { id: "price_1", product: "prod_1" } }] },
+      },
+    },
+  };
+  __setTestOverrides({
+    supabase: client,
+    verifyWebhookFn: async () => event as any,
+  });
+
+  // First delivery: should process normally (subscriptions upsert + member insert).
+  await handleWebhook(makeRequest(), "sandbox");
+  const callsAfterFirst = calls.length;
+  const writesAfterFirst = calls.filter((c) =>
+    c.table !== "stripe_webhook_events" && c.op !== "select"
+  ).length;
+  // Sanity check the first call actually did work.
+  const memberInsert = calls.find((c) => c.table === "members" && c.op === "insert");
+  assertEquals(memberInsert?.args.status, "active");
+
+  // Second delivery with the same event.id: only the dedup upsert should fire;
+  // no additional writes to members/subscriptions/etc.
+  await handleWebhook(makeRequest(), "sandbox");
+
+  const dedupCalls = calls.filter((c) => c.table === "stripe_webhook_events");
+  assertEquals(dedupCalls.length, 2, "dedup upsert attempted on both deliveries");
+
+  const writesAfterSecond = calls.filter((c) =>
+    c.table !== "stripe_webhook_events" && c.op !== "select"
+  ).length;
+  assertEquals(
+    writesAfterSecond,
+    writesAfterFirst,
+    "second delivery must not perform any non-dedup writes",
+  );
+  assertEquals(
+    calls.length,
+    callsAfterFirst + 1,
+    "second delivery only adds the dedup upsert call",
+  );
+
+  __resetTestOverrides();
 });
