@@ -29,6 +29,7 @@ export default function Signup() {
   const [state, setState] = useState<string>("");
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [marketingOptIn, setMarketingOptIn] = useState(false);
+  const [isAustralianResident, setIsAustralianResident] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -61,6 +62,10 @@ export default function Signup() {
       toast({ title: "You must agree to the Terms & Conditions and Privacy Policy", variant: "destructive" });
       return;
     }
+    if (!isAustralianResident) {
+      toast({ title: "Australian residents only", description: "You must confirm you are an Australian resident to join the club.", variant: "destructive" });
+      return;
+    }
 
     // Check for duplicate phone via SECURITY DEFINER RPC
     // (anon can't read other users' profiles directly under RLS).
@@ -85,6 +90,7 @@ export default function Signup() {
           phone: trimmedMobile,
           state,
           marketing_opt_in: marketingOptIn,
+          australian_resident: isAustralianResident,
         },
       },
     });
@@ -215,6 +221,19 @@ export default function Signup() {
                 <a href="https://www.junkyardsurf.com.au/legal/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
                   Privacy Policy
                 </a>
+              </Label>
+            </div>
+
+            {/* Required: Australian resident confirmation */}
+            <div className="flex items-start gap-2">
+              <Checkbox
+                id="australian-resident"
+                checked={isAustralianResident}
+                onCheckedChange={(checked) => setIsAustralianResident(checked === true)}
+                className="mt-1"
+              />
+              <Label htmlFor="australian-resident" className="text-sm font-normal leading-relaxed cursor-pointer">
+                I confirm I am an Australian resident
               </Label>
             </div>
 
