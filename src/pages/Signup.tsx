@@ -62,6 +62,10 @@ export default function Signup() {
       toast({ title: "You must agree to the Terms & Conditions and Privacy Policy", variant: "destructive" });
       return;
     }
+    if (!isAustralianResident) {
+      toast({ title: "Australian residents only", description: "You must confirm you are an Australian resident to join the club.", variant: "destructive" });
+      return;
+    }
 
     // Check for duplicate phone via SECURITY DEFINER RPC
     // (anon can't read other users' profiles directly under RLS).
