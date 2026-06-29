@@ -224,6 +224,19 @@ export default function Signup() {
               </Label>
             </div>
 
+            {/* Required: Australian resident confirmation */}
+            <div className="flex items-start gap-2">
+              <Checkbox
+                id="australian-resident"
+                checked={isAustralianResident}
+                onCheckedChange={(checked) => setIsAustralianResident(checked === true)}
+                className="mt-1"
+              />
+              <Label htmlFor="australian-resident" className="text-sm font-normal leading-relaxed cursor-pointer">
+                I confirm I am an Australian resident
+              </Label>
+            </div>
+
             {/* Optional: Marketing */}
             <div className="flex items-start gap-2">
               <Checkbox
