@@ -29,6 +29,7 @@ export default function Signup() {
   const [state, setState] = useState<string>("");
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [marketingOptIn, setMarketingOptIn] = useState(false);
+  const [isAustralianResident, setIsAustralianResident] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
