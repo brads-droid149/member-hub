@@ -90,6 +90,7 @@ export default function Signup() {
           phone: trimmedMobile,
           state,
           marketing_opt_in: marketingOptIn,
+          australian_resident: isAustralianResident,
         },
       },
     });
