@@ -22,24 +22,29 @@ import {
 import {
   Users,
   Loader2,
+  ArrowUp,
+  ArrowDown,
   ArrowUpDown,
   Download,
   Search,
   Eye,
   ShieldCheck,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
-import { useAdminMembers, type AdminMemberRow } from "@/contexts/AdminMembersContext";
+import {
+  useAdminMembers,
+  type AdminMemberRow,
+  type AdminMembersSortKey,
+} from "@/contexts/AdminMembersContext";
 import { supabase } from "@/integrations/supabase/client";
 import { getStripeEnvironment } from "@/lib/stripe";
 import { useToast } from "@/hooks/use-toast";
-import { cn, formatDate, exportMembersCSV, exportEmailList, exportDrawList } from "@/lib/utils";
+import { formatDate, exportMembersCSV, exportEmailList, exportDrawList } from "@/lib/utils";
 import { MemberStatusBadge } from "@/components/admin/MemberStatusBadge";
 import { MemberDetailPanel } from "@/components/admin/MemberDetailPanel";
-import { useMemberTable } from "@/hooks/use-member-table";
 
 type Row = AdminMemberRow;
-
-
 
 const exemptBadge = () => (
   <span className="inline-flex items-center rounded-full border border-accent/30 bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent-foreground">
@@ -49,20 +54,26 @@ const exemptBadge = () => (
 );
 
 export default function AdminMembers() {
-  const { members: rows, loading, refresh, setDrawExempt, setBillingExempt } = useAdminMembers();
-  const { toast } = useToast();
   const {
-    sortedMembers,
-    sortedRows,
+    members: rows,
+    totalCount,
+    loading,
+    page,
+    pageSize,
     searchQuery,
-    setSearchQuery,
     sortKey,
-    setSortKey,
     sortDir,
-    setSortDir,
-    toggleSort,
-  } = useMemberTable(rows);
+    setPage,
+    setSearchQuery,
+    setSort,
+    refresh,
+    fetchAll,
+    setDrawExempt,
+    setBillingExempt,
+  } = useAdminMembers();
+  const { toast } = useToast();
   const [drawExemptPending, setDrawExemptPending] = useState(false);
+  const [exporting, setExporting] = useState<null | "members" | "email" | "draw">(null);
 
   // Detail panel state
   const [selected, setSelected] = useState<Row | null>(null);
@@ -76,8 +87,6 @@ export default function AdminMembers() {
     () => (selected ? rows.find((r) => r.user_id === selected.user_id) ?? selected : null),
     [selected, rows],
   );
-
-
 
   const openMember = (r: Row) => {
     setSelected(r);
@@ -159,6 +168,42 @@ export default function AdminMembers() {
     }
   };
 
+  const runExport = async (
+    kind: "members" | "email" | "draw",
+    fn: (rows: AdminMemberRow[]) => void,
+  ) => {
+    setExporting(kind);
+    try {
+      const all = await fetchAll();
+      if (all.length === 0) {
+        toast({ title: "Nothing to export", description: "No members match the current filter." });
+        return;
+      }
+      fn(all);
+    } finally {
+      setExporting(null);
+    }
+  };
+
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+  const pageStart = totalCount === 0 ? 0 : page * pageSize + 1;
+  const pageEnd = Math.min(totalCount, page * pageSize + rows.length);
+
+  const sortIcon = (key: AdminMembersSortKey) => {
+    if (sortKey !== key) return <ArrowUpDown className="h-3 w-3 opacity-50" />;
+    return sortDir === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />;
+  };
+
+  const SortButton = ({ k, label }: { k: AdminMembersSortKey; label: string }) => (
+    <button
+      type="button"
+      onClick={() => setSort(k)}
+      className="inline-flex items-center gap-1 hover:text-foreground"
+    >
+      {label}
+      {sortIcon(k)}
+    </button>
+  );
 
   return (
     <div className="space-y-6">
@@ -169,20 +214,51 @@ export default function AdminMembers() {
             Members
           </h2>
           <p className="text-sm text-muted-foreground mt-1">
-            Total members: <span className="font-semibold text-foreground">{rows.length}</span>
+            {searchQuery.trim() ? (
+              <>
+                Matching: <span className="font-semibold text-foreground">{totalCount}</span>
+              </>
+            ) : (
+              <>
+                Total members: <span className="font-semibold text-foreground">{totalCount}</span>
+              </>
+            )}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button onClick={() => exportMembersCSV(sortedMembers)} disabled={loading || rows.length === 0}>
-            <Download className="h-4 w-4 mr-1.5" />
+          <Button
+            onClick={() => runExport("members", exportMembersCSV)}
+            disabled={loading || totalCount === 0 || exporting !== null}
+          >
+            {exporting === "members" ? (
+              <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+            ) : (
+              <Download className="h-4 w-4 mr-1.5" />
+            )}
             Download Members CSV
           </Button>
-          <Button variant="outline" onClick={() => exportEmailList(sortedMembers)} disabled={loading || rows.length === 0}>
-            <Download className="h-4 w-4 mr-1.5" />
+          <Button
+            variant="outline"
+            onClick={() => runExport("email", exportEmailList)}
+            disabled={loading || totalCount === 0 || exporting !== null}
+          >
+            {exporting === "email" ? (
+              <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+            ) : (
+              <Download className="h-4 w-4 mr-1.5" />
+            )}
             Email List
           </Button>
-          <Button variant="outline" onClick={() => exportDrawList(sortedMembers)} disabled={loading || rows.length === 0}>
-            <Download className="h-4 w-4 mr-1.5" />
+          <Button
+            variant="outline"
+            onClick={() => runExport("draw", exportDrawList)}
+            disabled={loading || totalCount === 0 || exporting !== null}
+          >
+            {exporting === "draw" ? (
+              <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+            ) : (
+              <Download className="h-4 w-4 mr-1.5" />
+            )}
             Draw Export
           </Button>
         </div>
@@ -203,23 +279,18 @@ export default function AdminMembers() {
           <TableHeader>
             <TableRow>
               <TableHead>ID</TableHead>
-              <TableHead>Full Name</TableHead>
-              <TableHead>Email</TableHead>
+              <TableHead><SortButton k="full_name" label="Full Name" /></TableHead>
+              <TableHead><SortButton k="email" label="Email" /></TableHead>
               <TableHead>Mobile</TableHead>
               <TableHead>State</TableHead>
               <TableHead className="text-right">
-                <button
-                  type="button"
-                  onClick={() => toggleSort("entries")}
-                  className="inline-flex items-center gap-1 hover:text-foreground"
-                >
-                  Entries
-                  <ArrowUpDown className="h-3 w-3" />
-                </button>
+                <SortButton k="entries" label="Entries" />
               </TableHead>
-              <TableHead className="text-right">Months Active</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Joined</TableHead>
+              <TableHead className="text-right">
+                <SortButton k="months_active" label="Months Active" />
+              </TableHead>
+              <TableHead><SortButton k="status" label="Status" /></TableHead>
+              <TableHead><SortButton k="joined_at" label="Joined" /></TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -230,14 +301,14 @@ export default function AdminMembers() {
                   <Loader2 className="h-5 w-5 animate-spin text-primary mx-auto" />
                 </TableCell>
               </TableRow>
-            ) : sortedRows.length === 0 ? (
+            ) : rows.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={10} className="text-center py-12 text-sm text-muted-foreground">
                   {searchQuery.trim() ? "No members match your search." : "No members yet."}
                 </TableCell>
               </TableRow>
             ) : (
-              sortedRows.map((r) => (
+              rows.map((r) => (
                 <TableRow key={r.user_id}>
                   <TableCell className="font-mono text-xs text-muted-foreground">{r.user_id.slice(0, 6)}</TableCell>
                   <TableCell className="font-medium text-foreground">{r.full_name || "—"}</TableCell>
@@ -264,6 +335,38 @@ export default function AdminMembers() {
             )}
           </TableBody>
         </Table>
+      </div>
+
+      {/* Pagination */}
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <p className="text-xs text-muted-foreground">
+          {totalCount === 0
+            ? "0 results"
+            : `Showing ${pageStart}–${pageEnd} of ${totalCount}`}
+        </p>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPage(page - 1)}
+            disabled={loading || page === 0}
+          >
+            <ChevronLeft className="h-4 w-4 mr-1" />
+            Previous
+          </Button>
+          <span className="text-xs text-muted-foreground tabular-nums">
+            Page {Math.min(page + 1, totalPages)} of {totalPages}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPage(page + 1)}
+            disabled={loading || page + 1 >= totalPages}
+          >
+            Next
+            <ChevronRight className="h-4 w-4 ml-1" />
+          </Button>
+        </div>
       </div>
 
       <MemberDetailPanel
