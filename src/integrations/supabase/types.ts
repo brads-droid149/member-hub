@@ -160,11 +160,11 @@ export type Database = {
       }
       members: {
         Row: {
+          billing_exempt: boolean
           created_at: string
+          draw_exempt: boolean
           entries: number
-          exempt_from_winning: boolean
           id: string
-          is_exempt: boolean
           last_entry_credited_at: string
           months_active: number
           past_due_since: string | null
@@ -175,11 +175,11 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          billing_exempt?: boolean
           created_at?: string
+          draw_exempt?: boolean
           entries?: number
-          exempt_from_winning?: boolean
           id?: string
-          is_exempt?: boolean
           last_entry_credited_at?: string
           months_active?: number
           past_due_since?: string | null
@@ -190,11 +190,11 @@ export type Database = {
           user_id: string
         }
         Update: {
+          billing_exempt?: boolean
           created_at?: string
+          draw_exempt?: boolean
           entries?: number
-          exempt_from_winning?: boolean
           id?: string
-          is_exempt?: boolean
           last_entry_credited_at?: string
           months_active?: number
           past_due_since?: string | null
@@ -433,11 +433,11 @@ export type Database = {
       get_admin_members_overview: {
         Args: never
         Returns: {
+          billing_exempt: boolean
+          draw_exempt: boolean
           email: string
           entries: number
-          exempt_from_winning: boolean
           full_name: string
-          is_exempt: boolean
           joined_at: string
           months_active: number
           phone: string
