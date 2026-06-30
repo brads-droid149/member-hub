@@ -2,12 +2,33 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { type StripeEnv, createStripeClient } from "../_shared/stripe.ts";
 import { getCorsHeaders, isAllowedReturnUrl } from "../_shared/cors.ts";
 
-const supabase = createClient(
-  Deno.env.get("SUPABASE_URL")!,
-  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-);
+let _supabase: any = null;
+function getSupabase(): any {
+  if (!_supabase) {
+    _supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
+  }
+  return _supabase;
+}
 
-Deno.serve(async (req) => {
+let _stripeFactory: typeof createStripeClient = createStripeClient;
+
+export function __setTestOverrides(opts: {
+  supabase?: any;
+  stripeFactory?: typeof createStripeClient;
+}) {
+  if (opts.supabase !== undefined) _supabase = opts.supabase;
+  if (opts.stripeFactory !== undefined) _stripeFactory = opts.stripeFactory;
+}
+
+export function __resetTestOverrides() {
+  _supabase = null;
+  _stripeFactory = createStripeClient;
+}
+
+export async function handler(req: Request): Promise<Response> {
   const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") {
@@ -22,6 +43,7 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    const supabase = getSupabase();
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     if (authError || !user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -56,7 +78,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const stripe = createStripeClient(environment);
+    const stripe = _stripeFactory(environment);
     const portal = await stripe.billingPortal.sessions.create({
       customer: sub.stripe_customer_id,
       ...(returnUrl && { return_url: returnUrl }),
@@ -74,4 +96,6 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
-});
+}
+
+Deno.serve(handler);

@@ -17,8 +17,29 @@
 // Two queues, processed in priority order:
 //   1. auth_emails          (signup / password reset — time sensitive, short TTL)
 //   2. transactional_emails (receipts, winner notifications — longer TTL)
-import { sendLovableEmail } from 'npm:@lovable.dev/email-js'
 import { createClient } from 'npm:@supabase/supabase-js@2'
+
+// Lazy-load @lovable.dev/email-js so unit tests can run without it resolved.
+type SendLovableEmailFn = (payload: any, opts: any) => Promise<unknown>
+let _sendEmailFn: SendLovableEmailFn | null = null
+async function getSendEmail(): Promise<SendLovableEmailFn> {
+  if (_sendEmailFn) return _sendEmailFn
+  const mod = await import('npm:@lovable.dev/email-js' as string)
+  return mod.sendLovableEmail as SendLovableEmailFn
+}
+
+let _createClientFn: any = createClient
+export function __setTestOverrides(opts: {
+  sendEmailFn?: SendLovableEmailFn
+  createClientFn?: any
+}) {
+  if (opts.sendEmailFn !== undefined) _sendEmailFn = opts.sendEmailFn
+  if (opts.createClientFn !== undefined) _createClientFn = opts.createClientFn
+}
+export function __resetTestOverrides() {
+  _sendEmailFn = null
+  _createClientFn = createClient
+}
 
 const MAX_RETRIES = 5
 const DEFAULT_BATCH_SIZE = 10
@@ -31,7 +52,7 @@ const DEFAULT_TRANSACTIONAL_TTL_MINUTES = 60
 // Check if an error is a rate-limit (429) response.
 // Uses EmailAPIError.status when available (email-js >=0.x with structured errors),
 // falls back to parsing the error message for older versions.
-function isRateLimited(error: unknown): boolean {
+export function isRateLimited(error: unknown): boolean {
   if (error && typeof error === 'object' && 'status' in error) {
     return (error as { status: number }).status === 429
   }
@@ -40,7 +61,7 @@ function isRateLimited(error: unknown): boolean {
 
 // Check if an error is a forbidden (403) response. Retrying won't help.
 // Move straight to DLQ.
-function isForbidden(error: unknown): boolean {
+export function isForbidden(error: unknown): boolean {
   if (error && typeof error === 'object' && 'status' in error) {
     return (error as { status: number }).status === 403
   }
@@ -48,14 +69,14 @@ function isForbidden(error: unknown): boolean {
 }
 
 // Extract Retry-After seconds from a structured EmailAPIError, or default to 60s.
-function getRetryAfterSeconds(error: unknown): number {
+export function getRetryAfterSeconds(error: unknown): number {
   if (error && typeof error === 'object' && 'retryAfterSeconds' in error) {
     return (error as { retryAfterSeconds: number | null }).retryAfterSeconds ?? 60
   }
   return 60
 }
 
-function parseJwtClaims(token: string): Record<string, unknown> | null {
+export function parseJwtClaims(token: string): Record<string, unknown> | null {
   const parts = token.split('.')
   if (parts.length < 2) {
     return null
@@ -75,7 +96,7 @@ function parseJwtClaims(token: string): Record<string, unknown> | null {
 
 // Move a message to the dead letter queue and log the reason.
 async function moveToDlq(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   queue: string,
   msg: { msg_id: number; message: Record<string, unknown> },
   reason: string
@@ -99,7 +120,7 @@ async function moveToDlq(
   }
 }
 
-Deno.serve(async (req) => {
+export const handler = async (req: Request): Promise<Response> => {
   const apiKey = Deno.env.get('LOVABLE_API_KEY')
   const supabaseUrl = Deno.env.get('SUPABASE_URL')
   const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
@@ -132,7 +153,7 @@ Deno.serve(async (req) => {
     )
   }
 
-  const supabase = createClient(supabaseUrl, supabaseServiceKey)
+  const supabase: any = _createClientFn(supabaseUrl, supabaseServiceKey)
 
   // 1. Check rate-limit cooldown and read queue config
   const { data: state } = await supabase
@@ -177,12 +198,12 @@ Deno.serve(async (req) => {
     const messageIds = Array.from(
       new Set(
         messages
-          .map((msg) =>
+          .map((msg: any) =>
             msg?.message?.message_id && typeof msg.message.message_id === 'string'
-              ? msg.message.message_id
+              ? (msg.message.message_id as string)
               : null
           )
-          .filter((id): id is string => Boolean(id))
+          .filter((id: string | null): id is string => Boolean(id))
       )
     )
     const failedAttemptsByMessageId = new Map<string, number>()
@@ -303,7 +324,8 @@ Deno.serve(async (req) => {
       }
 
       try {
-        await sendLovableEmail(
+        const sendEmail = await getSendEmail()
+        await sendEmail(
           {
             run_id: payload.run_id,
             to: payload.to,
@@ -414,4 +436,6 @@ Deno.serve(async (req) => {
     JSON.stringify({ processed: totalProcessed }),
     { headers: { 'Content-Type': 'application/json' } }
   )
-})
+}
+
+Deno.serve(handler)
