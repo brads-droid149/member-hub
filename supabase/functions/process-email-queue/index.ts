@@ -20,6 +20,21 @@
 import { sendLovableEmail } from 'npm:@lovable.dev/email-js'
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
+// Test-only seams — allow unit tests to inject stubbed supabase + send fn.
+let _sendEmailFn: typeof sendLovableEmail = sendLovableEmail
+let _createClientFn: typeof createClient = createClient
+export function __setTestOverrides(opts: {
+  sendEmailFn?: typeof sendLovableEmail
+  createClientFn?: typeof createClient
+}) {
+  if (opts.sendEmailFn !== undefined) _sendEmailFn = opts.sendEmailFn
+  if (opts.createClientFn !== undefined) _createClientFn = opts.createClientFn
+}
+export function __resetTestOverrides() {
+  _sendEmailFn = sendLovableEmail
+  _createClientFn = createClient
+}
+
 const MAX_RETRIES = 5
 const DEFAULT_BATCH_SIZE = 10
 const DEFAULT_SEND_DELAY_MS = 200
@@ -31,7 +46,7 @@ const DEFAULT_TRANSACTIONAL_TTL_MINUTES = 60
 // Check if an error is a rate-limit (429) response.
 // Uses EmailAPIError.status when available (email-js >=0.x with structured errors),
 // falls back to parsing the error message for older versions.
-function isRateLimited(error: unknown): boolean {
+export function isRateLimited(error: unknown): boolean {
   if (error && typeof error === 'object' && 'status' in error) {
     return (error as { status: number }).status === 429
   }
@@ -40,7 +55,7 @@ function isRateLimited(error: unknown): boolean {
 
 // Check if an error is a forbidden (403) response. Retrying won't help.
 // Move straight to DLQ.
-function isForbidden(error: unknown): boolean {
+export function isForbidden(error: unknown): boolean {
   if (error && typeof error === 'object' && 'status' in error) {
     return (error as { status: number }).status === 403
   }
@@ -48,14 +63,14 @@ function isForbidden(error: unknown): boolean {
 }
 
 // Extract Retry-After seconds from a structured EmailAPIError, or default to 60s.
-function getRetryAfterSeconds(error: unknown): number {
+export function getRetryAfterSeconds(error: unknown): number {
   if (error && typeof error === 'object' && 'retryAfterSeconds' in error) {
     return (error as { retryAfterSeconds: number | null }).retryAfterSeconds ?? 60
   }
   return 60
 }
 
-function parseJwtClaims(token: string): Record<string, unknown> | null {
+export function parseJwtClaims(token: string): Record<string, unknown> | null {
   const parts = token.split('.')
   if (parts.length < 2) {
     return null
