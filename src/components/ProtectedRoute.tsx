@@ -51,13 +51,13 @@ export default function ProtectedRoute({ children, adminOnly }: { children: Reac
 
       const { data: member } = await supabase
         .from("members")
-        .select("id, status, is_exempt")
+        .select("id, status, billing_exempt")
         .eq("user_id", userId)
         .maybeSingle();
       if (cancelled) return;
-      // is_exempt = comped/staff member who keeps access regardless of
+      // billing_exempt = comped/staff member who keeps access regardless of
       // billing status (no Stripe subscription required).
-      if (member?.is_exempt) {
+      if (member?.billing_exempt) {
         setAccess("allowed");
         return;
       }

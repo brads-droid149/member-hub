@@ -10,7 +10,6 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Loader2, XCircle, ShieldCheck, Pencil } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { MemberStatusBadge } from "@/components/admin/MemberStatusBadge";
 import { Switch } from "@/components/ui/switch";
 import type { AdminMemberRow } from "@/contexts/AdminMembersContext";
@@ -20,11 +19,11 @@ interface MemberDetailPanelProps {
   open: boolean;
   onClose: () => void;
   onCancel: () => void;
-  onToggleIsExempt: (value: boolean) => Promise<void>;
-  onToggleExemptFromWinning: (value: boolean) => Promise<void>;
+  onToggleBillingExempt: (value: boolean) => Promise<void>;
+  onToggleDrawExempt: (value: boolean) => Promise<void>;
   onSaveStats: (months: number, entries: number) => Promise<void>;
-  isExemptPending: boolean;
-  exemptFromWinningPending: boolean;
+  billingExemptPending: boolean;
+  drawExemptPending: boolean;
   savingStats: boolean;
 }
 
@@ -49,11 +48,11 @@ export function MemberDetailPanel({
   open,
   onClose,
   onCancel,
-  onToggleIsExempt,
-  onToggleExemptFromWinning,
+  onToggleBillingExempt,
+  onToggleDrawExempt,
   onSaveStats,
-  isExemptPending,
-  exemptFromWinningPending,
+  billingExemptPending,
+  drawExemptPending,
   savingStats,
 }: MemberDetailPanelProps) {
   const [editMonths, setEditMonths] = useState(0);
@@ -85,8 +84,8 @@ export function MemberDetailPanel({
               {/* Status badges */}
               <div className="flex flex-wrap gap-2">
                 <MemberStatusBadge status={s.status} />
-                {s.is_exempt && exemptBadge()}
-                {s.exempt_from_winning && (
+                {s.billing_exempt && exemptBadge()}
+                {s.draw_exempt && (
                   <span className="inline-flex items-center rounded-full border border-border bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
                     Draw exempt
                   </span>
@@ -196,9 +195,9 @@ export function MemberDetailPanel({
                     </p>
                   </div>
                   <Switch
-                    checked={s.is_exempt}
-                    disabled={isExemptPending}
-                    onCheckedChange={onToggleIsExempt}
+                    checked={s.billing_exempt}
+                    disabled={billingExemptPending}
+                    onCheckedChange={onToggleBillingExempt}
                     aria-label="Exempt from billing"
                   />
                 </div>
@@ -213,9 +212,9 @@ export function MemberDetailPanel({
                     </p>
                   </div>
                   <Switch
-                    checked={s.exempt_from_winning}
-                    disabled={exemptFromWinningPending}
-                    onCheckedChange={onToggleExemptFromWinning}
+                    checked={s.draw_exempt}
+                    disabled={drawExemptPending}
+                    onCheckedChange={onToggleDrawExempt}
                     aria-label="Exempt from draw"
                   />
                 </div>
