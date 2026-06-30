@@ -1,7 +1,24 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import Stripe from "https://esm.sh/stripe@22.0.2";
 import { type StripeEnv, verifyWebhook, createStripeClient } from "../_shared/stripe.ts";
-import { sendBillingEmail, brevoMarkCancelled } from "../_shared/billing-emails.ts";
+
+// Dynamic import of billing-emails (which pulls in @react-email/components)
+// so unit tests can run without that npm tree resolved.
+type SendBillingEmailFn = (opts: { userId: string; template: any }) => Promise<unknown>;
+type BrevoMarkCancelledFn = (email: string) => Promise<void>;
+let _sendBillingEmailFn: SendBillingEmailFn | null = null;
+let _brevoMarkCancelledFn: BrevoMarkCancelledFn | null = null;
+async function sendBillingEmail(opts: { userId: string; template: any }): Promise<unknown> {
+  if (_sendBillingEmailFn) return _sendBillingEmailFn(opts);
+  const mod = await import("../_shared/billing-emails.ts" as string);
+  return mod.sendBillingEmail(opts);
+}
+async function brevoMarkCancelled(email: string): Promise<void> {
+  if (_brevoMarkCancelledFn) return _brevoMarkCancelledFn(email);
+  const mod = await import("../_shared/billing-emails.ts" as string);
+  return mod.brevoMarkCancelled(email);
+}
+
 
 // Stripe's typings put period fields on the subscription item starting with
 // the Basil (2025-03-31) API version. The installed SDK types still expose
