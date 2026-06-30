@@ -57,7 +57,7 @@ Deno.test("non-POST → 405", async () => {
   await res.text();
 });
 
-Deno.test("missing token → 401", async () => {
+Deno.test({ name: "missing token → 401", sanitizeResources: false, sanitizeOps: false }, async () => {
   __resetTestOverrides();
   const res = await handler(req({ method: "POST", body: {} }));
   assertEquals(res.status, 401);
