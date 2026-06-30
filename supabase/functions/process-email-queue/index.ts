@@ -324,7 +324,8 @@ export const handler = async (req: Request): Promise<Response> => {
       }
 
       try {
-        await _sendEmailFn(
+        const sendEmail = await getSendEmail()
+        await sendEmail(
           {
             run_id: payload.run_id,
             to: payload.to,
