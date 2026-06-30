@@ -1,58 +1,16 @@
-// Email queue processor.
-//
-// Why a queue at all: outbound email (signup confirmations, password resets,
-// receipts, giveaway-winner notifications) must NOT be sent inline from a
-// user request or DB trigger. The provider can rate-limit us (429), be
-// temporarily down, or simply be slow — none of which should block a
-// checkout or auth flow. Instead, producers enqueue a message onto a PGMQ
-// queue and this worker drains the queue on a schedule (pg_cron).
-//
-// Why PGMQ (Postgres Message Queue) specifically:
-//   - lives in the same Postgres we already run, no extra infra
-//   - gives us visibility-timeout semantics (a claimed message is hidden
-//     for `vt` seconds; if the worker crashes mid-send, the message
-//     re-appears and another invocation retries it)
-//   - read_ct counter + DLQ tables come for free
-//
-// Two queues, processed in priority order:
-//   1. auth_emails          (signup / password reset — time sensitive, short TTL)
-//   2. transactional_emails (receipts, winner notifications — longer TTL)
+import { sendLovableEmail } from 'npm:@lovable.dev/email-js'
 import { createClient } from 'npm:@supabase/supabase-js@2'
-
-// Lazy-load @lovable.dev/email-js so unit tests can run without it resolved.
-type SendLovableEmailFn = (payload: any, opts: any) => Promise<unknown>
-let _sendEmailFn: SendLovableEmailFn | null = null
-async function getSendEmail(): Promise<SendLovableEmailFn> {
-  if (_sendEmailFn) return _sendEmailFn
-  const mod = await import('npm:@lovable.dev/email-js' as string)
-  return mod.sendLovableEmail as SendLovableEmailFn
-}
-
-let _createClientFn: any = createClient
-export function __setTestOverrides(opts: {
-  sendEmailFn?: SendLovableEmailFn
-  createClientFn?: any
-}) {
-  if (opts.sendEmailFn !== undefined) _sendEmailFn = opts.sendEmailFn
-  if (opts.createClientFn !== undefined) _createClientFn = opts.createClientFn
-}
-export function __resetTestOverrides() {
-  _sendEmailFn = null
-  _createClientFn = createClient
-}
 
 const MAX_RETRIES = 5
 const DEFAULT_BATCH_SIZE = 10
 const DEFAULT_SEND_DELAY_MS = 200
-// Auth emails (magic links etc.) expire fast on the user side, so we
-// refuse to send anything older than 15 min. Receipts are fine for an hour.
 const DEFAULT_AUTH_TTL_MINUTES = 15
 const DEFAULT_TRANSACTIONAL_TTL_MINUTES = 60
 
 // Check if an error is a rate-limit (429) response.
 // Uses EmailAPIError.status when available (email-js >=0.x with structured errors),
 // falls back to parsing the error message for older versions.
-export function isRateLimited(error: unknown): boolean {
+function isRateLimited(error: unknown): boolean {
   if (error && typeof error === 'object' && 'status' in error) {
     return (error as { status: number }).status === 429
   }
@@ -61,7 +19,7 @@ export function isRateLimited(error: unknown): boolean {
 
 // Check if an error is a forbidden (403) response. Retrying won't help.
 // Move straight to DLQ.
-export function isForbidden(error: unknown): boolean {
+function isForbidden(error: unknown): boolean {
   if (error && typeof error === 'object' && 'status' in error) {
     return (error as { status: number }).status === 403
   }
@@ -69,14 +27,14 @@ export function isForbidden(error: unknown): boolean {
 }
 
 // Extract Retry-After seconds from a structured EmailAPIError, or default to 60s.
-export function getRetryAfterSeconds(error: unknown): number {
+function getRetryAfterSeconds(error: unknown): number {
   if (error && typeof error === 'object' && 'retryAfterSeconds' in error) {
     return (error as { retryAfterSeconds: number | null }).retryAfterSeconds ?? 60
   }
   return 60
 }
 
-export function parseJwtClaims(token: string): Record<string, unknown> | null {
+function parseJwtClaims(token: string): Record<string, unknown> | null {
   const parts = token.split('.')
   if (parts.length < 2) {
     return null
@@ -96,7 +54,7 @@ export function parseJwtClaims(token: string): Record<string, unknown> | null {
 
 // Move a message to the dead letter queue and log the reason.
 async function moveToDlq(
-  supabase: any,
+  supabase: ReturnType<typeof createClient>,
   queue: string,
   msg: { msg_id: number; message: Record<string, unknown> },
   reason: string
@@ -120,7 +78,7 @@ async function moveToDlq(
   }
 }
 
-export const handler = async (req: Request): Promise<Response> => {
+Deno.serve(async (req) => {
   const apiKey = Deno.env.get('LOVABLE_API_KEY')
   const supabaseUrl = Deno.env.get('SUPABASE_URL')
   const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
@@ -153,7 +111,7 @@ export const handler = async (req: Request): Promise<Response> => {
     )
   }
 
-  const supabase: any = _createClientFn(supabaseUrl, supabaseServiceKey)
+  const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
   // 1. Check rate-limit cooldown and read queue config
   const { data: state } = await supabase
@@ -198,12 +156,12 @@ export const handler = async (req: Request): Promise<Response> => {
     const messageIds = Array.from(
       new Set(
         messages
-          .map((msg: any) =>
+          .map((msg) =>
             msg?.message?.message_id && typeof msg.message.message_id === 'string'
-              ? (msg.message.message_id as string)
+              ? msg.message.message_id
               : null
           )
-          .filter((id: string | null): id is string => Boolean(id))
+          .filter((id): id is string => Boolean(id))
       )
     )
     const failedAttemptsByMessageId = new Map<string, number>()
@@ -234,24 +192,15 @@ export const handler = async (req: Request): Promise<Response> => {
     for (let i = 0; i < messages.length; i++) {
       const msg = messages[i]
       const payload = msg.message
-      // Retry budget — count of REAL send failures from email_send_log.
-      // We deliberately don't use pgmq's msg.read_ct here: read_ct ticks up
-      // every time a message is claimed in a batch, even if we never
-      // attempted to send it (e.g. a 429 stopped the batch early). Using
-      // read_ct would prematurely DLQ healthy messages. We only fall back
-      // to read_ct for legacy messages with no message_id.
       const failedAttempts =
         payload?.message_id && typeof payload.message_id === 'string'
           ? (failedAttemptsByMessageId.get(payload.message_id) ?? 0)
           : msg.read_ct ?? 0
 
-      // TTL: drop messages older than the queue's max age. A magic link
-      // sent an hour after the user clicked "send reset" is worse than no
-      // email at all (it'll confuse the user, the underlying token may
-      // already be expired). We move expired messages to the DLQ rather
-      // than delete so we have an audit trail of what we dropped and why.
-      // payload.queued_at is always stamped by the producer at enqueue time.
-      const queuedAt = payload.queued_at
+      // Drop expired messages (TTL exceeded).
+      // Prefer payload.queued_at when present; fall back to PGMQ's enqueued_at
+      // which is always set by the queue.
+      const queuedAt = payload.queued_at ?? msg.enqueued_at
       if (queuedAt) {
         const ageMs = Date.now() - new Date(queuedAt).getTime()
         const maxAgeMs = ttlMinutes[queue] * 60 * 1000
@@ -267,9 +216,7 @@ export const handler = async (req: Request): Promise<Response> => {
         }
       }
 
-      // Retry logic: after MAX_RETRIES real send failures (logged as
-      // status='failed' in email_send_log), the message is parked in the
-      // DLQ for manual inspection rather than being retried forever.
+      // Move to DLQ if max failed send attempts reached.
       if (failedAttempts >= MAX_RETRIES) {
         await moveToDlq(supabase, queue, msg, `Max retries (${MAX_RETRIES}) exceeded (attempted ${failedAttempts} times)`)
         continue
@@ -301,31 +248,8 @@ export const handler = async (req: Request): Promise<Response> => {
         }
       }
 
-      // Suppression check (transactional only — auth flows like password
-      // reset must still go through even if the user previously opted out
-      // of marketing/billing emails).
-      if (queue === 'transactional_emails' && payload?.to && typeof payload.to === 'string') {
-        const { data: suppressed } = await supabase
-          .from('suppressed_emails')
-          .select('id')
-          .eq('email', payload.to.toLowerCase())
-          .maybeSingle()
-        if (suppressed) {
-          console.warn('Skipping suppressed recipient', { queue, msg_id: msg.msg_id, to: payload.to })
-          await supabase.from('email_send_log').insert({
-            message_id: payload.message_id,
-            template_name: payload.label || queue,
-            recipient_email: payload.to,
-            status: 'suppressed',
-          })
-          await supabase.rpc('delete_email', { queue_name: queue, message_id: msg.msg_id })
-          continue
-        }
-      }
-
       try {
-        const sendEmail = await getSendEmail()
-        await sendEmail(
+        await sendLovableEmail(
           {
             run_id: payload.run_id,
             to: payload.to,
@@ -436,6 +360,4 @@ export const handler = async (req: Request): Promise<Response> => {
     JSON.stringify({ processed: totalProcessed }),
     { headers: { 'Content-Type': 'application/json' } }
   )
-}
-
-Deno.serve(handler)
+})
