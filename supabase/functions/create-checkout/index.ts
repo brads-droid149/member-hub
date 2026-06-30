@@ -2,10 +2,33 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { type StripeEnv, createStripeClient } from "../_shared/stripe.ts";
 import { getCorsHeaders, isAllowedReturnUrl } from "../_shared/cors.ts";
 
-const supabaseAdmin = createClient(
-  Deno.env.get("SUPABASE_URL")!,
-  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-);
+// Lazy supabase client — env vars may not be present at module load (e.g. tests).
+let _supabase: ReturnType<typeof createClient> | null = null;
+function getSupabase() {
+  if (!_supabase) {
+    _supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
+  }
+  return _supabase;
+}
+
+let _stripeFactory: typeof createStripeClient = createStripeClient;
+
+// Test-only seam — lets unit tests inject stubbed supabase + stripe clients.
+export function __setTestOverrides(opts: {
+  supabase?: any;
+  stripeFactory?: typeof createStripeClient;
+}) {
+  if (opts.supabase !== undefined) _supabase = opts.supabase;
+  if (opts.stripeFactory !== undefined) _stripeFactory = opts.stripeFactory;
+}
+
+export function __resetTestOverrides() {
+  _supabase = null;
+  _stripeFactory = createStripeClient;
+}
 
 async function resolveOrCreateCustomer(
   stripe: ReturnType<typeof createStripeClient>,
@@ -40,7 +63,7 @@ async function resolveOrCreateCustomer(
   return created.id;
 }
 
-async function createCheckoutSession(options: {
+export async function createCheckoutSession(options: {
   priceId: string;
   quantity?: number;
   customerEmail?: string;
@@ -50,7 +73,7 @@ async function createCheckoutSession(options: {
 }) {
   const ALLOWED_PRICE_IDS = new Set(["membership_monthly", "membership_yearly"]);
   if (!ALLOWED_PRICE_IDS.has(options.priceId)) throw new Error("Invalid priceId");
-  const stripe = createStripeClient(options.environment);
+  const stripe = _stripeFactory(options.environment);
 
   const prices = await stripe.prices.list({ lookup_keys: [options.priceId] });
   if (!prices.data.length) throw new Error("Price not found");
@@ -88,7 +111,7 @@ async function createCheckoutSession(options: {
   return session.client_secret;
 }
 
-Deno.serve(async (req) => {
+export async function handler(req: Request): Promise<Response> {
   const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") {
@@ -103,7 +126,7 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+    const { data: { user }, error: authError } = await getSupabase().auth.getUser(token);
     if (authError || !user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
@@ -142,4 +165,6 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
-});
+}
+
+Deno.serve(handler);

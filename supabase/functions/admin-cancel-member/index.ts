@@ -3,18 +3,48 @@ import { type StripeEnv, createStripeClient } from "../_shared/stripe.ts";
 import { getCorsHeaders } from "../_shared/cors.ts";
 import { sendBillingEmail, brevoMarkCancelled } from "../_shared/billing-emails.ts";
 
-const supabase = createClient(
-  Deno.env.get("SUPABASE_URL")!,
-  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-);
+let _supabase: ReturnType<typeof createClient> | null = null;
+function getSupabase() {
+  if (!_supabase) {
+    _supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
+  }
+  return _supabase;
+}
 
-Deno.serve(async (req) => {
+let _stripeFactory: typeof createStripeClient = createStripeClient;
+let _sendBillingEmailFn: typeof sendBillingEmail = sendBillingEmail;
+let _brevoMarkCancelledFn: typeof brevoMarkCancelled = brevoMarkCancelled;
+
+export function __setTestOverrides(opts: {
+  supabase?: any;
+  stripeFactory?: typeof createStripeClient;
+  sendBillingEmailFn?: typeof sendBillingEmail;
+  brevoMarkCancelledFn?: typeof brevoMarkCancelled;
+}) {
+  if (opts.supabase !== undefined) _supabase = opts.supabase;
+  if (opts.stripeFactory !== undefined) _stripeFactory = opts.stripeFactory;
+  if (opts.sendBillingEmailFn !== undefined) _sendBillingEmailFn = opts.sendBillingEmailFn;
+  if (opts.brevoMarkCancelledFn !== undefined) _brevoMarkCancelledFn = opts.brevoMarkCancelledFn;
+}
+
+export function __resetTestOverrides() {
+  _supabase = null;
+  _stripeFactory = createStripeClient;
+  _sendBillingEmailFn = sendBillingEmail;
+  _brevoMarkCancelledFn = brevoMarkCancelled;
+}
+
+export async function handler(req: Request): Promise<Response> {
   const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") {
     return new Response("Method not allowed", { status: 405, headers: corsHeaders });
   }
   try {
+    const supabase = getSupabase();
     const token = req.headers.get("Authorization")?.replace("Bearer ", "");
     if (!token) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -74,7 +104,7 @@ Deno.serve(async (req) => {
     }
 
     if (stripeSubId) {
-      const stripe = createStripeClient(environment);
+      const stripe = _stripeFactory(environment);
       if (immediate) {
         await stripe.subscriptions.cancel(stripeSubId);
       } else {
@@ -97,13 +127,13 @@ Deno.serve(async (req) => {
     // webhook (handleSubscriptionDeleted) sends it then so the member's
     // experience matches the email.
     if (immediate || !stripeSubId) {
-      await sendBillingEmail({
+      await _sendBillingEmailFn({
         userId: targetUserId,
         template: { kind: "cancelled", reason: "admin" },
       });
       const { data: userResp } = await supabase.auth.admin.getUserById(targetUserId);
       const targetEmail = userResp?.user?.email;
-      if (targetEmail) await brevoMarkCancelled(targetEmail);
+      if (targetEmail) await _brevoMarkCancelledFn(targetEmail);
     }
 
     return new Response(JSON.stringify({ ok: true, immediate, hadSubscription: !!stripeSubId }), {
@@ -118,4 +148,6 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
-});
+}
+
+Deno.serve(handler);
