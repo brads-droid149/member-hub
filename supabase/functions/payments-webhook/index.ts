@@ -29,8 +29,10 @@ type SubscriptionItemWithPeriod = Stripe.SubscriptionItem & {
   current_period_end?: number;
 };
 
-let _supabase: ReturnType<typeof createClient> | null = null;
-function getSupabase() {
+// Typed as `any` because we don't generate the Database typing for edge
+// functions; the untyped client returns `never` for from()/update()/etc.
+let _supabase: any = null;
+function getSupabase(): any {
   if (!_supabase) {
     _supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -39,6 +41,7 @@ function getSupabase() {
   }
   return _supabase;
 }
+
 
 let _verifyWebhookFn: typeof verifyWebhook = verifyWebhook;
 
