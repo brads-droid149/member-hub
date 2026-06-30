@@ -24,7 +24,7 @@ type SendLovableEmailFn = (payload: any, opts: any) => Promise<unknown>
 let _sendEmailFn: SendLovableEmailFn | null = null
 async function getSendEmail(): Promise<SendLovableEmailFn> {
   if (_sendEmailFn) return _sendEmailFn
-  const mod = await import('npm:@lovable.dev/email-js')
+  const mod = await import('npm:@lovable.dev/email-js' as string)
   return mod.sendLovableEmail as SendLovableEmailFn
 }
 
