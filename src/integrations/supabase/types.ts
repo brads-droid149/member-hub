@@ -431,7 +431,13 @@ export type Database = {
         Returns: number
       }
       get_admin_members_overview: {
-        Args: never
+        Args: {
+          _limit?: number
+          _offset?: number
+          _search?: string
+          _sort_dir?: string
+          _sort_key?: string
+        }
         Returns: {
           billing_exempt: boolean
           draw_exempt: boolean
@@ -443,6 +449,7 @@ export type Database = {
           phone: string
           state: string
           status: string
+          total_count: number
           user_id: string
         }[]
       }
