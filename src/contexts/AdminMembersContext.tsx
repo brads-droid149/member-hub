@@ -100,7 +100,7 @@ export function AdminMembersProvider({ children }: { children: ReactNode }) {
     const seq = ++requestSeq.current;
     setLoading(true);
     const { data, error } = await supabase.rpc("get_admin_members_overview", {
-      _search: debouncedSearch || null,
+      _search: debouncedSearch || undefined,
       _limit: ADMIN_MEMBERS_PAGE_SIZE,
       _offset: page * ADMIN_MEMBERS_PAGE_SIZE,
       _sort_key: sortKey,
@@ -140,7 +140,7 @@ export function AdminMembersProvider({ children }: { children: ReactNode }) {
     let total = Infinity;
     while (offset < total) {
       const { data, error } = await supabase.rpc("get_admin_members_overview", {
-        _search: debouncedSearch || null,
+        _search: debouncedSearch || undefined,
         _limit: CHUNK,
         _offset: offset,
         _sort_key: sortKey,
