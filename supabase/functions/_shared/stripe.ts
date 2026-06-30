@@ -1,3 +1,11 @@
+// ⚠️ STATUS SPELLING SPLIT — DO NOT "FIX" THE INCONSISTENCY ⚠️
+// `subscriptions.status` mirrors Stripe's payload verbatim, which uses US spelling
+// ('canceled', 'incomplete', 'past_due', etc.). Stripe is the source of truth here.
+// `members.status` uses AU spelling ('cancelled', 'active', 'past_due', 'pending')
+// because the rest of the product (admin UI, emails, copy) is AU English.
+// The webhook in payments-webhook/index.ts translates between the two. If you ever
+// add a new status, keep this split intact — renaming either side will silently
+// break access gating in ProtectedRoute and the dunning/cancellation emails.
 import { encode } from "https://deno.land/std@0.168.0/encoding/hex.ts";
 import Stripe from "https://esm.sh/stripe@22.0.2";
 
