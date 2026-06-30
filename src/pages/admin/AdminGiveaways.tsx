@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getErrorMessage } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -65,10 +65,13 @@ export default function AdminGiveaways() {
     setLoading(false);
   };
 
-  // Record winner state — member list is loaded once at the Admin parent level
-  // and shared across admin tabs via AdminMembersContext.
-  const { members, refresh: refreshMembers } = useAdminMembers();
+  // Winner picker — server-side search (debounced) so we don't load every
+  // member just to find one. `refresh` only triggers a re-fetch of the admin
+  // members table view after we reset the winner's entries.
+  const { searchMembers, refresh: refreshMembers } = useAdminMembers();
   const [search, setSearch] = useState("");
+  const [matches, setMatches] = useState<MemberRow[]>([]);
+  const [searching, setSearching] = useState(false);
   const [selected, setSelected] = useState<MemberRow | null>(null);
   const [winnerPrize, setWinnerPrize] = useState("");
   const [winnerDrawDate, setWinnerDrawDate] = useState<Date | undefined>(undefined);
@@ -83,17 +86,28 @@ export default function AdminGiveaways() {
     setWinnerPrize(title);
   }, [title]);
 
-  const matches = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return [];
-    return members
-      .filter((m) =>
-        m.user_id.toLowerCase().includes(q) ||
-        (m.full_name ?? "").toLowerCase().includes(q) ||
-        (m.email ?? "").toLowerCase().includes(q),
-      )
-      .slice(0, 8);
-  }, [search, members]);
+  // Debounced server-side member search for the winner picker.
+  useEffect(() => {
+    const q = search.trim();
+    if (!q || selected) {
+      setMatches([]);
+      return;
+    }
+    let cancelled = false;
+    setSearching(true);
+    const t = window.setTimeout(async () => {
+      const rows = await searchMembers(q, 8);
+      if (!cancelled) {
+        setMatches(rows);
+        setSearching(false);
+      }
+    }, 250);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(t);
+      setSearching(false);
+    };
+  }, [search, selected, searchMembers]);
 
   const handleRecordWinner = async () => {
     if (!selected) return;
@@ -380,7 +394,10 @@ export default function AdminGiveaways() {
                 className="pl-9"
               />
             </div>
-            {search && !selected && matches.length > 0 && (
+            {search && !selected && searching && (
+              <p className="text-xs text-muted-foreground">Searching…</p>
+            )}
+            {search && !selected && !searching && matches.length > 0 && (
               <div className="rounded-md border border-border bg-card divide-y divide-border max-h-64 overflow-auto">
                 {matches.map((m) => (
                   <button
@@ -399,7 +416,7 @@ export default function AdminGiveaways() {
                 ))}
               </div>
             )}
-            {search && !selected && matches.length === 0 && (
+            {search && !selected && !searching && matches.length === 0 && (
               <p className="text-xs text-muted-foreground">No matching members.</p>
             )}
           </div>
