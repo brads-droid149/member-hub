@@ -17,6 +17,15 @@ function makeStubSupabase(opts: { existingMember?: any } = {}) {
   };
 
   const client: any = {
+    auth: {
+      admin: {
+        getUserById: async (_id: string) => ({
+          data: { user: { email: "user@example.com" } },
+          error: null,
+        }),
+      },
+    },
+
     from(table: string) {
       const chain: any = {
         _table: table,
@@ -104,6 +113,8 @@ Deno.test("subscription.deleted sets member cancelled and zeros entries", async 
   const { client, calls } = makeStubSupabase();
   __setTestOverrides({
     supabase: client,
+    sendBillingEmailFn: async () => ({ enqueued: true }),
+    brevoMarkCancelledFn: async () => {},
     verifyWebhookFn: async () => ({
       id: "evt_delete_1",
       type: "customer.subscription.deleted",
@@ -117,6 +128,7 @@ Deno.test("subscription.deleted sets member cancelled and zeros entries", async 
       },
     }) as any,
   });
+
 
   await handleWebhook(makeRequest(), "sandbox");
 

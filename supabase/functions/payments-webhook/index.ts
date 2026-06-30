@@ -1,7 +1,24 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import Stripe from "https://esm.sh/stripe@22.0.2";
 import { type StripeEnv, verifyWebhook, createStripeClient } from "../_shared/stripe.ts";
-import { sendBillingEmail, brevoMarkCancelled } from "../_shared/billing-emails.ts";
+
+// Dynamic import of billing-emails (which pulls in @react-email/components)
+// so unit tests can run without that npm tree resolved.
+type SendBillingEmailFn = (opts: { userId: string; template: any }) => Promise<unknown>;
+type BrevoMarkCancelledFn = (email: string) => Promise<void>;
+let _sendBillingEmailFn: SendBillingEmailFn | null = null;
+let _brevoMarkCancelledFn: BrevoMarkCancelledFn | null = null;
+async function sendBillingEmail(opts: { userId: string; template: any }): Promise<unknown> {
+  if (_sendBillingEmailFn) return _sendBillingEmailFn(opts);
+  const mod = await import("../_shared/billing-emails.ts" as string);
+  return mod.sendBillingEmail(opts);
+}
+async function brevoMarkCancelled(email: string): Promise<void> {
+  if (_brevoMarkCancelledFn) return _brevoMarkCancelledFn(email);
+  const mod = await import("../_shared/billing-emails.ts" as string);
+  return mod.brevoMarkCancelled(email);
+}
+
 
 // Stripe's typings put period fields on the subscription item starting with
 // the Basil (2025-03-31) API version. The installed SDK types still expose
@@ -12,8 +29,10 @@ type SubscriptionItemWithPeriod = Stripe.SubscriptionItem & {
   current_period_end?: number;
 };
 
-let _supabase: ReturnType<typeof createClient> | null = null;
-function getSupabase() {
+// Typed as `any` because we don't generate the Database typing for edge
+// functions; the untyped client returns `never` for from()/update()/etc.
+let _supabase: any = null;
+function getSupabase(): any {
   if (!_supabase) {
     _supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -23,6 +42,7 @@ function getSupabase() {
   return _supabase;
 }
 
+
 let _verifyWebhookFn: typeof verifyWebhook = verifyWebhook;
 
 // Test-only seam — allows unit tests to inject stubs without spinning up
@@ -30,15 +50,22 @@ let _verifyWebhookFn: typeof verifyWebhook = verifyWebhook;
 export function __setTestOverrides(opts: {
   supabase?: any;
   verifyWebhookFn?: typeof verifyWebhook;
+  sendBillingEmailFn?: SendBillingEmailFn;
+  brevoMarkCancelledFn?: BrevoMarkCancelledFn;
 }) {
   if (opts.supabase !== undefined) _supabase = opts.supabase;
   if (opts.verifyWebhookFn !== undefined) _verifyWebhookFn = opts.verifyWebhookFn;
+  if (opts.sendBillingEmailFn !== undefined) _sendBillingEmailFn = opts.sendBillingEmailFn;
+  if (opts.brevoMarkCancelledFn !== undefined) _brevoMarkCancelledFn = opts.brevoMarkCancelledFn;
 }
 
 export function __resetTestOverrides() {
   _supabase = null;
   _verifyWebhookFn = verifyWebhook;
+  _sendBillingEmailFn = null;
+  _brevoMarkCancelledFn = null;
 }
+
 
 // Map Stripe's ~8 subscription statuses down to the THREE values the
 // Junkyard app actually understands on members.status:

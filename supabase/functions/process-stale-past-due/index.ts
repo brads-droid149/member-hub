@@ -3,7 +3,16 @@
 // Replaces the pure-SQL `cancel_stale_past_due_members` cron so we can
 // dispatch transactional emails as part of the same step.
 import { createClient } from 'npm:@supabase/supabase-js@2'
-import { sendBillingEmail, brevoMarkCancelled } from '../_shared/billing-emails.ts'
+// Dynamic import avoids pulling @react-email/components into the module graph at type-check time.
+async function sendBillingEmail(opts: { userId: string; template: any }): Promise<unknown> {
+  const mod = await import('../_shared/billing-emails.ts' as string)
+  return mod.sendBillingEmail(opts)
+}
+async function brevoMarkCancelled(email: string): Promise<void> {
+  const mod = await import('../_shared/billing-emails.ts' as string)
+  return mod.brevoMarkCancelled(email)
+}
+
 
 function parseJwtClaims(token: string): Record<string, unknown> | null {
   const parts = token.split('.')
