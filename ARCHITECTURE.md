@@ -94,7 +94,7 @@ different redirects:
                 └──────┬──────┘
                        │ no
                 ┌──────▼─────────────────┐
-                │ members.is_exempt?     │── yes ──► allowed (comped/staff)
+                │ members.billing_exempt?│── yes ──► allowed (comped/staff)
                 └──────┬─────────────────┘
                        │ no
                 ┌──────▼─────────────────┐
