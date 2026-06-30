@@ -74,7 +74,7 @@ All server-side logic runs as Deno-based Edge Functions in Supabase.
 
 | Table | Purpose |
 |-------|---------|
-| `members` | Core member record. Links to `auth.users`, stores Stripe IDs, subscription status (`active`, `paused`, `cancelled`), entry count, months active, and exemption flags. |
+| `members` | Core member record. Links to `auth.users`, stores Stripe IDs, subscription status (`active`, `paused`, `cancelled`), entry count, months active, and exemption flags (`billing_exempt` for comped/staff access, `draw_exempt` to exclude from giveaway draws). |
 | `profiles` | Member profile data (full name, phone, state, avatar). One-to-one with `auth.users`. |
 | `subscriptions` | Stripe subscription snapshot. Mirrors key subscription data for fast local queries without calling Stripe. |
 | `giveaways` | Active and past surfboard giveaways. Stores title, prize image, draw date, and active flag. |

@@ -49,7 +49,7 @@ const exemptBadge = () => (
 );
 
 export default function AdminMembers() {
-  const { members: rows, loading, refresh, setExempt, setIsExempt } = useAdminMembers();
+  const { members: rows, loading, refresh, setDrawExempt, setBillingExempt } = useAdminMembers();
   const { toast } = useToast();
   const {
     sortedMembers,
@@ -62,7 +62,7 @@ export default function AdminMembers() {
     setSortDir,
     toggleSort,
   } = useMemberTable(rows);
-  const [exemptFromWinningPending, setExemptFromWinningPending] = useState(false);
+  const [drawExemptPending, setDrawExemptPending] = useState(false);
 
   // Detail panel state
   const [selected, setSelected] = useState<Row | null>(null);
@@ -105,7 +105,7 @@ export default function AdminMembers() {
   };
 
   const [savingStats, setSavingStats] = useState(false);
-  const [isExemptPending, setIsExemptPending] = useState(false);
+  const [billingExemptPending, setBillingExemptPending] = useState(false);
 
   const handleSaveStats = async (months: number, entries: number) => {
     if (!currentSelected) return;
@@ -127,11 +127,11 @@ export default function AdminMembers() {
     await refresh();
   };
 
-  const handleToggleIsExempt = async (value: boolean) => {
+  const handleToggleBillingExempt = async (value: boolean) => {
     if (!currentSelected) return;
-    setIsExemptPending(true);
+    setBillingExemptPending(true);
     try {
-      await setIsExempt(currentSelected.user_id, value);
+      await setBillingExempt(currentSelected.user_id, value);
       toast({
         title: value ? "Marked as exempt" : "Exempt removed",
         description: currentSelected.full_name || currentSelected.email || currentSelected.user_id.slice(0, 6),
@@ -139,15 +139,15 @@ export default function AdminMembers() {
     } catch {
       // toast shown in context
     } finally {
-      setIsExemptPending(false);
+      setBillingExemptPending(false);
     }
   };
 
-  const handleToggleExemptFromWinning = async (value: boolean) => {
+  const handleToggleDrawExempt = async (value: boolean) => {
     if (!currentSelected) return;
-    setExemptFromWinningPending(true);
+    setDrawExemptPending(true);
     try {
-      await setExempt(currentSelected.user_id, value);
+      await setDrawExempt(currentSelected.user_id, value);
       toast({
         title: value ? "Excluded from draw" : "Included in draw",
         description: currentSelected.full_name || currentSelected.email || currentSelected.user_id.slice(0, 6),
@@ -155,7 +155,7 @@ export default function AdminMembers() {
     } catch {
       // toast shown in context
     } finally {
-      setExemptFromWinningPending(false);
+      setDrawExemptPending(false);
     }
   };
 
@@ -249,7 +249,7 @@ export default function AdminMembers() {
                   <TableCell>
                     <div className="flex flex-col items-start gap-1">
                       <MemberStatusBadge status={r.status} />
-                      {r.is_exempt && exemptBadge()}
+                      {r.billing_exempt && exemptBadge()}
                     </div>
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">{formatDate(r.joined_at)}</TableCell>
@@ -271,11 +271,11 @@ export default function AdminMembers() {
         open={!!selected}
         onClose={() => setSelected(null)}
         onCancel={() => currentSelected && setCancelTarget(currentSelected)}
-        onToggleIsExempt={handleToggleIsExempt}
-        onToggleExemptFromWinning={handleToggleExemptFromWinning}
+        onToggleBillingExempt={handleToggleBillingExempt}
+        onToggleDrawExempt={handleToggleDrawExempt}
         onSaveStats={handleSaveStats}
-        isExemptPending={isExemptPending}
-        exemptFromWinningPending={exemptFromWinningPending}
+        billingExemptPending={billingExemptPending}
+        drawExemptPending={drawExemptPending}
         savingStats={savingStats}
       />
 

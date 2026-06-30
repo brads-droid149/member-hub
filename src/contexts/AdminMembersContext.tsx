@@ -12,16 +12,16 @@ export type AdminMemberRow = {
   entries: number;
   months_active: number;
   joined_at: string;
-  exempt_from_winning: boolean;
-  is_exempt: boolean;
+  draw_exempt: boolean;
+  billing_exempt: boolean;
 };
 
 type Ctx = {
   members: AdminMemberRow[];
   loading: boolean;
   refresh: () => Promise<void>;
-  setExempt: (userId: string, value: boolean) => Promise<void>;
-  setIsExempt: (userId: string, value: boolean) => Promise<void>;
+  setDrawExempt: (userId: string, value: boolean) => Promise<void>;
+  setBillingExempt: (userId: string, value: boolean) => Promise<void>;
 };
 
 const AdminMembersContext = createContext<Ctx | null>(null);
@@ -46,40 +46,40 @@ export function AdminMembersProvider({ children }: { children: ReactNode }) {
     refresh();
   }, [refresh]);
 
-  const setExempt = useCallback(
+  const setDrawExempt = useCallback(
     async (userId: string, value: boolean) => {
       // Optimistic update
       setMembers((prev) =>
-        prev.map((m) => (m.user_id === userId ? { ...m, exempt_from_winning: value } : m)),
+        prev.map((m) => (m.user_id === userId ? { ...m, draw_exempt: value } : m)),
       );
       const { error } = await supabase
         .from("members")
-        .update({ exempt_from_winning: value })
+        .update({ draw_exempt: value })
         .eq("user_id", userId);
       if (error) {
         // Revert
         setMembers((prev) =>
-          prev.map((m) => (m.user_id === userId ? { ...m, exempt_from_winning: !value } : m)),
+          prev.map((m) => (m.user_id === userId ? { ...m, draw_exempt: !value } : m)),
         );
-        toast({ title: "Failed to update exempt flag", description: error.message, variant: "destructive" });
+        toast({ title: "Failed to update draw exempt flag", description: error.message, variant: "destructive" });
         throw error;
       }
     },
     [toast],
   );
 
-  const setIsExempt = useCallback(
+  const setBillingExempt = useCallback(
     async (userId: string, value: boolean) => {
       setMembers((prev) =>
-        prev.map((m) => (m.user_id === userId ? { ...m, is_exempt: value, status: value ? "active" : m.status } : m)),
+        prev.map((m) => (m.user_id === userId ? { ...m, billing_exempt: value, status: value ? "active" : m.status } : m)),
       );
       const { error } = await supabase
         .from("members")
-        .update(value ? { is_exempt: true, status: "active" } : { is_exempt: false })
+        .update(value ? { billing_exempt: true, status: "active" } : { billing_exempt: false })
         .eq("user_id", userId);
       if (error) {
         await refresh();
-        toast({ title: "Failed to update exempt flag", description: error.message, variant: "destructive" });
+        toast({ title: "Failed to update billing exempt flag", description: error.message, variant: "destructive" });
         throw error;
       }
     },
@@ -87,7 +87,7 @@ export function AdminMembersProvider({ children }: { children: ReactNode }) {
   );
 
   return (
-    <AdminMembersContext.Provider value={{ members, loading, refresh, setExempt, setIsExempt }}>
+    <AdminMembersContext.Provider value={{ members, loading, refresh, setDrawExempt, setBillingExempt }}>
       {children}
     </AdminMembersContext.Provider>
   );

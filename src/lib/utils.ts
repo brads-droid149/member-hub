@@ -80,7 +80,7 @@ export function exportEmailList(members: AdminMemberRow[]) {
 export function exportDrawList(members: AdminMemberRow[]) {
   const lines = [["ID", "Full Name", "State"].join(",")];
   for (const r of members) {
-    if (r.exempt_from_winning) continue;
+    if (r.draw_exempt) continue;
     const count = Math.max(0, Math.floor(r.entries));
     const row = [r.user_id, r.full_name ?? "", r.state ?? ""].map(csvEscape).join(",");
     for (let i = 0; i < count; i++) lines.push(row);
