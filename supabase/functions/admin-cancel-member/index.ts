@@ -7,7 +7,7 @@ import { getCorsHeaders } from "../_shared/cors.ts";
 type SendBillingEmailFn = (opts: { userId: string; template: any }) => Promise<void>;
 type BrevoMarkCancelledFn = (email: string) => Promise<void>;
 
-let _supabase: ReturnType<typeof createClient> | null = null;
+let _supabase: any = null;
 function getSupabase(): any {
   if (!_supabase) {
     _supabase = createClient(

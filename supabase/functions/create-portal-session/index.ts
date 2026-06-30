@@ -2,7 +2,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { type StripeEnv, createStripeClient } from "../_shared/stripe.ts";
 import { getCorsHeaders, isAllowedReturnUrl } from "../_shared/cors.ts";
 
-let _supabase: ReturnType<typeof createClient> | null = null;
+let _supabase: any = null;
 function getSupabase(): any {
   if (!_supabase) {
     _supabase = createClient(
