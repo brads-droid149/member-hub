@@ -48,7 +48,8 @@ async function createCheckoutSession(options: {
   returnUrl: string;
   environment: StripeEnv;
 }) {
-  if (!/^[a-zA-Z0-9_-]+$/.test(options.priceId)) throw new Error("Invalid priceId");
+  const ALLOWED_PRICE_IDS = new Set(["membership_monthly", "membership_yearly"]);
+  if (!ALLOWED_PRICE_IDS.has(options.priceId)) throw new Error("Invalid priceId");
   const stripe = createStripeClient(options.environment);
 
   const prices = await stripe.prices.list({ lookup_keys: [options.priceId] });
