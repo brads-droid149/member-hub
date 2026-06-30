@@ -249,7 +249,7 @@ export default function AdminMembers() {
                   <TableCell>
                     <div className="flex flex-col items-start gap-1">
                       <MemberStatusBadge status={r.status} />
-                      {r.is_exempt && exemptBadge()}
+                      {r.billing_exempt && exemptBadge()}
                     </div>
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">{formatDate(r.joined_at)}</TableCell>
@@ -271,11 +271,11 @@ export default function AdminMembers() {
         open={!!selected}
         onClose={() => setSelected(null)}
         onCancel={() => currentSelected && setCancelTarget(currentSelected)}
-        onToggleIsExempt={handleToggleIsExempt}
-        onToggleExemptFromWinning={handleToggleExemptFromWinning}
+        onToggleBillingExempt={handleToggleBillingExempt}
+        onToggleDrawExempt={handleToggleDrawExempt}
         onSaveStats={handleSaveStats}
-        isExemptPending={isExemptPending}
-        exemptFromWinningPending={exemptFromWinningPending}
+        billingExemptPending={billingExemptPending}
+        drawExemptPending={drawExemptPending}
         savingStats={savingStats}
       />
 
