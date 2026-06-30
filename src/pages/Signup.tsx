@@ -86,15 +86,10 @@ export default function Signup() {
     setLoading(false);
 
     if (error) {
-      // Translate duplicate-key errors on phone to a friendly message
-      const msg = error.message.toLowerCase();
-      if (msg.includes("duplicate key") && msg.includes("phone")) {
-        toast({ title: "Mobile number already registered", variant: "destructive" });
-      } else {
-        toast({ title: "Signup failed", description: error.message, variant: "destructive" });
-      }
+      toast({ title: "Signup failed", description: error.message, variant: "destructive" });
       return;
     }
+
 
     // Brevo sync happens on first Home load once the user has a confirmed
     // session — calling it here would 401 when email confirmation is on.
