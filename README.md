@@ -125,15 +125,7 @@ Located at **`/admin`**. Access is restricted to users with the `admin` role (ch
 
 ## Deployment
 
-Deploys run automatically via **GitHub Actions** on every push to `main`. The workflow is defined in `.github/workflows/deploy.yml` and does the following:
-
-1. Installs dependencies with `npm ci`
-2. Builds the production bundle (`npm run build`) using secrets injected as environment variables
-3. Deploys the resulting `dist/` folder to the configured static host (target domain: **members.junkyardsurf.com.au**)
-4. Pushes any new Supabase migrations to the production database
-
-### Manual Deploy
-You can also trigger the workflow on demand via **Actions → Deploy → Run workflow**.
+**Deployment: Production deploys are manual via Lovable's Publish button only. No GitHub Actions or external CI/CD is configured.**
 
 ### Database Migrations
 Migrations live in `supabase/migrations/` and are applied in filename (timestamp) order.
