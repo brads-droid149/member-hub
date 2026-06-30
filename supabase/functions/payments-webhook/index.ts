@@ -47,15 +47,22 @@ let _verifyWebhookFn: typeof verifyWebhook = verifyWebhook;
 export function __setTestOverrides(opts: {
   supabase?: any;
   verifyWebhookFn?: typeof verifyWebhook;
+  sendBillingEmailFn?: SendBillingEmailFn;
+  brevoMarkCancelledFn?: BrevoMarkCancelledFn;
 }) {
   if (opts.supabase !== undefined) _supabase = opts.supabase;
   if (opts.verifyWebhookFn !== undefined) _verifyWebhookFn = opts.verifyWebhookFn;
+  if (opts.sendBillingEmailFn !== undefined) _sendBillingEmailFn = opts.sendBillingEmailFn;
+  if (opts.brevoMarkCancelledFn !== undefined) _brevoMarkCancelledFn = opts.brevoMarkCancelledFn;
 }
 
 export function __resetTestOverrides() {
   _supabase = null;
   _verifyWebhookFn = verifyWebhook;
+  _sendBillingEmailFn = null;
+  _brevoMarkCancelledFn = null;
 }
+
 
 // Map Stripe's ~8 subscription statuses down to the THREE values the
 // Junkyard app actually understands on members.status:
