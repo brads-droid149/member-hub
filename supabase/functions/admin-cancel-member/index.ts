@@ -143,13 +143,17 @@ export async function handler(req: Request): Promise<Response> {
     // webhook (handleSubscriptionDeleted) sends it then so the member's
     // experience matches the email.
     if (immediate || !stripeSubId) {
-      await _sendBillingEmailFn({
+      const sendBillingEmailFn = await getSendBillingEmail();
+      await sendBillingEmailFn({
         userId: targetUserId,
         template: { kind: "cancelled", reason: "admin" },
       });
       const { data: userResp } = await supabase.auth.admin.getUserById(targetUserId);
       const targetEmail = userResp?.user?.email;
-      if (targetEmail) await _brevoMarkCancelledFn(targetEmail);
+      if (targetEmail) {
+        const brevoMarkCancelledFn = await getBrevoMarkCancelled();
+        await brevoMarkCancelledFn(targetEmail);
+      }
     }
 
     return new Response(JSON.stringify({ ok: true, immediate, hadSubscription: !!stripeSubId }), {
