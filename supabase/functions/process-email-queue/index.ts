@@ -17,21 +17,27 @@
 // Two queues, processed in priority order:
 //   1. auth_emails          (signup / password reset — time sensitive, short TTL)
 //   2. transactional_emails (receipts, winner notifications — longer TTL)
-import { sendLovableEmail } from 'npm:@lovable.dev/email-js'
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
-// Test-only seams — allow unit tests to inject stubbed supabase + send fn.
-let _sendEmailFn: typeof sendLovableEmail = sendLovableEmail
+// Lazy-load @lovable.dev/email-js so unit tests can run without it resolved.
+type SendLovableEmailFn = (payload: any, opts: any) => Promise<unknown>
+let _sendEmailFn: SendLovableEmailFn | null = null
+async function getSendEmail(): Promise<SendLovableEmailFn> {
+  if (_sendEmailFn) return _sendEmailFn
+  const mod = await import('npm:@lovable.dev/email-js')
+  return mod.sendLovableEmail as SendLovableEmailFn
+}
+
 let _createClientFn: typeof createClient = createClient
 export function __setTestOverrides(opts: {
-  sendEmailFn?: typeof sendLovableEmail
+  sendEmailFn?: SendLovableEmailFn
   createClientFn?: typeof createClient
 }) {
   if (opts.sendEmailFn !== undefined) _sendEmailFn = opts.sendEmailFn
   if (opts.createClientFn !== undefined) _createClientFn = opts.createClientFn
 }
 export function __resetTestOverrides() {
-  _sendEmailFn = sendLovableEmail
+  _sendEmailFn = null
   _createClientFn = createClient
 }
 
