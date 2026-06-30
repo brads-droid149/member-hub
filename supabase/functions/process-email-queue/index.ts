@@ -318,7 +318,7 @@ export const handler = async (req: Request): Promise<Response> => {
       }
 
       try {
-        await sendLovableEmail(
+        await _sendEmailFn(
           {
             run_id: payload.run_id,
             to: payload.to,
@@ -429,4 +429,6 @@ export const handler = async (req: Request): Promise<Response> => {
     JSON.stringify({ processed: totalProcessed }),
     { headers: { 'Content-Type': 'application/json' } }
   )
-})
+}
+
+Deno.serve(handler)
