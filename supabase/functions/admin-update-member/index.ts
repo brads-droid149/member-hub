@@ -1,5 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { getCorsHeaders } from "../_shared/cors.ts";
+import { adminUpdateMemberSchema, parseJsonBody } from "../_shared/validation.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -39,28 +40,13 @@ Deno.serve(async (req) => {
       });
     }
 
-    const body = await req.json().catch(() => ({}));
-    const targetUserId: string | undefined = body.userId;
-    const monthsActive = Number.isFinite(body.monthsActive) ? Math.min(10000, Math.max(0, Math.floor(body.monthsActive))) : undefined;
-    const entries = Number.isFinite(body.entries) ? Math.min(10000, Math.max(0, Math.floor(body.entries))) : undefined;
+    const parsed = await parseJsonBody(req, adminUpdateMemberSchema, corsHeaders);
+    if (parsed.response) return parsed.response;
+    const { userId: targetUserId, monthsActive, entries } = parsed.data;
 
-    if (!targetUserId || !/^[a-f0-9-]{36}$/i.test(targetUserId)) {
-      return new Response(JSON.stringify({ error: "Invalid userId" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const updateData: Record<string, unknown> = {};
+    const updateData: Record<string, unknown> = { updated_at: new Date().toISOString() };
     if (monthsActive !== undefined) updateData.months_active = monthsActive;
     if (entries !== undefined) updateData.entries = entries;
-    if (Object.keys(updateData).length === 0) {
-      return new Response(JSON.stringify({ error: "No fields to update" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-    updateData.updated_at = new Date().toISOString();
 
     const { error: updateError } = await supabase
       .from("members")
