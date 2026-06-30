@@ -473,6 +473,7 @@ export type Database = {
         }
         Returns: number
       }
+      phone_exists: { Args: { _phone: string }; Returns: boolean }
       read_email_batch: {
         Args: { batch_size: number; queue_name: string; vt: number }
         Returns: {
