@@ -17,6 +17,15 @@ function makeStubSupabase(opts: { existingMember?: any } = {}) {
   };
 
   const client: any = {
+    auth: {
+      admin: {
+        getUserById: async (_id: string) => ({
+          data: { user: { email: "user@example.com" } },
+          error: null,
+        }),
+      },
+    },
+
     from(table: string) {
       const chain: any = {
         _table: table,
