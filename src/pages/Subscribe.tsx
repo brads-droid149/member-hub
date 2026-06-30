@@ -19,9 +19,9 @@ const PLANS: Record<Plan, { priceId: string; price: string; cadence: string; sub
   },
   yearly: {
     priceId: "membership_yearly",
-    price: "A$50",
+    price: "A$55",
     cadence: "/year",
-    sub: "Billed yearly. Save 17% vs monthly.",
+    sub: "Billed yearly. Save ~8% vs monthly.",
     badge: "Best value",
   },
 };
