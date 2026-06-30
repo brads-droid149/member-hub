@@ -11,7 +11,7 @@ Deno.env.set("SUPABASE_SERVICE_ROLE_KEY", "stub");
 const ORIGIN = "https://members.junkyardsurf.com.au";
 const VALID_UUID = "11111111-1111-1111-1111-111111111111";
 
-function req(init: RequestInit & { body?: any } = {}) {
+function req(init: any = {}) {
   const headers = new Headers(init.headers as any);
   if (!headers.has("origin")) headers.set("origin", ORIGIN);
   const body = init.body && typeof init.body === "object" ? JSON.stringify(init.body) : init.body;

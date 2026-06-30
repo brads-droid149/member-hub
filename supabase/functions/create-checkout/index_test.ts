@@ -55,7 +55,7 @@ function makeStubStripe(checkoutSession: any = { client_secret: "cs_test_secret"
 
 const ORIGIN = "https://members.junkyardsurf.com.au";
 
-function req(init: RequestInit & { body?: any } = {}, url = "http://localhost/create-checkout") {
+function req(init: any = {}, url = "http://localhost/create-checkout") {
   const headers = new Headers(init.headers as any);
   if (!headers.has("origin")) headers.set("origin", ORIGIN);
   const body = init.body && typeof init.body === "object" ? JSON.stringify(init.body) : init.body;
