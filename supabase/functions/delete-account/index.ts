@@ -2,9 +2,10 @@
 // (immediate), sends a final confirmation email, then deletes the auth
 // user (cascade removes profiles + members + subscriptions rows).
 import { createClient } from 'npm:@supabase/supabase-js@2'
-import { type StripeEnv, createStripeClient } from '../_shared/stripe.ts'
+import { createStripeClient } from '../_shared/stripe.ts'
 import { getCorsHeaders } from '../_shared/cors.ts'
 import { sendBillingEmail, brevoMarkCancelled } from '../_shared/billing-emails.ts'
+import { deleteAccountSchema, parseJsonBody } from '../_shared/validation.ts'
 
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL')!,
@@ -32,8 +33,9 @@ Deno.serve(async (req) => {
       })
     }
 
-    const body = await req.json().catch(() => ({}))
-    const environment: StripeEnv = body.environment === 'live' ? 'live' : 'sandbox'
+    const parsed = await parseJsonBody(req, deleteAccountSchema, corsHeaders)
+    if (parsed.response) return parsed.response
+    const { environment } = parsed.data
 
     // Capture email before deletion for final notification.
     const email = user.email
