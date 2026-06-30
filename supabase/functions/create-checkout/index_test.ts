@@ -59,7 +59,7 @@ function req(init: RequestInit & { body?: any } = {}, url = "http://localhost/cr
   const headers = new Headers(init.headers as any);
   if (!headers.has("origin")) headers.set("origin", ORIGIN);
   const body = init.body && typeof init.body === "object" ? JSON.stringify(init.body) : init.body;
-  return new Request(url, { ...init, headers, body });
+  return new Request(url, { ...init, headers, body: body as any });
 }
 
 Deno.test("OPTIONS returns ok with CORS headers", async () => {
