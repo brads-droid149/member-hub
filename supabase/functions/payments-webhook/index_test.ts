@@ -104,6 +104,8 @@ Deno.test("subscription.deleted sets member cancelled and zeros entries", async 
   const { client, calls } = makeStubSupabase();
   __setTestOverrides({
     supabase: client,
+    sendBillingEmailFn: async () => ({ enqueued: true }),
+    brevoMarkCancelledFn: async () => {},
     verifyWebhookFn: async () => ({
       id: "evt_delete_1",
       type: "customer.subscription.deleted",
@@ -117,6 +119,7 @@ Deno.test("subscription.deleted sets member cancelled and zeros entries", async 
       },
     }) as any,
   });
+
 
   await handleWebhook(makeRequest(), "sandbox");
 
