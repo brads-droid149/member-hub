@@ -8,7 +8,7 @@ type SendBillingEmailFn = (opts: { userId: string; template: any }) => Promise<v
 type BrevoMarkCancelledFn = (email: string) => Promise<void>;
 
 let _supabase: ReturnType<typeof createClient> | null = null;
-function getSupabase() {
+function getSupabase(): any {
   if (!_supabase) {
     _supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,

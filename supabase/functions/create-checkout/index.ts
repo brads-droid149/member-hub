@@ -4,7 +4,7 @@ import { getCorsHeaders, isAllowedReturnUrl } from "../_shared/cors.ts";
 
 // Lazy supabase client — env vars may not be present at module load (e.g. tests).
 let _supabase: ReturnType<typeof createClient> | null = null;
-function getSupabase() {
+function getSupabase(): any {
   if (!_supabase) {
     _supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
