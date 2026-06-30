@@ -28,10 +28,10 @@ async function getSendEmail(): Promise<SendLovableEmailFn> {
   return mod.sendLovableEmail as SendLovableEmailFn
 }
 
-let _createClientFn: typeof createClient = createClient
+let _createClientFn: any = createClient
 export function __setTestOverrides(opts: {
   sendEmailFn?: SendLovableEmailFn
-  createClientFn?: typeof createClient
+  createClientFn?: any
 }) {
   if (opts.sendEmailFn !== undefined) _sendEmailFn = opts.sendEmailFn
   if (opts.createClientFn !== undefined) _createClientFn = opts.createClientFn
@@ -153,7 +153,7 @@ export const handler = async (req: Request): Promise<Response> => {
     )
   }
 
-  const supabase = _createClientFn(supabaseUrl, supabaseServiceKey)
+  const supabase: any = _createClientFn(supabaseUrl, supabaseServiceKey)
 
   // 1. Check rate-limit cooldown and read queue config
   const { data: state } = await supabase
