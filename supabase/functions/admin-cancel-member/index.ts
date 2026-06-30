@@ -60,7 +60,6 @@ export async function handler(req: Request): Promise<Response> {
     return new Response("Method not allowed", { status: 405, headers: corsHeaders });
   }
   try {
-    const supabase = getSupabase();
     const token = req.headers.get("Authorization")?.replace("Bearer ", "");
     if (!token) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -68,6 +67,7 @@ export async function handler(req: Request): Promise<Response> {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    const supabase = getSupabase();
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     if (authError || !user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
