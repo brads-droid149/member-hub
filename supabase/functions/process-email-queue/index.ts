@@ -99,12 +99,14 @@ Deno.serve(async (req) => {
     )
   }
 
-  // Defense in depth: verify_jwt=true already requires a valid JWT at the
-  // gateway layer. This adds an explicit role check so only service-role
-  // callers can trigger queue processing.
+  // Defense in depth: verify_jwt=true already authenticates the caller at the
+  // gateway layer. For legacy JWT keys, additionally assert the service_role
+  // claim. New-format API keys (sb_secret_*) are opaque, not JWTs — in that
+  // case the parsed claims will be null and we rely on the gateway check.
   const token = authHeader.slice('Bearer '.length).trim()
   const claims = parseJwtClaims(token)
-  if (claims?.role !== 'service_role') {
+  if (claims !== null && claims.role !== 'service_role') {
+    console.error('Rejecting non-service-role JWT', { role: claims.role })
     return new Response(
       JSON.stringify({ error: 'Forbidden' }),
       { status: 403, headers: { 'Content-Type': 'application/json' } }
