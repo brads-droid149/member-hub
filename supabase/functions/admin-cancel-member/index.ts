@@ -1,7 +1,11 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { type StripeEnv, createStripeClient } from "../_shared/stripe.ts";
 import { getCorsHeaders } from "../_shared/cors.ts";
-import { sendBillingEmail, brevoMarkCancelled } from "../_shared/billing-emails.ts";
+
+// Dynamic import of billing-emails (which pulls in @react-email/components) so
+// unit tests can run without that npm tree resolved.
+type SendBillingEmailFn = (opts: { userId: string; template: any }) => Promise<void>;
+type BrevoMarkCancelledFn = (email: string) => Promise<void>;
 
 let _supabase: ReturnType<typeof createClient> | null = null;
 function getSupabase() {
@@ -15,14 +19,25 @@ function getSupabase() {
 }
 
 let _stripeFactory: typeof createStripeClient = createStripeClient;
-let _sendBillingEmailFn: typeof sendBillingEmail = sendBillingEmail;
-let _brevoMarkCancelledFn: typeof brevoMarkCancelled = brevoMarkCancelled;
+let _sendBillingEmailFn: SendBillingEmailFn | null = null;
+let _brevoMarkCancelledFn: BrevoMarkCancelledFn | null = null;
+
+async function getSendBillingEmail(): Promise<SendBillingEmailFn> {
+  if (_sendBillingEmailFn) return _sendBillingEmailFn;
+  const mod = await import("../_shared/billing-emails.ts");
+  return mod.sendBillingEmail;
+}
+async function getBrevoMarkCancelled(): Promise<BrevoMarkCancelledFn> {
+  if (_brevoMarkCancelledFn) return _brevoMarkCancelledFn;
+  const mod = await import("../_shared/billing-emails.ts");
+  return mod.brevoMarkCancelled;
+}
 
 export function __setTestOverrides(opts: {
   supabase?: any;
   stripeFactory?: typeof createStripeClient;
-  sendBillingEmailFn?: typeof sendBillingEmail;
-  brevoMarkCancelledFn?: typeof brevoMarkCancelled;
+  sendBillingEmailFn?: SendBillingEmailFn;
+  brevoMarkCancelledFn?: BrevoMarkCancelledFn;
 }) {
   if (opts.supabase !== undefined) _supabase = opts.supabase;
   if (opts.stripeFactory !== undefined) _stripeFactory = opts.stripeFactory;
@@ -33,9 +48,10 @@ export function __setTestOverrides(opts: {
 export function __resetTestOverrides() {
   _supabase = null;
   _stripeFactory = createStripeClient;
-  _sendBillingEmailFn = sendBillingEmail;
-  _brevoMarkCancelledFn = brevoMarkCancelled;
+  _sendBillingEmailFn = null;
+  _brevoMarkCancelledFn = null;
 }
+
 
 export async function handler(req: Request): Promise<Response> {
   const corsHeaders = getCorsHeaders(req);
