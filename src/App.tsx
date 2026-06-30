@@ -52,7 +52,9 @@ const App = () => (
             path="/admin"
             element={
               <ProtectedRoute adminOnly>
-                <Admin />
+                <Suspense fallback={<AdminFallback />}>
+                  <Admin />
+                </Suspense>
               </ProtectedRoute>
             }
           />
