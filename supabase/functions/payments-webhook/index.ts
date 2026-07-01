@@ -241,9 +241,10 @@ async function handleInvoicePaid(invoice: Stripe.Invoice, env: StripeEnv) {
     .update({ status: "active", past_due_since: null, updated_at: new Date().toISOString() })
     .eq("user_id", userId);
 
-  // Renewal receipt — fire-and-forget. Only on subscription_cycle (true
-  // renewal), not subscription_update (proration / mid-cycle change).
-  if (reason === "subscription_cycle") {
+  // Receipt — fire-and-forget. Sent on the initial signup invoice
+  // (subscription_create) and on genuine renewals (subscription_cycle),
+  // but NOT on subscription_update (proration / mid-cycle change).
+  if (reason === "subscription_cycle" || reason === "subscription_create") {
     const amount = (invoice.amount_paid ?? 0) / 100;
     const currency = (invoice.currency ?? "aud").toUpperCase();
     const amountFormatted = `${currency} ${amount.toFixed(2)}`;
