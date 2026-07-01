@@ -231,9 +231,9 @@ async function userIdFromInvoice(invoice: Stripe.Invoice, env: StripeEnv): Promi
 //     on the invoice instead.
 async function handleInvoicePaid(invoice: Stripe.Invoice, env: StripeEnv) {
   const reason = invoice.billing_reason;
-  // Only renewals and mid-cycle updates re-activate. The very first
-  // invoice (subscription_create) is already handled by syncMember.
-  if (reason !== "subscription_cycle" && reason !== "subscription_update") return;
+  // subscription_create also runs through here so the first invoice
+  // triggers a receipt email. syncMember still owns member row creation.
+  if (reason !== "subscription_cycle" && reason !== "subscription_update" && reason !== "subscription_create") return;
   const userId = await userIdFromInvoice(invoice, env);
   if (!userId) return;
   await getSupabase()
