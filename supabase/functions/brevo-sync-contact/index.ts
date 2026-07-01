@@ -6,7 +6,7 @@ const GATEWAY_URL = "https://connector-gateway.lovable.dev/brevo";
 
 const BodySchema = z.object({
   email: z.string().email(),
-  full_name: z.string().min(1).max(200).optional(),
+  full_name: z.string().max(200).optional().transform((v) => (v && v.trim().length > 0 ? v.trim() : undefined)),
   phone: z.string().max(20).optional(),
   state: z.string().max(10).optional(),
   marketing_opt_in: z.boolean().default(false),
