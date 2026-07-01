@@ -87,23 +87,18 @@ export async function createCheckoutSession(options: {
       })
     : undefined;
 
-  // Full compliance handling: Stripe acts as merchant of record and handles
-  // tax calculation/collection/filing/remittance, fraud, disputes, and
-  // transaction-level support for buyers in ~80 countries (+3.5%/txn).
-  // Note: `managed_payments` conflicts with `automatic_tax`, `customer_update`,
-  // `tax_id_collection`, `adaptive_pricing`, and several other fields — do
-  // not add them here. Managed Payments internally disables Adaptive Pricing,
-  // so combined with the Price having no `currency_options`, every charge is
-  // guaranteed to settle in AUD regardless of buyer location.
+  // Tax handling: Stripe automatically calculates GST for Australian customers.
+  // The Price has `tax_behavior: inclusive`, so the A$5 shown to customers
+  // already includes GST rather than adding it on top.
   const session = await stripe.checkout.sessions.create({
     line_items: [{ price: stripePrice.id, quantity: options.quantity || 1 }],
     mode: isRecurring ? "subscription" : "payment",
     ui_mode: "embedded_page",
     return_url: options.returnUrl,
-    managed_payments: { enabled: true },
+    automatic_tax: { enabled: true },
     ...(customerId && { customer: customerId }),
     ...(options.userId && {
-      metadata: { userId: options.userId, managed_payments: "true" },
+      metadata: { userId: options.userId },
       ...(isRecurring && { subscription_data: { metadata: { userId: options.userId } } }),
     }),
   } as any);
