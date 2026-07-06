@@ -80,7 +80,7 @@ export default function Home() {
       });
       return;
     }
-    window.open(data.url, "_blank", "noopener,noreferrer");
+    window.location.href = data.url;
   };
 
   return (
