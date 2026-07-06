@@ -21,6 +21,24 @@ import { AU_STATES } from "@/lib/constants";
 // Validates Australian mobile in +61 format: +61 followed by 4 and 8 more digits.
 const isValidAuMobile = (val: string) => /^\+614\d{8}$/.test(val.replace(/\s+/g, ""));
 
+declare global {
+  interface Window {
+    tolt_data?: { customer_id?: string } & Record<string, unknown>;
+    tolt?: { signup: (email: string) => Promise<unknown> };
+  }
+}
+
+// Fire-and-forget Tolt affiliate lead tracking. Never throws; never blocks signup.
+async function trackToltSignup(email: string) {
+  if (!window.tolt_data) return; // not a referred visitor
+  if (window.tolt_data.customer_id) return; // already tracked
+  try {
+    await window.tolt?.signup(email);
+  } catch (error) {
+    console.error("Tolt signup tracking failed:", error);
+  }
+}
+
 export default function Signup() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
