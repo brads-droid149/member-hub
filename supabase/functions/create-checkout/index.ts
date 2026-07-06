@@ -109,6 +109,7 @@ export async function createCheckoutSession(options: {
   userId?: string;
   returnUrl: string;
   environment: StripeEnv;
+  toltReferral?: string;
 }) {
   const ALLOWED_PRICE_IDS = new Set(["membership_monthly", "membership_yearly"]);
   if (!ALLOWED_PRICE_IDS.has(options.priceId)) throw new Error("Invalid priceId");
@@ -146,11 +147,21 @@ export async function createCheckoutSession(options: {
     return_url: options.returnUrl,
     automatic_tax: { enabled: false },
     ...(customerId && { customer: customerId }),
-    ...(options.userId && { metadata: { userId: options.userId } }),
+    ...((options.userId || options.toltReferral) && {
+      metadata: {
+        ...(options.userId && { userId: options.userId }),
+        ...(options.toltReferral && { tolt_referral: options.toltReferral }),
+      },
+    }),
     ...(isRecurring && {
       subscription_data: {
         default_tax_rates: [auGstTaxRateId],
-        ...(options.userId && { metadata: { userId: options.userId } }),
+        ...((options.userId || options.toltReferral) && {
+          metadata: {
+            ...(options.userId && { userId: options.userId }),
+            ...(options.toltReferral && { tolt_referral: options.toltReferral }),
+          },
+        }),
       },
     }),
   } as any);
@@ -202,6 +213,7 @@ export async function handler(req: Request): Promise<Response> {
       userId: user.id,
       returnUrl: body.returnUrl,
       environment: env,
+      toltReferral: typeof body.toltReferral === "string" ? body.toltReferral : undefined,
     });
     return new Response(JSON.stringify({ clientSecret }), {
       status: 200,
