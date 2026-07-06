@@ -2,6 +2,12 @@ import { EmbeddedCheckoutProvider, EmbeddedCheckout } from "@stripe/react-stripe
 import { getStripe, getStripeEnvironment } from "@/lib/stripe";
 import { supabase } from "@/integrations/supabase/client";
 
+declare global {
+  interface Window {
+    tolt_referral?: string;
+  }
+}
+
 interface StripeEmbeddedCheckoutProps {
   priceId: string;
   quantity?: number;

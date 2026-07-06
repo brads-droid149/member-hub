@@ -1,21 +1,39 @@
-# Add Tolt lead tracking to signup
+## Plan: Pass Tolt referral ID to Stripe checkout metadata
 
-## Scope
-Only one signup path exists in the app: email/password in `src/pages/Signup.tsx`. There is no OAuth/social signup route today, so a single integration point covers all current signup flows. (Note for later: if a future paid-conversion flow allows account creation inside the Stripe checkout without visiting `/signup`, that will need its own Tolt call — out of scope here.)
+Threads `window.tolt_referral` from the browser through the create-checkout edge function into Stripe session + subscription metadata, so Tolt can attribute paid conversions to referrers.
 
-## Changes
+### 1. `src/components/StripeEmbeddedCheckout.tsx`
 
-**`src/pages/Signup.tsx`**
-1. Add a module-scope helper `trackToltSignup(email)` matching the spec:
-   - Returns early if `window.tolt_data` is missing (visitor wasn't referred).
-   - Returns early if `window.tolt_data.customer_id` exists (already tracked).
-   - Wraps `window.tolt.signup(email)` in try/catch, logging errors to `console.error`.
-2. In `handleSignup`, place the call **once**, immediately after the `if (error) { … return; }` guard and **before** the `if (data.session) { navigate("/subscribe") } else { navigate("/check-email") }` branch. This guarantees Tolt fires on every successful signup — both the auto-signed-in path and the email-verification path — with no duplication.
-3. Fire-and-forget: call `trackToltSignup(email.trim())` without `await`, so the user is never blocked or delayed even if the Tolt script hasn't loaded or the call fails.
-4. Add a minimal inline `declare global` block typing `window.tolt` / `window.tolt_data` so the code typechecks without touching shared types.
+- Add a `declare global` block at the top typing `window.tolt_referral?: string` (mirrors the pattern used in `Signup.tsx`).
+- In `fetchClientSecret`, extend the body passed to `supabase.functions.invoke("create-checkout", ...)` with:
+  ```ts
+  toltReferral: typeof window !== "undefined" ? window.tolt_referral : undefined,
+  ```
 
-## Non-goals / guarantees
-- No change to the Supabase `signUp` call, its arguments, or the surrounding validation.
-- No change to navigation, toast, or Brevo sync behavior.
-- No change to `index.html` (Tolt script tag was added previously).
-- No new dependencies.
+### 2. `supabase/functions/create-checkout/index.ts`
+
+- Add `toltReferral?: string;` to the `options` parameter type of `createCheckoutSession`.
+- In `stripe.checkout.sessions.create({...})`, replace the session-level metadata spread:
+  ```ts
+  ...(options.userId && { metadata: { userId: options.userId } }),
+  ```
+  with:
+  ```ts
+  ...((options.userId || options.toltReferral) && {
+    metadata: {
+      ...(options.userId && { userId: options.userId }),
+      ...(options.toltReferral && { tolt_referral: options.toltReferral }),
+    },
+  }),
+  ```
+- Apply the same replacement inside `subscription_data.metadata` (recurring branch) so the referral lands on the Subscription too — so it flows onto every renewal invoice, not just the first checkout session.
+- In `handler`, when calling `createCheckoutSession(...)`, add:
+  ```ts
+  toltReferral: typeof body.toltReferral === "string" ? body.toltReferral : undefined,
+  ```
+  Type-guarding on `string` ensures a non-string client payload is safely ignored rather than crashing Stripe's metadata validation.
+
+### Non-goals
+
+- No `customer_creation` param (customer already resolved via `resolveOrCreateCustomer` and passed as `customer: customerId`; also invalid for subscription mode).
+- No changes to GST tax rate logic, price resolution, `automatic_tax`, `ui_mode`, `resolveOrCreateCustomer`, or existing `userId` metadata behavior — `tolt_referral` is added alongside.
