@@ -63,6 +63,45 @@ async function resolveOrCreateCustomer(
   return created.id;
 }
 
+// Cached per Stripe env — tax_rate objects have no lookup_key, so we list+match.
+const _auGstTaxRateCache: Partial<Record<StripeEnv, string>> = {};
+
+async function resolveOrCreateAuGstTaxRate(
+  stripe: ReturnType<typeof createStripeClient>,
+  env: StripeEnv,
+): Promise<string> {
+  if (_auGstTaxRateCache[env]) return _auGstTaxRateCache[env]!;
+
+  // List active rates and match on our canonical shape. Stripe caps at 100
+  // active rates per account, which is fine — we only ever create one.
+  const existing = await stripe.taxRates.list({ active: true, limit: 100 });
+  const match = existing.data.find(
+    (r) =>
+      r.active &&
+      r.inclusive === true &&
+      Number(r.percentage) === 10 &&
+      r.country === "AU" &&
+      (r.display_name === "GST" || r.jurisdiction === "AU"),
+  );
+  if (match) {
+    _auGstTaxRateCache[env] = match.id;
+    return match.id;
+  }
+
+  const created = await stripe.taxRates.create({
+    display_name: "GST",
+    description: "Australian GST",
+    jurisdiction: "AU",
+    country: "AU",
+    percentage: 10,
+    inclusive: true,
+    active: true,
+  });
+  _auGstTaxRateCache[env] = created.id;
+  return created.id;
+}
+
+
 export async function createCheckoutSession(options: {
   priceId: string;
   quantity?: number;
