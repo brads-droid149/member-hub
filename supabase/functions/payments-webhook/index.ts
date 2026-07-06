@@ -10,12 +10,12 @@ let _sendBillingEmailFn: SendBillingEmailFn | null = null;
 let _brevoMarkCancelledFn: BrevoMarkCancelledFn | null = null;
 async function sendBillingEmail(opts: { userId: string; template: any }): Promise<unknown> {
   if (_sendBillingEmailFn) return _sendBillingEmailFn(opts);
-  const mod = await import("../_shared/billing-emails.ts" as string);
+  const mod = await import("../_shared/billing-emails.ts");
   return mod.sendBillingEmail(opts);
 }
 async function brevoMarkCancelled(email: string): Promise<void> {
   if (_brevoMarkCancelledFn) return _brevoMarkCancelledFn(email);
-  const mod = await import("../_shared/billing-emails.ts" as string);
+  const mod = await import("../_shared/billing-emails.ts");
   return mod.brevoMarkCancelled(email);
 }
 
