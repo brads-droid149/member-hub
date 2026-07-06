@@ -213,6 +213,7 @@ export async function handler(req: Request): Promise<Response> {
       userId: user.id,
       returnUrl: body.returnUrl,
       environment: env,
+      toltReferral: typeof body.toltReferral === "string" ? body.toltReferral : undefined,
     });
     return new Response(JSON.stringify({ clientSecret }), {
       status: 200,
