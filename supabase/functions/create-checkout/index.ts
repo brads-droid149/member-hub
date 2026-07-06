@@ -192,7 +192,9 @@ export async function handler(req: Request): Promise<Response> {
     }
     const clientSecret = await createCheckoutSession({
       priceId: body.priceId,
-      quantity: body.quantity,
+      // Memberships are always single-unit. Never trust client-supplied quantity —
+      // a large integer would create an over-priced subscription.
+      quantity: 1,
       // Always use the authenticated user's email from the JWT — never trust
       // a client-supplied email, which could let an attacker attach their
       // checkout session to another user's Stripe customer record.
