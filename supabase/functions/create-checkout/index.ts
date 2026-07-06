@@ -109,6 +109,7 @@ export async function createCheckoutSession(options: {
   userId?: string;
   returnUrl: string;
   environment: StripeEnv;
+  toltReferral?: string;
 }) {
   const ALLOWED_PRICE_IDS = new Set(["membership_monthly", "membership_yearly"]);
   if (!ALLOWED_PRICE_IDS.has(options.priceId)) throw new Error("Invalid priceId");
