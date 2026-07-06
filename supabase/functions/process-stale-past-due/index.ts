@@ -5,11 +5,11 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
 // Dynamic import avoids pulling @react-email/components into the module graph at type-check time.
 async function sendBillingEmail(opts: { userId: string; template: any }): Promise<unknown> {
-  const mod = await import('../_shared/billing-emails.ts' as string)
+  const mod = await import('../_shared/billing-emails.ts')
   return mod.sendBillingEmail(opts)
 }
 async function brevoMarkCancelled(email: string): Promise<void> {
-  const mod = await import('../_shared/billing-emails.ts' as string)
+  const mod = await import('../_shared/billing-emails.ts')
   return mod.brevoMarkCancelled(email)
 }
 

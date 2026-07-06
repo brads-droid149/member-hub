@@ -24,12 +24,12 @@ let _brevoMarkCancelledFn: BrevoMarkCancelledFn | null = null;
 
 async function getSendBillingEmail(): Promise<SendBillingEmailFn> {
   if (_sendBillingEmailFn) return _sendBillingEmailFn;
-  const mod = await import("../_shared/billing-emails.ts" as string);
+  const mod = await import("../_shared/billing-emails.ts");
   return mod.sendBillingEmail;
 }
 async function getBrevoMarkCancelled(): Promise<BrevoMarkCancelledFn> {
   if (_brevoMarkCancelledFn) return _brevoMarkCancelledFn;
-  const mod = await import("../_shared/billing-emails.ts" as string);
+  const mod = await import("../_shared/billing-emails.ts");
   return mod.brevoMarkCancelled;
 }
 
