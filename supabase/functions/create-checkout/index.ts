@@ -145,6 +145,7 @@ export async function createCheckoutSession(options: {
     mode: isRecurring ? "subscription" : "payment",
     ui_mode: "embedded_page",
     return_url: options.returnUrl,
+    allow_promotion_codes: true,
     automatic_tax: { enabled: false },
     ...(customerId && { customer: customerId }),
     ...((options.userId || options.toltReferral) && {
