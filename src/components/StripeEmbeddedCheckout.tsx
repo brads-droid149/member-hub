@@ -32,6 +32,7 @@ export function StripeEmbeddedCheckoutForm({
         userId,
         returnUrl,
         environment: getStripeEnvironment(),
+        toltReferral: typeof window !== "undefined" ? window.tolt_referral : undefined,
       },
     });
     if (error || !data?.clientSecret) {
