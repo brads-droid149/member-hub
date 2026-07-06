@@ -147,11 +147,21 @@ export async function createCheckoutSession(options: {
     return_url: options.returnUrl,
     automatic_tax: { enabled: false },
     ...(customerId && { customer: customerId }),
-    ...(options.userId && { metadata: { userId: options.userId } }),
+    ...((options.userId || options.toltReferral) && {
+      metadata: {
+        ...(options.userId && { userId: options.userId }),
+        ...(options.toltReferral && { tolt_referral: options.toltReferral }),
+      },
+    }),
     ...(isRecurring && {
       subscription_data: {
         default_tax_rates: [auGstTaxRateId],
-        ...(options.userId && { metadata: { userId: options.userId } }),
+        ...((options.userId || options.toltReferral) && {
+          metadata: {
+            ...(options.userId && { userId: options.userId }),
+            ...(options.toltReferral && { tolt_referral: options.toltReferral }),
+          },
+        }),
       },
     }),
   } as any);
