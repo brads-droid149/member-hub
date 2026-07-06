@@ -126,21 +126,35 @@ export async function createCheckoutSession(options: {
       })
     : undefined;
 
-  // Tax handling: Stripe automatically calculates GST for Australian customers.
-  // The Price has `tax_behavior: inclusive`, so the A$5 shown to customers
-  // already includes GST rather than adding it on top.
+  // Tax handling: we attach a fixed AU GST tax_rate (10%, inclusive) instead of
+  // Stripe's automatic_tax, which incurs a per-transaction fee. The Price has
+  // `tax_behavior: inclusive`, matching the tax_rate's `inclusive: true`, so the
+  // displayed A$5 / A$55 continues to include GST rather than adding on top.
+  const auGstTaxRateId = await resolveOrCreateAuGstTaxRate(stripe, options.environment);
+
   const session = await stripe.checkout.sessions.create({
-    line_items: [{ price: stripePrice.id, quantity: options.quantity || 1 }],
+    line_items: [{
+      price: stripePrice.id,
+      quantity: options.quantity || 1,
+      // One-off charges take tax_rates on the line item. For subscriptions,
+      // tax rates go on subscription_data.default_tax_rates below so they
+      // flow onto every renewal invoice automatically.
+      ...(!isRecurring && { tax_rates: [auGstTaxRateId] }),
+    }],
     mode: isRecurring ? "subscription" : "payment",
     ui_mode: "embedded_page",
     return_url: options.returnUrl,
-    automatic_tax: { enabled: true },
+    automatic_tax: { enabled: false },
     ...(customerId && { customer: customerId }),
-    ...(options.userId && {
-      metadata: { userId: options.userId },
-      ...(isRecurring && { subscription_data: { metadata: { userId: options.userId } } }),
+    ...(options.userId && { metadata: { userId: options.userId } }),
+    ...(isRecurring && {
+      subscription_data: {
+        default_tax_rates: [auGstTaxRateId],
+        ...(options.userId && { metadata: { userId: options.userId } }),
+      },
     }),
   } as any);
+
 
   return session.client_secret;
 }
