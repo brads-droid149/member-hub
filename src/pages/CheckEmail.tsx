@@ -33,6 +33,11 @@ export default function CheckEmail() {
           <p className="text-center text-foreground">
             Check your inbox to confirm your account. Once confirmed, sign in to choose your membership.
           </p>
+          {email && (
+            <p className="text-center text-sm text-muted-foreground">
+              email sent to {email}
+            </p>
+          )}
           <Button className="w-full" onClick={() => navigate("/login")}>
             Sign In
           </Button>
