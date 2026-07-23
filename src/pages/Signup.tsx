@@ -117,7 +117,7 @@ export default function Signup() {
     if (data.session) {
       navigate("/subscribe");
     } else {
-      navigate("/check-email");
+      navigate("/check-email", { state: { email: email.trim() } });
     }
   };
 

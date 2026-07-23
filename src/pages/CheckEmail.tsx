@@ -1,10 +1,16 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
+interface CheckEmailLocationState {
+  email?: string;
+}
+
 export default function CheckEmail() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { email } = (location.state as CheckEmailLocationState | null) ?? {};
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
