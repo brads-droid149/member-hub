@@ -1,39 +1,42 @@
-## Plan: Pass Tolt referral ID to Stripe checkout metadata
+## What's happening
 
-Threads `window.tolt_referral` from the browser through the create-checkout edge function into Stripe session + subscription metadata, so Tolt can attribute paid conversions to referrers.
+It isn't the browser reloading the page — it's the app throwing away its screen and rebuilding it.
 
-### 1. `src/components/StripeEmbeddedCheckout.tsx`
+`src/components/ProtectedRoute.tsx` subscribes to auth state changes, and its handler does this on **every** event:
 
-- Add a `declare global` block at the top typing `window.tolt_referral?: string` (mirrors the pattern used in `Signup.tsx`).
-- In `fetchClientSecret`, extend the body passed to `supabase.functions.invoke("create-checkout", ...)` with:
-  ```ts
-  toltReferral: typeof window !== "undefined" ? window.tolt_referral : undefined,
-  ```
+```ts
+supabase.auth.onAuthStateChange((_e, s) => {
+  setAccess("loading");   // <- wipes the screen
+  evaluate(s);
+});
+```
 
-### 2. `supabase/functions/create-checkout/index.ts`
+The client is configured with `autoRefreshToken: true` (`src/integrations/supabase/client.ts`), and Supabase re-checks/refreshes the session whenever the tab becomes visible again. That fires `TOKEN_REFRESHED` (and often `SIGNED_IN`), so coming back to the tab:
 
-- Add `toltReferral?: string;` to the `options` parameter type of `createCheckoutSession`.
-- In `stripe.checkout.sessions.create({...})`, replace the session-level metadata spread:
-  ```ts
-  ...(options.userId && { metadata: { userId: options.userId } }),
-  ```
-  with:
-  ```ts
-  ...((options.userId || options.toltReferral) && {
-    metadata: {
-      ...(options.userId && { userId: options.userId }),
-      ...(options.toltReferral && { tolt_referral: options.toltReferral }),
-    },
-  }),
-  ```
-- Apply the same replacement inside `subscription_data.metadata` (recurring branch) so the referral lands on the Subscription too — so it flows onto every renewal invoice, not just the first checkout session.
-- In `handler`, when calling `createCheckoutSession(...)`, add:
-  ```ts
-  toltReferral: typeof body.toltReferral === "string" ? body.toltReferral : undefined,
-  ```
-  Type-guarding on `string` ensures a non-string client payload is safely ignored rather than crashing Stripe's metadata validation.
+1. `access` flips to `loading` → the spinner replaces the whole route,
+2. `Home` unmounts, losing all its local state (active section resets to Overview, giveaway/winners/partners caches cleared),
+3. `evaluate()` re-runs two round-trips (`has_role`, then `members`), and `useHomeData` re-mounts and refetches profile/member/subscription and re-opens the realtime channel.
 
-### Non-goals
+That sequence is what reads as a reload.
 
-- No `customer_creation` param (customer already resolved via `resolveOrCreateCustomer` and passed as `customer: customerId`; also invalid for subscription mode).
-- No changes to GST tax rate logic, price resolution, `automatic_tax`, `ui_mode`, `resolveOrCreateCustomer`, or existing `userId` metadata behavior — `tolt_referral` is added alongside.
+## Fix
+
+**1. `src/components/ProtectedRoute.tsx` — don't reset to loading on benign events**
+
+- Only show the loading state on the initial evaluation. Keep the current `access` value while re-evaluating in the background.
+- Ignore events that can't change access: `TOKEN_REFRESHED`, `INITIAL_SESSION`, and `USER_UPDATED`.
+- Treat `SIGNED_IN` as a no-op when the user id is unchanged from the one already evaluated (tab-focus re-emits it for the same user); only re-evaluate on a genuine user change.
+- Still re-evaluate immediately on `SIGNED_OUT` and on a `SIGNED_IN` with a different user id.
+- Track the last evaluated user id in a ref so the comparison survives re-renders.
+
+Net effect: returning to the tab leaves the rendered dashboard exactly as it was.
+
+**2. `src/hooks/use-home-data.ts` — avoid redundant refetch churn (optional, same turn)**
+
+The hook's effect already has an empty dep array, so with fix 1 it stops re-running on tab focus. No change strictly needed; leave it as is unless the mount-guard needs adjusting once fix 1 lands.
+
+## Verification
+
+- Load `/` in the preview signed in, switch to another section (e.g. Partner Discounts), switch browser tabs and come back: the section and content should persist with no spinner flash.
+- Confirm sign-out still redirects to `/login`, and that a signed-out user hitting `/` still gets redirected.
+- Run the existing `src/test/ProtectedRoute.test.tsx` suite and extend it with a case asserting a `TOKEN_REFRESHED` event does not return the component to the loading state.
