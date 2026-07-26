@@ -100,4 +100,37 @@ describe("ProtectedRoute", () => {
     renderAt();
     expect(await screen.findByText("Protected!")).toBeInTheDocument();
   });
+
+  it("keeps rendering children on TOKEN_REFRESHED (tab refocus)", async () => {
+    mockGetSession.mockResolvedValue(sessionFor());
+    mockHasRole.mockResolvedValue({ data: false });
+    mockMaybeSingle.mockResolvedValue({ data: { id: "m1", status: "active" } });
+    renderAt();
+    expect(await screen.findByText("Protected!")).toBeInTheDocument();
+
+    await act(async () => {
+      authCallback?.("TOKEN_REFRESHED", { user: { id: "user-1" } });
+    });
+    expect(screen.getByText("Protected!")).toBeInTheDocument();
+
+    // A repeated SIGNED_IN for the same user is also a no-op.
+    await act(async () => {
+      authCallback?.("SIGNED_IN", { user: { id: "user-1" } });
+    });
+    expect(screen.getByText("Protected!")).toBeInTheDocument();
+  });
+
+  it("redirects to /login on SIGNED_OUT", async () => {
+    mockGetSession.mockResolvedValue(sessionFor());
+    mockHasRole.mockResolvedValue({ data: false });
+    mockMaybeSingle.mockResolvedValue({ data: { id: "m1", status: "active" } });
+    renderAt();
+    expect(await screen.findByText("Protected!")).toBeInTheDocument();
+
+    await act(async () => {
+      authCallback?.("SIGNED_OUT", null);
+    });
+    expect(await screen.findByText("Login Page")).toBeInTheDocument();
+  });
 });
+
