@@ -14,6 +14,11 @@ type Access = "loading" | "allowed" | "no-session" | "no-membership" | "not-admi
 // too, so we short-circuit the members lookup for them.
 export default function ProtectedRoute({ children, adminOnly }: { children: React.ReactNode; adminOnly?: boolean }) {
   const [access, setAccess] = useState<Access>("loading");
+  // Tracks which user id the current `access` value was computed for, so
+  // repeated SIGNED_IN / TOKEN_REFRESHED events for the same user (which
+  // Supabase re-emits every time the tab regains focus) don't trigger a
+  // re-evaluation — that would blank the screen and unmount the whole page.
+  const evaluatedUserId = useRef<string | null | undefined>(undefined);
 
   useEffect(() => {
     // Prevents setAccess from firing after unmount or after a newer auth
