@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import type { Session } from "@supabase/supabase-js";
@@ -14,6 +14,11 @@ type Access = "loading" | "allowed" | "no-session" | "no-membership" | "not-admi
 // too, so we short-circuit the members lookup for them.
 export default function ProtectedRoute({ children, adminOnly }: { children: React.ReactNode; adminOnly?: boolean }) {
   const [access, setAccess] = useState<Access>("loading");
+  // Tracks which user id the current `access` value was computed for, so
+  // repeated SIGNED_IN / TOKEN_REFRESHED events for the same user (which
+  // Supabase re-emits every time the tab regains focus) don't trigger a
+  // re-evaluation — that would blank the screen and unmount the whole page.
+  const evaluatedUserId = useRef<string | null | undefined>(undefined);
 
   useEffect(() => {
     // Prevents setAccess from firing after unmount or after a newer auth
@@ -21,6 +26,7 @@ export default function ProtectedRoute({ children, adminOnly }: { children: Reac
     let cancelled = false;
 
     const evaluate = async (session: Session | null) => {
+      evaluatedUserId.current = session?.user.id ?? null;
       // Session and membership are deliberately checked as two separate
       // gates. A user can be authenticated (have a valid Supabase session)
       // but not have a paid Junkyard membership — e.g. they signed up but
@@ -69,8 +75,18 @@ export default function ProtectedRoute({ children, adminOnly }: { children: Reac
     };
 
     supabase.auth.getSession().then(({ data }) => evaluate(data.session));
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => {
-      setAccess("loading");
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, s) => {
+      // Ignore events that can't change access. Supabase re-emits
+      // TOKEN_REFRESHED / INITIAL_SESSION / SIGNED_IN whenever the tab
+      // regains focus and the token is refreshed; re-running the gate there
+      // would flash the spinner and remount the whole page (losing the
+      // active section and all cached section data).
+      if (event === "TOKEN_REFRESHED" || event === "INITIAL_SESSION" || event === "USER_UPDATED") return;
+      const nextUserId = s?.user.id ?? null;
+      if (event === "SIGNED_IN" && nextUserId === evaluatedUserId.current) return;
+      // Only blank the screen when we don't yet have a verdict; otherwise
+      // re-evaluate in the background and keep rendering what's there.
+      if (evaluatedUserId.current === undefined) setAccess("loading");
       evaluate(s);
     });
     return () => {
