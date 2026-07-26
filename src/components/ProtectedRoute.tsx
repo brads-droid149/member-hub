@@ -75,8 +75,18 @@ export default function ProtectedRoute({ children, adminOnly }: { children: Reac
     };
 
     supabase.auth.getSession().then(({ data }) => evaluate(data.session));
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => {
-      setAccess("loading");
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, s) => {
+      // Ignore events that can't change access. Supabase re-emits
+      // TOKEN_REFRESHED / INITIAL_SESSION / SIGNED_IN whenever the tab
+      // regains focus and the token is refreshed; re-running the gate there
+      // would flash the spinner and remount the whole page (losing the
+      // active section and all cached section data).
+      if (event === "TOKEN_REFRESHED" || event === "INITIAL_SESSION" || event === "USER_UPDATED") return;
+      const nextUserId = s?.user.id ?? null;
+      if (event === "SIGNED_IN" && nextUserId === evaluatedUserId.current) return;
+      // Only blank the screen when we don't yet have a verdict; otherwise
+      // re-evaluate in the background and keep rendering what's there.
+      if (evaluatedUserId.current === undefined) setAccess("loading");
       evaluate(s);
     });
     return () => {
