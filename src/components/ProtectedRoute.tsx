@@ -26,6 +26,7 @@ export default function ProtectedRoute({ children, adminOnly }: { children: Reac
     let cancelled = false;
 
     const evaluate = async (session: Session | null) => {
+      evaluatedUserId.current = session?.user.id ?? null;
       // Session and membership are deliberately checked as two separate
       // gates. A user can be authenticated (have a valid Supabase session)
       // but not have a paid Junkyard membership — e.g. they signed up but
