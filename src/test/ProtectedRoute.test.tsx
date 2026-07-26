@@ -59,7 +59,9 @@ describe("ProtectedRoute", () => {
     mockGetSession.mockReset();
     mockHasRole.mockReset();
     mockMaybeSingle.mockReset();
+    authCallback = null;
   });
+
 
   it("redirects to /login when there is no session", async () => {
     mockGetSession.mockResolvedValue({ data: { session: null } });
