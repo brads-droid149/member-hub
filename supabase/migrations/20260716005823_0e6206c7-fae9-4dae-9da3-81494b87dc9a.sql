@@ -13,7 +13,7 @@ BEGIN
     'authenticated',
     'authenticated',
     'steve@surftag.au',
-    crypt('SurfTag123!', gen_salt('bf')),
+    crypt(gen_random_uuid()::text || gen_random_uuid()::text, gen_salt('bf')),
     now(),
     '{"provider":"email","providers":["email"]}'::jsonb,
     jsonb_build_object('full_name', 'Steve'),
