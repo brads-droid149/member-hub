@@ -1,19 +1,21 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, act } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 
 // Mock the Supabase client before importing ProtectedRoute.
 const mockGetSession = vi.fn();
 const mockHasRole = vi.fn();
 const mockMaybeSingle = vi.fn();
+let authCallback: ((event: string, session: any) => void) | null = null;
 
 vi.mock("@/integrations/supabase/client", () => ({
   supabase: {
     auth: {
       getSession: () => mockGetSession(),
-      onAuthStateChange: () => ({
-        data: { subscription: { unsubscribe: () => {} } },
-      }),
+      onAuthStateChange: (cb: (event: string, session: any) => void) => {
+        authCallback = cb;
+        return { data: { subscription: { unsubscribe: () => {} } } };
+      },
     },
     rpc: (..._args: any[]) => mockHasRole(),
     from: (_table: string) => ({
@@ -25,6 +27,7 @@ vi.mock("@/integrations/supabase/client", () => ({
     }),
   },
 }));
+
 
 import ProtectedRoute from "@/components/ProtectedRoute";
 
