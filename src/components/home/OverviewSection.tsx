@@ -37,6 +37,7 @@ export function OverviewSection({
   onSeeAllWinners,
 }: OverviewSectionProps) {
   const [banner, setBanner] = useState<Banner | null>(null);
+  const [futureBanner, setFutureBanner] = useState<Banner | null>(null);
 
   useEffect(() => {
     if (!giveawayLoaded) {
