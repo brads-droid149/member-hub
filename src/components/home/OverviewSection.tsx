@@ -68,11 +68,11 @@ export function OverviewSection({
         .from("banners")
         .select("*")
         .eq("is_active", true)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
+        .order("created_at", { ascending: false });
       if (error) console.error("Failed to load banner:", error);
-      setBanner(data ?? null);
+      const rows = data ?? [];
+      setBanner(rows.find((b) => b.kind === "promo") ?? null);
+      setFutureBanner(rows.find((b) => b.kind === "future_giveaways") ?? null);
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
