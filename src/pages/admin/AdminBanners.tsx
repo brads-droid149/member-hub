@@ -14,7 +14,13 @@ type Banner = Tables<"banners">;
 
 const ACCEPTED = ["image/jpeg", "image/jpg", "image/png"];
 
-export default function AdminBanners() {
+interface BannerEditorProps {
+  kind: string;
+  heading: string;
+  description: string;
+}
+
+function BannerEditor({ kind, heading, description }: BannerEditorProps) {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -33,6 +39,7 @@ export default function AdminBanners() {
     const { data } = await supabase
       .from("banners")
       .select("*")
+      .eq("kind", kind)
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -55,7 +62,8 @@ export default function AdminBanners() {
 
   useEffect(() => {
     load();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [kind]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -113,6 +121,7 @@ export default function AdminBanners() {
           image_url: finalImageUrl!,
           link_url: linkUrl.trim() || null,
           is_active: isActive,
+          kind,
         });
         if (error) throw error;
       }
@@ -151,15 +160,13 @@ export default function AdminBanners() {
   }
 
   return (
-    <div className="space-y-6 max-w-3xl">
+    <div className="space-y-4">
       <div>
         <h2 className="text-xl font-display font-bold text-foreground flex items-center gap-2">
           <ImageIcon className="h-5 w-5 text-primary" />
-          Promotional Banner
+          {heading}
         </h2>
-        <p className="text-sm text-muted-foreground mt-1">
-          Shown on the member dashboard below the main cards. Wide horizontal image (~16:5).
-        </p>
+        <p className="text-sm text-muted-foreground mt-1">{description}</p>
       </div>
 
       <Card>
@@ -198,9 +205,9 @@ export default function AdminBanners() {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="b-link">Link URL</Label>
+              <Label htmlFor={`b-link-${kind}`}>Link URL</Label>
               <Input
-                id="b-link"
+                id={`b-link-${kind}`}
                 type="url"
                 value={linkUrl}
                 onChange={(e) => setLinkUrl(e.target.value)}
@@ -210,8 +217,8 @@ export default function AdminBanners() {
             </div>
 
             <div className="flex items-center gap-3">
-              <Switch id="b-active" checked={isActive} onCheckedChange={setIsActive} />
-              <Label htmlFor="b-active" className="cursor-pointer">
+              <Switch id={`b-active-${kind}`} checked={isActive} onCheckedChange={setIsActive} />
+              <Label htmlFor={`b-active-${kind}`} className="cursor-pointer">
                 {isActive ? "Active — visible to members" : "Inactive — hidden from members"}
               </Label>
             </div>
@@ -242,6 +249,23 @@ export default function AdminBanners() {
           </form>
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+export default function AdminBanners() {
+  return (
+    <div className="space-y-10 max-w-3xl">
+      <BannerEditor
+        kind="future_giveaways"
+        heading="Future Giveaways Banner"
+        description="Shown on the member dashboard above the promotional banner. Wide horizontal image (~16:5)."
+      />
+      <BannerEditor
+        kind="promo"
+        heading="Promotional Banner"
+        description="Shown on the member dashboard below the Future Giveaways banner. Wide horizontal image (~16:5)."
+      />
     </div>
   );
 }
