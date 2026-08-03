@@ -228,29 +228,36 @@ export function OverviewSection({
         </div>
       </div>
 
-      {banner && (
-        banner.link_url ? (
-          <a
-            href={banner.link_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block w-full hover:opacity-90 transition-opacity"
-          >
+      {[
+        { b: futureBanner, alt: "Future giveaways banner" },
+        { b: banner, alt: "Promotional banner" },
+      ].map(({ b, alt }) =>
+        b ? (
+          b.link_url ? (
+            <a
+              key={b.id}
+              href={b.link_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block w-full hover:opacity-90 transition-opacity"
+            >
+              <img
+                src={b.image_url}
+                alt={alt}
+                className="w-full aspect-[16/5] object-cover object-center rounded-lg"
+                loading="lazy"
+              />
+            </a>
+          ) : (
             <img
-              src={banner.image_url}
-              alt="Promotional banner"
+              key={b.id}
+              src={b.image_url}
+              alt={alt}
               className="w-full aspect-[16/5] object-cover object-center rounded-lg"
               loading="lazy"
             />
-          </a>
-        ) : (
-          <img
-            src={banner.image_url}
-            alt="Promotional banner"
-            className="w-full aspect-[16/5] object-cover object-center rounded-lg"
-            loading="lazy"
-          />
-        )
+          )
+        ) : null
       )}
     </section>
   );
