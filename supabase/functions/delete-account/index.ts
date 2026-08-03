@@ -51,25 +51,60 @@ Deno.serve(async (req) => {
 
     // 1. Cancel Stripe subscription immediately (if any). The webhook will
     //    update the local rows, but they'll be cascade-deleted anyway.
-    const { data: sub } = await supabase
+    //    We gather every subscription reference we know about (the members
+    //    row + all subscription rows for this env) AND sweep the Stripe
+    //    customer for any remaining active subs, so a deleted account can
+    //    never leave live billing running (previously possible when the
+    //    subscriptions row was missing or out of sync).
+    const subIds = new Set<string>()
+    let customerId: string | undefined
+
+    const { data: member } = await supabase
+      .from('members')
+      .select('stripe_subscription_id, stripe_customer_id')
+      .eq('user_id', user.id)
+      .maybeSingle()
+    const m = member as { stripe_subscription_id?: string; stripe_customer_id?: string } | null
+    if (m?.stripe_subscription_id) subIds.add(m.stripe_subscription_id)
+    if (m?.stripe_customer_id) customerId = m.stripe_customer_id
+
+    const { data: subs } = await supabase
       .from('subscriptions')
-      .select('stripe_subscription_id')
+      .select('stripe_subscription_id, stripe_customer_id')
       .eq('user_id', user.id)
       .eq('environment', environment)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle()
-
-    const stripeSubId = (sub as { stripe_subscription_id?: string } | null)?.stripe_subscription_id
-    if (stripeSubId) {
-      try {
-        const stripe = createStripeClient(environment)
-        await stripe.subscriptions.cancel(stripeSubId)
-      } catch (e) {
-        console.error('stripe cancel during delete-account failed', e)
-        // Continue — don't trap the user in their account.
-      }
+    for (const s of (subs ?? []) as Array<{ stripe_subscription_id?: string; stripe_customer_id?: string }>) {
+      if (s.stripe_subscription_id) subIds.add(s.stripe_subscription_id)
+      if (!customerId && s.stripe_customer_id) customerId = s.stripe_customer_id
     }
+
+    try {
+      const stripe = createStripeClient(environment)
+
+      // Sweep the customer for anything not tracked locally.
+      if (customerId) {
+        try {
+          const list = await stripe.subscriptions.list({ customer: customerId, status: 'all', limit: 100 })
+          for (const s of list.data) {
+            if (s.status !== 'canceled' && s.status !== 'incomplete_expired') subIds.add(s.id)
+          }
+        } catch (e) {
+          console.error('stripe subscription sweep failed', e)
+        }
+      }
+
+      for (const id of subIds) {
+        try {
+          await stripe.subscriptions.cancel(id)
+        } catch (e) {
+          console.error('stripe cancel during delete-account failed', id, e)
+          // Continue — don't trap the user in their account.
+        }
+      }
+    } catch (e) {
+      console.error('stripe client unavailable during delete-account', e)
+    }
+
 
     // 2. Send the final email BEFORE deletion (profile lookup needs the row).
     await sendBillingEmail({
