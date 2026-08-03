@@ -37,6 +37,7 @@ export function OverviewSection({
   onSeeAllWinners,
 }: OverviewSectionProps) {
   const [banner, setBanner] = useState<Banner | null>(null);
+  const [futureBanner, setFutureBanner] = useState<Banner | null>(null);
 
   useEffect(() => {
     if (!giveawayLoaded) {
@@ -67,11 +68,11 @@ export function OverviewSection({
         .from("banners")
         .select("*")
         .eq("is_active", true)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
+        .order("created_at", { ascending: false });
       if (error) console.error("Failed to load banner:", error);
-      setBanner(data ?? null);
+      const rows = data ?? [];
+      setBanner(rows.find((b) => b.kind === "promo") ?? null);
+      setFutureBanner(rows.find((b) => b.kind === "future_giveaways") ?? null);
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -227,29 +228,36 @@ export function OverviewSection({
         </div>
       </div>
 
-      {banner && (
-        banner.link_url ? (
-          <a
-            href={banner.link_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block w-full hover:opacity-90 transition-opacity"
-          >
+      {[
+        { b: futureBanner, alt: "Future giveaways banner" },
+        { b: banner, alt: "Promotional banner" },
+      ].map(({ b, alt }) =>
+        b ? (
+          b.link_url ? (
+            <a
+              key={b.id}
+              href={b.link_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block w-full hover:opacity-90 transition-opacity"
+            >
+              <img
+                src={b.image_url}
+                alt={alt}
+                className="w-full aspect-[16/5] object-cover object-center rounded-lg"
+                loading="lazy"
+              />
+            </a>
+          ) : (
             <img
-              src={banner.image_url}
-              alt="Promotional banner"
+              key={b.id}
+              src={b.image_url}
+              alt={alt}
               className="w-full aspect-[16/5] object-cover object-center rounded-lg"
               loading="lazy"
             />
-          </a>
-        ) : (
-          <img
-            src={banner.image_url}
-            alt="Promotional banner"
-            className="w-full aspect-[16/5] object-cover object-center rounded-lg"
-            loading="lazy"
-          />
-        )
+          )
+        ) : null
       )}
     </section>
   );
