@@ -75,6 +75,8 @@ export function buildEnqueuePayload(opts: {
       html: opts.html,
       text: opts.text,
       purpose: 'transactional' as const,
+      // Required by the email API for app emails (no run_id).
+      idempotency_key: opts.messageId,
       label: opts.label,
       unsubscribe_token: opts.unsubscribeToken,
       queued_at: opts.queuedAt ?? new Date().toISOString(),

@@ -146,6 +146,10 @@ export async function sendBillingEmail(opts: {
         html,
         text,
         purpose: 'transactional',
+        // The email API requires either run_id (auth emails) or an
+        // idempotency_key for transactional sends — without it every
+        // app email 400s and eventually dead-letters.
+        idempotency_key: messageId,
         label,
         unsubscribe_token,
         queued_at: new Date().toISOString(),
