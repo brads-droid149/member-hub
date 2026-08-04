@@ -112,7 +112,14 @@ Deno.serve(async (req) => {
       (data as { code?: string })?.code === "duplicate_parameter" &&
       ((data as { metadata?: { duplicate_identifiers?: string[] } })?.metadata?.duplicate_identifiers ?? []).includes("SMS");
 
-    if (isDupSms) {
+    // Brevo also rejects unparseable numbers outright — drop SMS and retry
+    // rather than failing the whole sync.
+    const isInvalidPhone =
+      response.status === 400 &&
+      (data as { code?: string })?.code === "invalid_parameter" &&
+      /phone/i.test(String((data as { message?: string })?.message ?? ""));
+
+    if (isDupSms || isInvalidPhone) {
       console.warn("Brevo SMS duplicate — retrying without SMS attribute");
       const retryAttrs = { ...(payload.attributes as Record<string, unknown>) };
       delete retryAttrs.SMS;
