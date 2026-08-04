@@ -24,6 +24,13 @@ const BODIES: Record<Props['reason'], string> = {
   deleted: 'Your account and membership have been permanently deleted at your request.',
 }
 
+const CLOSINGS: Record<Props['reason'], (siteName: string) => React.ReactNode> = {
+  admin: () => "You'll no longer be billed and your giveaway entries have been reset. You can still browse the club, but partner discounts and new entries are locked until you rejoin.",
+  portal: () => "You'll no longer be billed and your giveaway entries have been reset. You can still browse the club, but partner discounts and new entries are locked until you rejoin.",
+  stale_past_due: () => "You'll no longer be billed and your giveaway entries have been reset. You can still browse the club, but partner discounts and new entries are locked until you rejoin.",
+  deleted: (siteName: string) => `You'll no longer be billed, your giveaway entries have been reset, and access to ${siteName} has ended.`,
+}
+
 export const BillingCancelledEmail = ({ siteName, siteUrl, firstName, reason, rejoinUrl }: Props) => (
   <Html lang="en" dir="ltr">
     <Head />
