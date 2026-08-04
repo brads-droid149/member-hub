@@ -34,12 +34,26 @@ function makeStubStripe(checkoutSession: any = { client_secret: "cs_test_secret"
           return { data: [{ id: "price_123", type: "recurring" }] };
         },
       },
+      taxRates: {
+        list: async () => ({
+          data: [{
+            id: "txr_au_gst",
+            active: true,
+            inclusive: true,
+            percentage: 10,
+            country: "AU",
+            display_name: "GST",
+          }],
+        }),
+        create: async () => ({ id: "txr_au_gst" }),
+      },
       customers: {
         search: async () => ({ data: [] }),
         list: async () => ({ data: [] }),
         create: async () => ({ id: "cus_new" }),
         update: async () => ({}),
       },
+
       checkout: {
         sessions: {
           create: async (args: any) => {
