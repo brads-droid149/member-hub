@@ -147,6 +147,12 @@ export async function createCheckoutSession(options: {
     return_url: options.returnUrl,
     allow_promotion_codes: true,
     automatic_tax: { enabled: false },
+    // Force AUD presentment. Stripe's Adaptive Pricing otherwise converts the
+    // AUD price into the buyer's local currency (EUR, USD, ...), which breaks
+    // the GST story and doesn't match the prices shown in the portal.
+    currency: "aud",
+    adaptive_pricing: { enabled: false },
+
     ...(customerId && { customer: customerId }),
     ...((options.userId || options.toltReferral) && {
       metadata: {
