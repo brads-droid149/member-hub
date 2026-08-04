@@ -29,6 +29,7 @@ export function useHomeData() {
   const [profile, setProfile] = useState<HomeProfile | null>(null);
   const [member, setMember] = useState<HomeMember | null>(null);
   const [subscription, setSubscription] = useState<HomeSubscription | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [profileLoading, setProfileLoading] = useState(true);
 
   useEffect(() => {
