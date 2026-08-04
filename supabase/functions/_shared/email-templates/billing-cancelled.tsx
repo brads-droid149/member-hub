@@ -42,8 +42,18 @@ export const BillingCancelledEmail = ({ siteName, siteUrl, firstName, reason, re
           {firstName ? `Hi ${firstName},` : 'Hi,'} {BODIES[reason]}
         </Text>
         <Text style={text}>
-          You'll no longer be billed, your giveaway entries have been reset, and access to{' '}
-          <Link href={siteUrl} style={link}><strong>{siteName}</strong></Link> has ended.
+          {reason === 'deleted' ? (
+            <>
+              You'll no longer be billed, your giveaway entries have been reset, and access to{' '}
+              <Link href={siteUrl} style={link}><strong>{siteName}</strong></Link> has ended.
+            </>
+          ) : (
+            <>
+              You'll no longer be billed and your giveaway entries have been reset. You can still browse{' '}
+              <Link href={siteUrl} style={link}><strong>{siteName}</strong></Link>, but partner discounts
+              and new entries are locked until you rejoin.
+            </>
+          )}
         </Text>
         {reason !== 'deleted' && rejoinUrl && (
           <>
