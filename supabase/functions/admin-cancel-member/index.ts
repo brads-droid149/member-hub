@@ -162,8 +162,7 @@ export async function handler(req: Request): Promise<Response> {
     });
   } catch (e) {
     console.error("admin-cancel-member error:", e);
-    const message = e instanceof Error ? e.message : "Unknown error";
-    return new Response(JSON.stringify({ error: message }), {
+    return new Response(JSON.stringify({ error: "Something went wrong. Please try again." }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

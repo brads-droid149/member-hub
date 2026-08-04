@@ -170,7 +170,7 @@ export function PartnersSection({ partners, setPartners, isMember }: PartnersSec
           })}
         </div>
       ) : (
-        <p className="text-sm text-muted-foreground text-center py-12">No partner discounts available yet</p>
+        <p className="text-sm text-muted-foreground text-center py-12">No partner discounts available right now</p>
       )}
     </section>
   );
