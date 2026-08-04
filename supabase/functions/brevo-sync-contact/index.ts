@@ -71,7 +71,7 @@ Deno.serve(async (req) => {
       attributes: {
         FIRSTNAME: firstName,
         LASTNAME: lastName,
-        SMS: phone,
+        SMS: normalizeAuPhone(phone),
         STATE: state,
         MARKETING_OPT_IN: marketing_opt_in,
       },
