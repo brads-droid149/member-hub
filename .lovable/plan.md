@@ -21,6 +21,6 @@ A free-browsing user with no membership currently sees "New Member". They should
 
 ## Technical notes
 
-- `src/pages/Subscribe.tsx`: compute `defaultPlan` from `params.get("plan")` and `intent` before `useState<Plan>`.
-- `supabase/functions/_shared/email-templates/billing-cancelled.tsx`: add a second `Record<Props['reason'], string>` (e.g. `CLOSINGS`) and render it in place of the hardcoded second paragraph.
+- `src/pages/Subscribe.tsx`: compute `defaultPlan` before `useState<Plan>` — read `params.get("plan")` first and honour it when it is `"monthly"` or `"yearly"`; fall back to the intent-based default only when the param is absent or unrecognised.
+- `supabase/functions/_shared/email-templates/billing-cancelled.tsx`: add a second `Record<Props['reason'], string>` (e.g. `CLOSINGS`) with all four keys, keeping `deleted` on the existing access-has-ended wording and giving `admin`, `portal`, and `stale_past_due` the new soft-downgrade wording. Render `CLOSINGS[reason]` in place of the hardcoded second paragraph so `deleted` is never folded into the new bucket.
 - `src/components/home/OverviewSection.tsx`: it already receives both `monthsLabel` and `isMember`, so render `!isMember ? "Browsing for free" : monthsLabel` at line 99 — no changes needed in `Home.tsx`.
