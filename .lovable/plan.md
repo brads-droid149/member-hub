@@ -17,17 +17,20 @@ Change the gating model from "pay before you see anything" to "sign up free, bro
 
 - No-confirmation signups: `navigate("/subscribe")` becomes `navigate("/")`.
 - Confirmation signups: `emailRedirectTo` changes from `${origin}/subscribe` to `${origin}/` so confirmed users land on the portal.
-- `/check-email` is unchanged.
+- `/check-email` keeps its structure; its copy changes from "Once confirmed, sign in to choose your membership." to "Once confirmed, sign in to start exploring the club."
 
 ## 3. Route protection
 
 `ProtectedRoute` no longer bounces signed-in users without a membership to `/subscribe`. Only signed-out users are redirected (to `/login`). Admin-only routes keep their current behaviour.
 
+New `unverified` state, checked right after the `no-session` check and before the admin/membership checks, on both `/` and admin-only routes: if a session exists but `email_confirmed_at` is missing, redirect to `/check-email`.
+
 Confirmed: a member whose subscription lapses or is cancelled now soft-downgrades into the free-browsing view (locked codes, locked entries, "Join the Club" reappears) rather than being redirected.
 
 ## 4. Membership state
 
-`useHomeData` exposes `isMember` — true when a membership row exists with status `active` or `past_due`; admins and billing-exempt accounts also count. `Home` passes it to each section and to `AppSidebar`.
+`useHomeData` also fetches the caller's admin role via the existing `has_role` RPC pattern, in parallel with the profile/members/subscriptions reads. `isMember` is true when a membership row exists with status `active` or `past_due` (which already covers billing-exempt accounts, seeded as `active`), or when the user holds the admin role. `Home` passes `isMember` to each section and to `AppSidebar`.
+
 
 ## 5. Partner discounts section
 
