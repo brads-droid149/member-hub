@@ -538,6 +538,10 @@ export async function handleWebhook(req: Request, env: StripeEnv) {
     case "invoice.payment_failed":
       await handleInvoicePaymentFailed(event.data.object as Stripe.Invoice, env);
       break;
+    case "checkout.session.completed":
+      await handleCheckoutCompleted(event.data.object as Stripe.Checkout.Session, env);
+      break;
+
     default:
       console.log("Unhandled event:", event.type);
   }
