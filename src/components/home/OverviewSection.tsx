@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Trophy, Calendar } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Trophy, Calendar, Lock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { trackPaywallClick } from "@/lib/analytics";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Giveaway = Tables<"giveaways">;
@@ -13,6 +16,7 @@ interface OverviewSectionProps {
   firstName: string;
   monthsLabel: string;
   entries: number;
+  isMember: boolean;
   profileLoading: boolean;
   giveaway: Giveaway | null;
   giveawayLoaded: boolean;
