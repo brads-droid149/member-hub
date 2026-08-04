@@ -150,7 +150,7 @@ export function PartnersSection({ partners, setPartners, isMember }: PartnersSec
                       className="flex items-center gap-1.5 bg-secondary rounded-md px-3 py-1.5 text-xs font-medium text-primary group-hover:bg-primary/10 transition-colors"
                     >
                       <Lock className="h-3.5 w-3.5" />
-                      Unlock with membership
+                      Unlock {partner.name} — join the club
                     </button>
                   )}
                   {partner.website_url && (

@@ -12,6 +12,18 @@ const BodySchema = z.object({
   marketing_opt_in: z.boolean().default(false),
 });
 
+// Brevo requires E.164 for the SMS attribute. AU numbers are typically entered
+// locally ("0412 345 678"), which Brevo rejects with invalid_parameter.
+function normalizeAuPhone(phone?: string): string | undefined {
+  if (!phone) return undefined;
+  const digits = phone.replace(/[^\d+]/g, "");
+  if (digits.startsWith("+")) return digits;
+  if (digits.startsWith("61")) return `+${digits}`;
+  if (digits.startsWith("0")) return `+61${digits.slice(1)}`;
+  if (digits.length === 9) return `+61${digits}`;
+  return undefined;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: getCorsHeaders(req) });
 
@@ -71,7 +83,7 @@ Deno.serve(async (req) => {
       attributes: {
         FIRSTNAME: firstName,
         LASTNAME: lastName,
-        SMS: phone,
+        SMS: normalizeAuPhone(phone),
         STATE: state,
         MARKETING_OPT_IN: marketing_opt_in,
       },
@@ -100,8 +112,15 @@ Deno.serve(async (req) => {
       (data as { code?: string })?.code === "duplicate_parameter" &&
       ((data as { metadata?: { duplicate_identifiers?: string[] } })?.metadata?.duplicate_identifiers ?? []).includes("SMS");
 
-    if (isDupSms) {
-      console.warn("Brevo SMS duplicate — retrying without SMS attribute");
+    // Brevo also rejects unparseable numbers outright — drop SMS and retry
+    // rather than failing the whole sync.
+    const isInvalidPhone =
+      response.status === 400 &&
+      (data as { code?: string })?.code === "invalid_parameter" &&
+      /phone/i.test(String((data as { message?: string })?.message ?? ""));
+
+    if (isDupSms || isInvalidPhone) {
+      console.warn("Brevo SMS rejected (duplicate or invalid) — retrying without SMS attribute");
       const retryAttrs = { ...(payload.attributes as Record<string, unknown>) };
       delete retryAttrs.SMS;
       const retryPayload = { ...payload, attributes: retryAttrs };
