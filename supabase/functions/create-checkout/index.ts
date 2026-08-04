@@ -147,6 +147,11 @@ export async function createCheckoutSession(options: {
     return_url: options.returnUrl,
     allow_promotion_codes: true,
     automatic_tax: { enabled: false },
+    // Lock checkout to the Price's own currency (AUD). Stripe's Adaptive
+    // Pricing otherwise auto-converts to the buyer's local currency (e.g. EUR),
+    // which mismatches the A$ amounts shown in the portal and breaks the
+    // inclusive AU GST tax_rate assumption.
+    adaptive_pricing: { enabled: false },
     ...(customerId && { customer: customerId }),
     ...((options.userId || options.toltReferral) && {
       metadata: {
