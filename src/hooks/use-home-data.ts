@@ -63,7 +63,7 @@ export function useHomeData() {
       // members, subscriptions are separate tables keyed only by user_id)
       // so running them sequentially would just add ~2x round-trip latency
       // to first paint of the Home screen for no benefit.
-      const [profileRes, memberRes, subRes] = await Promise.all([
+      const [profileRes, memberRes, subRes, adminRes] = await Promise.all([
         supabase.from("profiles").select("full_name, phone, state, brevo_synced").eq("user_id", user.id).maybeSingle(),
         supabase.from("members").select("months_active, entries, status").eq("user_id", user.id).maybeSingle(),
         supabase
@@ -74,7 +74,11 @@ export function useHomeData() {
           .order("created_at", { ascending: false })
           .limit(1)
           .maybeSingle(),
+        supabase.rpc("has_role", { _user_id: user.id, _role: "admin" }),
       ]);
+
+      if (!cancelled) setIsAdmin(!!adminRes.data);
+
 
       if (cancelled) return;
       if (profileRes.data) {
