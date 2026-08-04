@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { LayoutGrid, Tag, Trophy, Settings as SettingsIcon, Shield, LogOut } from "lucide-react";
+import { trackPaywallClick } from "@/lib/analytics";
 import { Link, useNavigate } from "react-router-dom";
 import {
   Sidebar,
@@ -28,9 +29,10 @@ const items: { id: SectionId; label: string; icon: typeof LayoutGrid }[] = [
 interface AppSidebarProps {
   active: SectionId;
   onSelect: (id: SectionId) => void;
+  isMember: boolean;
 }
 
-export function AppSidebar({ active, onSelect }: AppSidebarProps) {
+export function AppSidebar({ active, onSelect, isMember }: AppSidebarProps) {
   const { state, setOpenMobile } = useSidebar();
   const collapsed = state === "collapsed";
   const isMobile = useIsMobile();
@@ -76,6 +78,22 @@ export function AppSidebar({ active, onSelect }: AppSidebarProps) {
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
+              {!isMember && !isAdmin && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    tooltip="Join the Club"
+                    onClick={() => {
+                      trackPaywallClick("sidebar");
+                      if (isMobile) setOpenMobile(false);
+                      navigate("/subscribe?intent=nav");
+                    }}
+                    className="bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground font-semibold"
+                  >
+                    <Trophy className="h-4 w-4" />
+                    <span>Join the Club</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
               {items.map((item) => (
                 <SidebarMenuItem key={item.id}>
                   <SidebarMenuButton

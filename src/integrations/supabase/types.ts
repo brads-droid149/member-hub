@@ -420,7 +420,16 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      partners_preview: {
+        Row: {
+          description: string | null
+          id: string | null
+          logo_url: string | null
+          name: string | null
+          website_url: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       cancel_stale_past_due_members: { Args: never; Returns: undefined }
@@ -455,6 +464,16 @@ export type Database = {
           status: string
           total_count: number
           user_id: string
+        }[]
+      }
+      get_partners_preview: {
+        Args: never
+        Returns: {
+          description: string
+          id: string
+          logo_url: string
+          name: string
+          website_url: string
         }[]
       }
       has_active_subscription: {

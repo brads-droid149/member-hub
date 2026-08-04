@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
@@ -28,9 +28,11 @@ const PLANS: Record<Plan, { priceId: string; price: string; cadence: string; sub
 
 export default function Subscribe() {
   const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const intent = params.get("intent");
   const [state, setState] = useState<State>("loading");
   const [user, setUser] = useState<{ id: string; email?: string } | null>(null);
-  const [plan, setPlan] = useState<Plan>("monthly");
+  const [plan, setPlan] = useState<Plan>(params.get("plan") === "yearly" ? "yearly" : "monthly");
   const [showCheckout, setShowCheckout] = useState(false);
 
   useEffect(() => {
@@ -157,6 +159,25 @@ export default function Subscribe() {
     "+1 giveaway entry every month you're active",
   ];
 
+  // Intent-aware copy: the paywall CTAs pass ?intent= so the page can speak to
+  // whatever the user was just trying to unlock.
+  const partnerName = params.get("partner");
+  const headline =
+    intent === "discount"
+      ? partnerName
+        ? `Unlock the ${partnerName} discount`
+        : "Unlock partner discounts"
+      : intent === "entries"
+        ? "Start earning giveaway entries"
+        : "Choose your membership";
+  const subhead =
+    intent === "discount"
+      ? "Membership unlocks every partner code, plus monthly giveaway entries."
+      : intent === "entries"
+        ? "Members earn +1 entry every month they stay active."
+        : "Same perks. Pick the billing that suits you.";
+
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4 py-10">
       <Card className="w-full max-w-2xl border-border/50">
@@ -166,10 +187,8 @@ export default function Subscribe() {
           </div>
 
           <div className="space-y-2">
-            <h1 className="text-3xl font-bold">Choose your membership</h1>
-            <p className="text-muted-foreground">
-              Same perks. Pick the billing that suits you.
-            </p>
+            <h1 className="text-3xl font-bold">{headline}</h1>
+            <p className="text-muted-foreground">{subhead}</p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
@@ -214,6 +233,10 @@ export default function Subscribe() {
 
           <Button className="w-full" size="lg" onClick={() => setShowCheckout(true)}>
             Continue with {PLANS[plan].price}{PLANS[plan].cadence}
+          </Button>
+
+          <Button variant="ghost" className="w-full" onClick={() => navigate("/")}>
+            Back to the portal
           </Button>
 
           <Button variant="ghost" className="w-full" onClick={handleSignOut}>

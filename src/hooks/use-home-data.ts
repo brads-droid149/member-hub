@@ -29,6 +29,7 @@ export function useHomeData() {
   const [profile, setProfile] = useState<HomeProfile | null>(null);
   const [member, setMember] = useState<HomeMember | null>(null);
   const [subscription, setSubscription] = useState<HomeSubscription | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [profileLoading, setProfileLoading] = useState(true);
 
   useEffect(() => {
@@ -63,7 +64,7 @@ export function useHomeData() {
       // members, subscriptions are separate tables keyed only by user_id)
       // so running them sequentially would just add ~2x round-trip latency
       // to first paint of the Home screen for no benefit.
-      const [profileRes, memberRes, subRes] = await Promise.all([
+      const [profileRes, memberRes, subRes, adminRes] = await Promise.all([
         supabase.from("profiles").select("full_name, phone, state, brevo_synced").eq("user_id", user.id).maybeSingle(),
         supabase.from("members").select("months_active, entries, status").eq("user_id", user.id).maybeSingle(),
         supabase
@@ -74,7 +75,11 @@ export function useHomeData() {
           .order("created_at", { ascending: false })
           .limit(1)
           .maybeSingle(),
+        supabase.rpc("has_role", { _user_id: user.id, _role: "admin" }),
       ]);
+
+      if (!cancelled) setIsAdmin(!!adminRes.data);
+
 
       if (cancelled) return;
       if (profileRes.data) {
@@ -154,6 +159,12 @@ export function useHomeData() {
     };
   }, []);
 
+  // A "member" unlocks the paid perks (discount codes, giveaway entries).
+  // Billing-exempt/comped accounts are seeded with status 'active', so the
+  // status check already covers them; admins always count as members.
+  const isMember =
+    isAdmin || (!!member && ["active", "past_due"].includes(member.status));
+
   return {
     userId,
     authName,
@@ -162,5 +173,7 @@ export function useHomeData() {
     member,
     subscription,
     profileLoading,
+    isAdmin,
+    isMember,
   };
 }
