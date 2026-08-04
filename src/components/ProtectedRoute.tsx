@@ -90,7 +90,7 @@ export default function ProtectedRoute({ children, adminOnly }: { children: Reac
   }
 
   if (access === "no-session") return <Navigate to="/login" replace />;
-  if (access === "no-membership") return <Navigate to="/subscribe" replace />;
+  if (access === "unverified") return <Navigate to="/check-email" replace />;
   if (access === "not-admin") return <Navigate to="/" replace />;
   return <>{children}</>;
 }
