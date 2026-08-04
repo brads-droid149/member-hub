@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import { LayoutGrid, Tag, Trophy, Settings as SettingsIcon, Shield, LogOut } from "lucide-react";
 import { trackPaywallClick } from "@/lib/analytics";
 import { Link, useNavigate } from "react-router-dom";
@@ -30,24 +29,13 @@ interface AppSidebarProps {
   active: SectionId;
   onSelect: (id: SectionId) => void;
   isMember: boolean;
+  isAdmin: boolean;
 }
 
-export function AppSidebar({ active, onSelect, isMember }: AppSidebarProps) {
+export function AppSidebar({ active, onSelect, isMember, isAdmin }: AppSidebarProps) {
   const { state, setOpenMobile } = useSidebar();
   const collapsed = state === "collapsed";
   const isMobile = useIsMobile();
-  const [isAdmin, setIsAdmin] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      const { data } = await supabase.rpc("has_role", { _user_id: user.id, _role: "admin" });
-      if (!cancelled) setIsAdmin(!!data);
-    })();
-    return () => { cancelled = true; };
-  }, []);
   const navigate = useNavigate();
 
   const handleSelect = (id: SectionId) => {

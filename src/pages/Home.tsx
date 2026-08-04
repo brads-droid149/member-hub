@@ -35,7 +35,7 @@ function MobileSidebarTrigger() {
 
 export default function Home() {
   const { toast } = useToast();
-  const { userId, authName, profile, setProfile, member, subscription, profileLoading, isMember } = useHomeData();
+  const { userId, authName, profile, setProfile, member, subscription, profileLoading, isMember, isAdmin } = useHomeData();
 
   const [active, setActive] = useState<SectionId>("overview");
 
@@ -92,7 +92,7 @@ export default function Home() {
         <meta name="robots" content="noindex" />
       </Helmet>
       <div className="min-h-screen flex w-full bg-background">
-        <AppSidebar active={active} onSelect={setActive} isMember={isMember} />
+        <AppSidebar active={active} onSelect={setActive} isMember={isMember} isAdmin={isAdmin} />
 
         <div className="flex-1 flex flex-col min-w-0">
           <header className="md:hidden sticky top-0 z-30 h-12 flex items-center border-b border-border bg-background/80 backdrop-blur-md px-3">
