@@ -159,6 +159,12 @@ export function useHomeData() {
     };
   }, []);
 
+  // A "member" unlocks the paid perks (discount codes, giveaway entries).
+  // Billing-exempt/comped accounts are seeded with status 'active', so the
+  // status check already covers them; admins always count as members.
+  const isMember =
+    isAdmin || (!!member && ["active", "past_due"].includes(member.status));
+
   return {
     userId,
     authName,
@@ -167,5 +173,7 @@ export function useHomeData() {
     member,
     subscription,
     profileLoading,
+    isAdmin,
+    isMember,
   };
 }
