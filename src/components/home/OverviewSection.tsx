@@ -31,6 +31,7 @@ export function OverviewSection({
   firstName,
   monthsLabel,
   entries,
+  isMember,
   profileLoading,
   giveaway,
   giveawayLoaded,
@@ -40,6 +41,7 @@ export function OverviewSection({
   setWinners,
   onSeeAllWinners,
 }: OverviewSectionProps) {
+  const navigate = useNavigate();
   const [banner, setBanner] = useState<Banner | null>(null);
   const [futureBanner, setFutureBanner] = useState<Banner | null>(null);
 
@@ -163,6 +165,27 @@ export function OverviewSection({
                 <div className="space-y-1.5 max-w-xs mx-auto">
                   <Skeleton className="h-3 w-full" />
                   <Skeleton className="h-3 w-3/4 mx-auto" />
+                </div>
+              </>
+            ) : !isMember ? (
+              // Free browsing: the entry count is a paid perk, so show the
+              // locked state instead of a misleading "0".
+              <>
+                <div className="flex items-center justify-center">
+                  <Lock className="h-16 w-16 text-muted-foreground/40" />
+                </div>
+                <div className="space-y-3 max-w-xs mx-auto">
+                  <p className="text-sm text-muted-foreground">
+                    Join the club to start earning giveaway entries — +1 every month you stay active.
+                  </p>
+                  <Button
+                    onClick={() => {
+                      trackPaywallClick("entries_card");
+                      navigate("/subscribe?intent=entries");
+                    }}
+                  >
+                    Join the Club
+                  </Button>
                 </div>
               </>
             ) : (
