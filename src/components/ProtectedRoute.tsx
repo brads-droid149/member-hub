@@ -42,17 +42,13 @@ export default function ProtectedRoute({ children, adminOnly }: { children: Reac
       }
       const userId = session.user.id;
 
-      const { data: isAdmin } = await supabase.rpc("has_role", {
-        _user_id: userId,
-        _role: "admin",
-      });
-      if (cancelled) return;
-      if (isAdmin) {
-        setAccess("allowed");
-        return;
-      }
       if (adminOnly) {
-        setAccess("not-admin");
+        const { data: isAdmin } = await supabase.rpc("has_role", {
+          _user_id: userId,
+          _role: "admin",
+        });
+        if (cancelled) return;
+        setAccess(isAdmin ? "allowed" : "not-admin");
         return;
       }
 
