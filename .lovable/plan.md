@@ -1,42 +1,53 @@
-## What's happening
+# Free accounts browse the portal, membership unlocks codes + entries
 
-It isn't the browser reloading the page — it's the app throwing away its screen and rebuilding it.
+Shift from "pay before you see anything" to "sign up free, look around, pay to unlock discount codes and giveaway entries." The lock is enforced in the database, not just in the interface.
 
-`src/components/ProtectedRoute.tsx` subscribes to auth state changes, and its handler does this on **every** event:
+## Database access rules (new migration)
 
-```ts
-supabase.auth.onAuthStateChange((_e, s) => {
-  setAccess("loading");   // <- wipes the screen
-  evaluate(s);
-});
-```
+- **Giveaways**: any signed-in user can view (admin bypass kept). Writes stay admin-only.
+- **Past winners**: any signed-in user can view. Writes stay admin-only.
+- **Partners**: the base table keeps its current rule — only active/past_due members and admins can read a full partner row, which is the only place `discount_code` lives.
+- **Partner preview**: a new read-only source exposing only id, name, logo, description and website — no discount code at all — readable by any signed-in user.
 
-The client is configured with `autoRefreshToken: true` (`src/integrations/supabase/client.ts`), and Supabase re-checks/refreshes the session whenever the tab becomes visible again. That fires `TOKEN_REFRESHED` (and often `SIGNED_IN`), so coming back to the tab:
+Important detail: on this database (Postgres 17), a plain "invoker" view would inherit the partners table rule and return nothing for free users. So the preview is exposed as a `SECURITY DEFINER` function `public.get_partners_preview()` that hard-selects the five safe columns, with `EXECUTE` granted to authenticated only, plus a thin view `public.partners_preview` over that function for a table-like client call. `discount_code` is never referenced in the function body, so it cannot leak even by mistake.
 
-1. `access` flips to `loading` → the spinner replaces the whole route,
-2. `Home` unmounts, losing all its local state (active section resets to Overview, giveaway/winners/partners caches cleared),
-3. `evaluate()` re-runs two round-trips (`has_role`, then `members`), and `useHomeData` re-mounts and refetches profile/member/subscription and re-opens the realtime channel.
+## Signup
 
-That sequence is what reads as a reload.
+New signups that don't need email confirmation land on the portal (`/`) instead of the subscribe page. The email-confirmation path (`/check-email`) is unchanged.
 
-## Fix
+## Route protection
 
-**1. `src/components/ProtectedRoute.tsx` — don't reset to loading on benign events**
+A signed-in user without a membership is let into the portal instead of being bounced to `/subscribe`. Only signed-out users are redirected (to `/login`). Admin-only routes keep their existing behaviour.
 
-- Only show the loading state on the initial evaluation. Keep the current `access` value while re-evaluating in the background.
-- Ignore events that can't change access: `TOKEN_REFRESHED`, `INITIAL_SESSION`, and `USER_UPDATED`.
-- Treat `SIGNED_IN` as a no-op when the user id is unchanged from the one already evaluated (tab-focus re-emits it for the same user); only re-evaluate on a genuine user change.
-- Still re-evaluate immediately on `SIGNED_OUT` and on a `SIGNED_IN` with a different user id.
-- Track the last evaluated user id in a ref so the comparison survives re-renders.
+## Membership state for the interface
 
-Net effect: returning to the tab leaves the rendered dashboard exactly as it was.
+`useHomeData` exposes an `isMember` flag (true when a membership row exists with status active or past_due; admins and billing-exempt accounts count as members). Home passes it to each section.
 
-**2. `src/hooks/use-home-data.ts` — avoid redundant refetch churn (optional, same turn)**
+## Partner discounts section
 
-The hook's effect already has an empty dep array, so with fix 1 it stops re-running on tab focus. No change strictly needed; leave it as is unless the mount-guard needs adjusting once fix 1 lands.
+- Member: unchanged — real codes, click to copy.
+- Free user: loads the preview source, cards show a lock pill reading "Unlock with membership" instead of a code, and clicking the card or pill goes to `/subscribe`. Intro line becomes "Join the club to unlock these codes."
 
-## Verification
+## Overview section
 
-- Load `/` in the preview signed in, switch to another section (e.g. Partner Discounts), switch browser tabs and come back: the section and content should persist with no spinner flash.
-- Confirm sign-out still redirects to `/login`, and that a signed-out user hitting `/` still gets redirected.
-- Run the existing `src/test/ProtectedRoute.test.tsx` suite and extend it with a case asserting a `TOKEN_REFRESHED` event does not return the component to the loading state.
+- Giveaway card and Past Winners card now render for everyone.
+- "Your Entries This Draw" for a free user shows a locked state — lock icon, "Join to start earning entries," and a Join button to `/subscribe` — clearly different from a member sitting on zero entries.
+
+## Sidebar
+
+Free users get a persistent "Upgrade" call-to-action in the sidebar footer linking to `/subscribe`. Hidden for members and admins.
+
+## Technical notes
+
+- Migration adds: relaxed SELECT policies on `giveaways` and `past_winners` (`TO authenticated`), `public.get_partners_preview()` (SECURITY DEFINER, `SET search_path = public`, EXECUTE to authenticated), and `public.partners_preview` view with SELECT granted to authenticated.
+- `ProtectedRoute` keeps computing membership but only redirects on `no-session` / `not-admin`; the `no-membership` verdict becomes `allowed`.
+- `PartnersSection` gets an `isMember` prop and branches its query and card rendering; the partner type for free users omits `discount_code`.
+- Untouched: Stripe checkout, Tolt tracking, `create-checkout`, `payments-webhook`.
+
+## Verification pass
+
+1. New free account lands on the portal, not `/subscribe`.
+2. Network payload for the preview query contains no `discount_code` field.
+3. A direct `partners` query from that free account's console returns zero rows (server-side block confirmed).
+4. Existing active member: codes visible, copy works, real entry count.
+5. Admin: sees everything regardless of membership.
