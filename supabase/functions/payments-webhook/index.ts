@@ -179,15 +179,20 @@ async function syncMember(opts: {
 // (2) local subscriptions table, or (3) Stripe customer metadata. The
 // fallback chain handles the case where invoice.paid arrives before
 // customer.subscription.created (Stripe doesn't guarantee event order).
-async function userIdFromInvoice(invoice: Stripe.Invoice, env: StripeEnv): Promise<string | null> {
-  // Subscription id from either legacy or new invoice shape.
+function subscriptionIdFromInvoice(invoice: Stripe.Invoice): string | undefined {
   const legacySub = (invoice as unknown as { subscription?: string | Stripe.Subscription | null })
     .subscription;
   const parentSub = (invoice as unknown as {
     parent?: { subscription_details?: { subscription?: string | Stripe.Subscription | null } };
   }).parent?.subscription_details?.subscription;
   const rawSub = legacySub ?? parentSub;
-  const subscriptionId = typeof rawSub === "string" ? rawSub : rawSub?.id;
+  return typeof rawSub === "string" ? rawSub : rawSub?.id;
+}
+
+async function userIdFromInvoice(invoice: Stripe.Invoice, env: StripeEnv): Promise<string | null> {
+  // Subscription id from either legacy or new invoice shape.
+  const subscriptionId = subscriptionIdFromInvoice(invoice);
+
 
   if (subscriptionId) {
     const { data: sub } = await getSupabase()
@@ -229,6 +234,40 @@ async function userIdFromInvoice(invoice: Stripe.Invoice, env: StripeEnv): Promi
 //     successfully retries their card. Subscription events alone don't
 //     reliably fire on every successful retry, so we anchor reactivation
 //     on the invoice instead.
+// Receipt de-duplication.
+//
+// The very first receipt for a subscription can be triggered by TWO different
+// Stripe events: `checkout.session.completed` (always delivered) and
+// `invoice.paid` with billing_reason=subscription_create. The event-id dedup in
+// handleWebhook only stops the SAME event being processed twice, so we need a
+// second guard keyed on the thing being receipted.
+//
+// We reuse stripe_webhook_events as a generic ledger: its PK on event_id gives
+// us an atomic claim. An empty `select()` result means the key already existed,
+// i.e. someone else already sent this receipt.
+async function claimReceiptSlot(key: string): Promise<boolean> {
+  const { data, error } = await getSupabase()
+    .from("stripe_webhook_events")
+    .upsert({ event_id: key, event_type: "receipt-guard" }, {
+      onConflict: "event_id",
+      ignoreDuplicates: true,
+    })
+    .select();
+  if (error) {
+    console.error("claimReceiptSlot failed, sending anyway", key, error);
+    return true; // fail open — a missing receipt is worse than a rare duplicate
+  }
+  return !(Array.isArray(data) && data.length === 0);
+}
+
+function formatAuDate(unixSeconds: number): string {
+  return new Date(unixSeconds * 1000).toLocaleDateString("en-AU", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
+
 async function handleInvoicePaid(invoice: Stripe.Invoice, env: StripeEnv) {
   const reason = invoice.billing_reason;
   // subscription_create also runs through here so the first invoice
@@ -245,12 +284,24 @@ async function handleInvoicePaid(invoice: Stripe.Invoice, env: StripeEnv) {
   // (subscription_create) and on genuine renewals (subscription_cycle),
   // but NOT on subscription_update (proration / mid-cycle change).
   if (reason === "subscription_cycle" || reason === "subscription_create") {
+    // Dedup key: the first receipt is keyed on the subscription (so the
+    // checkout.session.completed safety net and this event can't both send);
+    // renewals are keyed on the invoice.
+    const subscriptionId = subscriptionIdFromInvoice(invoice);
+    const key = reason === "subscription_create" && subscriptionId
+      ? `receipt-first:${subscriptionId}`
+      : `receipt-cycle:${invoice.id}`;
+    if (!(await claimReceiptSlot(key))) {
+      console.log("Receipt already sent, skipping", key);
+      return;
+    }
+
     const amount = (invoice.amount_paid ?? 0) / 100;
     const currency = (invoice.currency ?? "aud").toUpperCase();
     const amountFormatted = `${currency} ${amount.toFixed(2)}`;
-    const invoiceDate = new Date((invoice.created ?? Date.now() / 1000) * 1000).toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" });
-    const subEnd = (invoice.lines?.data?.[0]?.period?.end ?? 0) * 1000;
-    const nextBillingDate = subEnd ? new Date(subEnd).toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" }) : undefined;
+    const invoiceDate = formatAuDate(invoice.created ?? Date.now() / 1000);
+    const subEnd = invoice.lines?.data?.[0]?.period?.end ?? 0;
+    const nextBillingDate = subEnd ? formatAuDate(subEnd) : undefined;
     await sendBillingEmail({
       userId,
       template: {
@@ -264,6 +315,54 @@ async function handleInvoicePaid(invoice: Stripe.Invoice, env: StripeEnv) {
     });
   }
 }
+
+// Safety net: send the FIRST receipt straight off checkout.session.completed.
+// This event is reliably delivered; invoice.paid historically was not (the
+// webhook endpoint wasn't subscribed to invoice.*). Renewal receipts still
+// come from handleInvoicePaid — this only ever fires for the first payment.
+async function handleCheckoutCompleted(session: Stripe.Checkout.Session, env: StripeEnv) {
+  if (session.mode !== "subscription") return;
+  if (session.payment_status === "unpaid") return;
+
+  const rawSub = session.subscription;
+  const subscriptionId = typeof rawSub === "string" ? rawSub : rawSub?.id;
+  if (!subscriptionId) return;
+
+  let userId = session.metadata?.userId;
+  let periodEnd: number | undefined;
+  try {
+    const stripe = createStripeClient(env);
+    const sub = await stripe.subscriptions.retrieve(subscriptionId);
+    userId = userId || sub.metadata?.userId;
+    const item = sub.items?.data?.[0] as SubscriptionItemWithPeriod | undefined;
+    periodEnd = item?.current_period_end
+      ?? (sub as Stripe.Subscription & { current_period_end?: number }).current_period_end;
+  } catch (e) {
+    console.error("handleCheckoutCompleted: subscription lookup failed", e);
+  }
+  if (!userId) {
+    console.error("handleCheckoutCompleted: no userId", session.id);
+    return;
+  }
+
+  if (!(await claimReceiptSlot(`receipt-first:${subscriptionId}`))) {
+    console.log("First receipt already sent, skipping", subscriptionId);
+    return;
+  }
+
+  const amount = (session.amount_total ?? 0) / 100;
+  const currency = (session.currency ?? "aud").toUpperCase();
+  await sendBillingEmail({
+    userId,
+    template: {
+      kind: "receipt",
+      amountFormatted: `${currency} ${amount.toFixed(2)}`,
+      invoiceDate: formatAuDate(session.created ?? Date.now() / 1000),
+      nextBillingDate: periodEnd ? formatAuDate(periodEnd) : undefined,
+    },
+  });
+}
+
 
 async function handleInvoicePaymentFailed(invoice: Stripe.Invoice, env: StripeEnv) {
   const userId = await userIdFromInvoice(invoice, env);
@@ -439,6 +538,10 @@ export async function handleWebhook(req: Request, env: StripeEnv) {
     case "invoice.payment_failed":
       await handleInvoicePaymentFailed(event.data.object as Stripe.Invoice, env);
       break;
+    case "checkout.session.completed":
+      await handleCheckoutCompleted(event.data.object as Stripe.Checkout.Session, env);
+      break;
+
     default:
       console.log("Unhandled event:", event.type);
   }
