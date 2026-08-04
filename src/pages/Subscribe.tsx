@@ -235,6 +235,10 @@ export default function Subscribe() {
             Continue with {PLANS[plan].price}{PLANS[plan].cadence}
           </Button>
 
+          <Button variant="ghost" className="w-full" onClick={() => navigate("/")}>
+            Back to the portal
+          </Button>
+
           <Button variant="ghost" className="w-full" onClick={handleSignOut}>
             Sign out
           </Button>
