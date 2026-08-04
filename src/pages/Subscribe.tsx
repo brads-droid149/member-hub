@@ -32,7 +32,13 @@ export default function Subscribe() {
   const intent = params.get("intent");
   const [state, setState] = useState<State>("loading");
   const [user, setUser] = useState<{ id: string; email?: string } | null>(null);
-  const [plan, setPlan] = useState<Plan>(params.get("plan") === "yearly" ? "yearly" : "monthly");
+  // An explicit ?plan= always wins. Otherwise paywall-CTA visits
+  // (intent=discount|entries) default to yearly; everything else monthly.
+  const [plan, setPlan] = useState<Plan>(() => {
+    const explicit = params.get("plan");
+    if (explicit === "yearly" || explicit === "monthly") return explicit;
+    return intent === "discount" || intent === "entries" ? "yearly" : "monthly";
+  });
   const [showCheckout, setShowCheckout] = useState(false);
 
   useEffect(() => {
