@@ -7,7 +7,7 @@ import type { Session } from "@supabase/supabase-js";
 //  - no-session    -> user is signed out, redirect to /login
 //  - no-membership -> signed in but no active members row, redirect to /subscribe
 //  - not-admin     -> signed in member trying to hit an adminOnly route, send home
-type Access = "loading" | "allowed" | "no-session" | "no-membership" | "not-admin";
+type Access = "loading" | "allowed" | "no-session" | "unverified" | "no-membership" | "not-admin";
 
 // Wrap any route that requires authentication. Pass `adminOnly` for admin-
 // only screens (e.g. /admin/*) — admins always pass the membership check
@@ -27,20 +27,21 @@ export default function ProtectedRoute({ children, adminOnly }: { children: Reac
 
     const evaluate = async (session: Session | null) => {
       evaluatedUserId.current = session?.user.id ?? null;
-      // Session and membership are deliberately checked as two separate
-      // gates. A user can be authenticated (have a valid Supabase session)
-      // but not have a paid Junkyard membership — e.g. they signed up but
-      // bailed out of Stripe checkout, or their subscription was cancelled.
-      // Those two cases need different redirects (login vs /subscribe), so
-      // we can't collapse them into one check.
+      // Membership is no longer a gate for the portal: signed-in users can
+      // browse for free and only the perks (discount codes, giveaway
+      // entries) are locked, enforced by RLS in the database. The only
+      // gates left here are: signed out -> /login, unconfirmed email ->
+      // /check-email, and admin-only routes -> admins only.
       if (!session) {
         if (!cancelled) setAccess("no-session");
         return;
       }
+      if (!session.user.email_confirmed_at) {
+        if (!cancelled) setAccess("unverified");
+        return;
+      }
       const userId = session.user.id;
 
-      // Admins bypass the membership requirement (staff accounts don't
-      // need to be paying members to administer the system).
       const { data: isAdmin } = await supabase.rpc("has_role", {
         _user_id: userId,
         _role: "admin",
@@ -55,23 +56,8 @@ export default function ProtectedRoute({ children, adminOnly }: { children: Reac
         return;
       }
 
-      const { data: member } = await supabase
-        .from("members")
-        .select("id, status, billing_exempt")
-        .eq("user_id", userId)
-        .maybeSingle();
-      if (cancelled) return;
-      // billing_exempt = comped/staff member who keeps access regardless of
-      // billing status (no Stripe subscription required).
-      if (member?.billing_exempt) {
-        setAccess("allowed");
-        return;
-      }
-      // Allow access while payment is being retried (past_due). Home shows
-      // a dunning banner; the daily cron will move them to 'cancelled'
-      // after 7 days of failed retries, which then trips no-membership.
-      const allowedStatuses = ["active", "past_due"];
-      setAccess(member && allowedStatuses.includes(member.status) ? "allowed" : "no-membership");
+      setAccess("allowed");
+
     };
 
     supabase.auth.getSession().then(({ data }) => evaluate(data.session));
