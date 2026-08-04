@@ -72,7 +72,8 @@ Stripe checkout, Tolt tracking, pricing/vouchers, `create-checkout`, and `paymen
 4. Direct `partners` query from a free account returns zero rows.
 5. Promo and future-giveaway banners render for a free account.
 6. Active member: real codes, copy works, real entry count, no "Join the Club".
-7. Admin: full access, no "Join the Club".
+7. Admin with no members row: real partner codes and a real (or absent) entries state — not the locked preview — and no "Join the Club".
 8. Each of the three CTAs produces the right Subscribe headline and pre-selected plan; "Back to portal" returns to `/`.
 9. Test-mode checkout from a free account removes the sidebar button without a manual refresh.
 10. Cancelling a test-mode subscription leaves the user in the portal, reverted to the free-browsing view.
+11. A signed-in but unconfirmed session navigating to `/` lands on `/check-email`.
