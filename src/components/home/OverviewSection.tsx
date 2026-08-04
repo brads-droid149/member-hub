@@ -96,7 +96,9 @@ export function OverviewSection({
       ) : (
         <div>
           <h1 className="text-3xl font-display font-bold text-foreground">Welcome back, {firstName}</h1>
-          <p className="text-sm text-muted-foreground mt-2">{monthsLabel}</p>
+          <p className="text-sm text-muted-foreground mt-2">
+            {isMember ? monthsLabel : "Browsing for free"}
+          </p>
         </div>
       )}
 
