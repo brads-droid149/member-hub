@@ -179,15 +179,20 @@ async function syncMember(opts: {
 // (2) local subscriptions table, or (3) Stripe customer metadata. The
 // fallback chain handles the case where invoice.paid arrives before
 // customer.subscription.created (Stripe doesn't guarantee event order).
-async function userIdFromInvoice(invoice: Stripe.Invoice, env: StripeEnv): Promise<string | null> {
-  // Subscription id from either legacy or new invoice shape.
+function subscriptionIdFromInvoice(invoice: Stripe.Invoice): string | undefined {
   const legacySub = (invoice as unknown as { subscription?: string | Stripe.Subscription | null })
     .subscription;
   const parentSub = (invoice as unknown as {
     parent?: { subscription_details?: { subscription?: string | Stripe.Subscription | null } };
   }).parent?.subscription_details?.subscription;
   const rawSub = legacySub ?? parentSub;
-  const subscriptionId = typeof rawSub === "string" ? rawSub : rawSub?.id;
+  return typeof rawSub === "string" ? rawSub : rawSub?.id;
+}
+
+async function userIdFromInvoice(invoice: Stripe.Invoice, env: StripeEnv): Promise<string | null> {
+  // Subscription id from either legacy or new invoice shape.
+  const subscriptionId = subscriptionIdFromInvoice(invoice);
+
 
   if (subscriptionId) {
     const { data: sub } = await getSupabase()
