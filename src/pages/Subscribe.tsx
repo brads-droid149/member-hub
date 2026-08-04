@@ -28,9 +28,11 @@ const PLANS: Record<Plan, { priceId: string; price: string; cadence: string; sub
 
 export default function Subscribe() {
   const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const intent = params.get("intent");
   const [state, setState] = useState<State>("loading");
   const [user, setUser] = useState<{ id: string; email?: string } | null>(null);
-  const [plan, setPlan] = useState<Plan>("monthly");
+  const [plan, setPlan] = useState<Plan>(params.get("plan") === "yearly" ? "yearly" : "monthly");
   const [showCheckout, setShowCheckout] = useState(false);
 
   useEffect(() => {
