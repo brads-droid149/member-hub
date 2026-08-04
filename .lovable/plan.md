@@ -1,42 +1,75 @@
-## What's happening
+# Free Browsing + Paywalled Perks
 
-It isn't the browser reloading the page — it's the app throwing away its screen and rebuilding it.
+Change the gating model from "pay before you see anything" to "sign up free, browse the portal, pay to unlock discount codes and giveaway entries." The lock is enforced in the database, not just the UI.
 
-`src/components/ProtectedRoute.tsx` subscribes to auth state changes, and its handler does this on **every** event:
+## 1. Database access rules (one migration)
 
-```ts
-supabase.auth.onAuthStateChange((_e, s) => {
-  setAccess("loading");   // <- wipes the screen
-  evaluate(s);
-});
-```
+- Giveaways: any signed-in user can view. Writes stay admin-only.
+- Past winners: any signed-in user can view. Writes stay admin-only.
+- Banners: relax the SELECT policy so any signed-in user can view active banners (keep `is_active = true`, drop the subscription check). Writes stay admin-only.
+- Partners table: unchanged — only active/past_due members and admins can read a full row (the only place `discount_code` lives).
+- New partner preview exposing only id, name, logo, description, website — no discount code:
+  - `public.get_partners_preview()` as SECURITY DEFINER with `SET search_path = public`, hard-selecting the five safe columns. `discount_code` is never referenced in the body.
+  - Thin view `public.partners_preview` over that function for a table-like client call.
+  - `REVOKE ALL` from `PUBLIC` on both (Postgres grants to PUBLIC by default, which includes `anon`), then grant EXECUTE / SELECT to `authenticated` only.
 
-The client is configured with `autoRefreshToken: true` (`src/integrations/supabase/client.ts`), and Supabase re-checks/refreshes the session whenever the tab becomes visible again. That fires `TOKEN_REFRESHED` (and often `SIGNED_IN`), so coming back to the tab:
+## 2. Signup
 
-1. `access` flips to `loading` → the spinner replaces the whole route,
-2. `Home` unmounts, losing all its local state (active section resets to Overview, giveaway/winners/partners caches cleared),
-3. `evaluate()` re-runs two round-trips (`has_role`, then `members`), and `useHomeData` re-mounts and refetches profile/member/subscription and re-opens the realtime channel.
+- No-confirmation signups: `navigate("/subscribe")` becomes `navigate("/")`.
+- Confirmation signups: `emailRedirectTo` changes from `${origin}/subscribe` to `${origin}/` so confirmed users land on the portal.
+- `/check-email` is unchanged.
 
-That sequence is what reads as a reload.
+## 3. Route protection
 
-## Fix
+`ProtectedRoute` no longer bounces signed-in users without a membership to `/subscribe`. Only signed-out users are redirected (to `/login`). Admin-only routes keep their current behaviour.
 
-**1. `src/components/ProtectedRoute.tsx` — don't reset to loading on benign events**
+Confirmed: a member whose subscription lapses or is cancelled now soft-downgrades into the free-browsing view (locked codes, locked entries, "Join the Club" reappears) rather than being redirected.
 
-- Only show the loading state on the initial evaluation. Keep the current `access` value while re-evaluating in the background.
-- Ignore events that can't change access: `TOKEN_REFRESHED`, `INITIAL_SESSION`, and `USER_UPDATED`.
-- Treat `SIGNED_IN` as a no-op when the user id is unchanged from the one already evaluated (tab-focus re-emits it for the same user); only re-evaluate on a genuine user change.
-- Still re-evaluate immediately on `SIGNED_OUT` and on a `SIGNED_IN` with a different user id.
-- Track the last evaluated user id in a ref so the comparison survives re-renders.
+## 4. Membership state
 
-Net effect: returning to the tab leaves the rendered dashboard exactly as it was.
+`useHomeData` exposes `isMember` — true when a membership row exists with status `active` or `past_due`; admins and billing-exempt accounts also count. `Home` passes it to each section and to `AppSidebar`.
 
-**2. `src/hooks/use-home-data.ts` — avoid redundant refetch churn (optional, same turn)**
+## 5. Partner discounts section
 
-The hook's effect already has an empty dep array, so with fix 1 it stops re-running on tab focus. No change strictly needed; leave it as is unless the mount-guard needs adjusting once fix 1 lands.
+- Member: unchanged — real codes, click to copy.
+- Free user: loads `partners_preview`; each card shows an "Unlock with membership" lock pill instead of a code, and clicking the card or pill goes to `/subscribe?intent=discount&partner=<name>`. Intro line becomes "Join the club to unlock these codes."
+
+## 6. Overview section
+
+- Giveaway card, Past Winners card, and both banners render for everyone.
+- "Your Entries This Draw" for a free user shows a locked state — lock icon, "Join to start earning entries," and a Join button to `/subscribe?intent=entries` — visually distinct from a member on zero entries.
+
+## 7. Sidebar
+
+`AppSidebar` takes an `isMember` prop. When `isMember` is false and the user is not an admin, a primary/filled "Join the Club" item (Trophy icon) renders at the top of the nav list, above Overview, navigating to `/subscribe?intent=nav`. It renders nothing for members and admins, and disappears automatically once membership activates (Subscribe already redirects on the realtime member-row change).
+
+## 8. Subscribe page
+
+- "Back to portal" link near the top of the plan-selection view only (not needs-verify or checkout), shown only in the free-browsing flow, navigating to `/`.
+- Intent-aware headline from `?intent=`:
+  - `discount`: "Unlock {partner} — join the club" (fallback "Unlock partner discounts")
+  - `entries`: "Start earning giveaway entries"
+  - `nav` / none: existing "Choose your membership"
+  Perks list unchanged.
+- Plan pre-selection: any intent param other than `nav` defaults the toggle to yearly; direct nav with no intent keeps monthly.
+
+## 9. Analytics
+
+The codebase has no existing GTM/dataLayer helper, so add a small one (e.g. `src/lib/analytics.ts`) that safely pushes to `window.dataLayer`. Each paywall CTA pushes `{ event: "paywall_click", location: "partner_card" | "entries_card" | "sidebar" }` before navigating.
+
+## Untouched
+
+Stripe checkout, Tolt tracking, pricing/vouchers, `create-checkout`, and `payments-webhook` are not changed.
 
 ## Verification
 
-- Load `/` in the preview signed in, switch to another section (e.g. Partner Discounts), switch browser tabs and come back: the section and content should persist with no spinner flash.
-- Confirm sign-out still redirects to `/login`, and that a signed-out user hitting `/` still gets redirected.
-- Run the existing `src/test/ProtectedRoute.test.tsx` suite and extend it with a case asserting a `TOKEN_REFRESHED` event does not return the component to the loading state.
+1. Free signup (no confirmation) lands on the portal.
+2. Free signup requiring confirmation lands on the portal after clicking the email link.
+3. `partners_preview` network payload contains no `discount_code`.
+4. Direct `partners` query from a free account returns zero rows.
+5. Promo and future-giveaway banners render for a free account.
+6. Active member: real codes, copy works, real entry count, no "Join the Club".
+7. Admin: full access, no "Join the Club".
+8. Each of the three CTAs produces the right Subscribe headline and pre-selected plan; "Back to portal" returns to `/`.
+9. Test-mode checkout from a free account removes the sidebar button without a manual refresh.
+10. Cancelling a test-mode subscription leaves the user in the portal, reverted to the free-browsing view.
