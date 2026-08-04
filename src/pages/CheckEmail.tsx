@@ -31,7 +31,7 @@ export default function CheckEmail() {
         </CardHeader>
         <CardContent className="space-y-6">
           <p className="text-center text-foreground">
-            Check your inbox to confirm your account. Once confirmed, sign in to choose your membership.
+            Check your inbox to confirm your account. Once confirmed, sign in to start exploring the club.
           </p>
           {email && (
             <p className="text-center text-sm text-muted-foreground">

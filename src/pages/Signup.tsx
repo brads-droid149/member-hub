@@ -90,7 +90,8 @@ export default function Signup() {
       email: email.trim(),
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/subscribe`,
+        // Free browsing: confirmed users land on the portal, not the paywall.
+        emailRedirectTo: `${window.location.origin}/`,
         data: {
           full_name: fullName.trim(),
           phone: trimmedMobile,
@@ -115,7 +116,7 @@ export default function Signup() {
 
 
     if (data.session) {
-      navigate("/subscribe");
+      navigate("/");
     } else {
       navigate("/check-email", { state: { email: email.trim() } });
     }
