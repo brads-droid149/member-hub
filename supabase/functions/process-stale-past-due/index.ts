@@ -29,8 +29,15 @@ Deno.serve(async (req) => {
   if (!authHeader?.startsWith('Bearer ')) {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 })
   }
-  const claims = parseJwtClaims(authHeader.slice('Bearer '.length).trim())
-  if (claims?.role !== 'service_role') {
+  // Legacy service-role keys are JWTs and carry a role claim. New-format keys
+  // (sb_secret_*) are opaque, so claims parse to null — in that case require an
+  // exact match against the project's service-role key instead.
+  const token = authHeader.slice('Bearer '.length).trim()
+  const claims = parseJwtClaims(token)
+  const isServiceRole = claims !== null
+    ? claims.role === 'service_role'
+    : token === Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+  if (!isServiceRole) {
     return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403 })
   }
 
