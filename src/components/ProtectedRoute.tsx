@@ -3,11 +3,11 @@ import { Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import type { Session } from "@supabase/supabase-js";
 
-// Three failure states the route can resolve to (besides "allowed"):
-//  - no-session    -> user is signed out, redirect to /login
-//  - no-membership -> signed in but no active members row, redirect to /subscribe
-//  - not-admin     -> signed in member trying to hit an adminOnly route, send home
-type Access = "loading" | "allowed" | "no-session" | "unverified" | "no-membership" | "not-admin";
+// Failure states the route can resolve to (besides "allowed"):
+//  - no-session -> user is signed out, redirect to /login
+//  - unverified -> signed in but email not confirmed, redirect to /check-email
+//  - not-admin  -> signed in user trying to hit an adminOnly route, send home
+type Access = "loading" | "allowed" | "no-session" | "unverified" | "not-admin";
 
 // Wrap any route that requires authentication. Pass `adminOnly` for admin-
 // only screens (e.g. /admin/*) — admins always pass the membership check
