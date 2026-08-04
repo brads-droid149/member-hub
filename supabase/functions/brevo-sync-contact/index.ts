@@ -120,7 +120,7 @@ Deno.serve(async (req) => {
       /phone/i.test(String((data as { message?: string })?.message ?? ""));
 
     if (isDupSms || isInvalidPhone) {
-      console.warn("Brevo SMS duplicate — retrying without SMS attribute");
+      console.warn("Brevo SMS rejected (duplicate or invalid) — retrying without SMS attribute");
       const retryAttrs = { ...(payload.attributes as Record<string, unknown>) };
       delete retryAttrs.SMS;
       const retryPayload = { ...payload, attributes: retryAttrs };
