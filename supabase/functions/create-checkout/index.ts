@@ -152,7 +152,6 @@ export async function createCheckoutSession(options: {
     // which mismatches the A$ amounts shown in the portal and breaks the
     // inclusive AU GST tax_rate assumption.
     adaptive_pricing: { enabled: false },
-    currency: stripePrice.currency,
     ...(customerId && { customer: customerId }),
     ...((options.userId || options.toltReferral) && {
       metadata: {
