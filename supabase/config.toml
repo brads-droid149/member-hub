@@ -19,6 +19,4 @@ project_id = "zsnhpkqisxwkfaurwcmu"
     verify_jwt = false
   [functions.delete-account]
     verify_jwt = false
-  [functions.admin-dunning-test]
-    verify_jwt = false
 
