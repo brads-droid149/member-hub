@@ -4,7 +4,7 @@ Three small corrections following the free-browsing rollout.
 
 ## 1. Yearly plan pre-selection (Subscribe page)
 
-Visitors arriving from a paywall CTA (`intent=discount` or `intent=entries`) should land on the yearly plan pre-selected. An explicit `?plan=yearly` still wins. Direct visits, or `intent=nav`, keep monthly as the default.
+An explicit `?plan=` param always wins — `yearly` or `monthly`. Only when no `plan` param is present does the intent decide: `intent=discount` or `intent=entries` pre-selects yearly; anything else (including `intent=nav` or direct navigation) stays monthly.
 
 ## 2. Cancellation email copy
 
