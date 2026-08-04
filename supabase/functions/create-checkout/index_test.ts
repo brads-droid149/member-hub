@@ -156,5 +156,8 @@ Deno.test("happy path returns clientSecret", async () => {
   const checkout = calls.find((c) => c.op === "checkout.create");
   assertExists(checkout);
   assertEquals(checkout.args.metadata?.userId, "u1");
+  // Adaptive Pricing must stay off so buyers are charged in AUD, not a
+  // locally converted currency like EUR.
+  assertEquals(checkout.args.adaptive_pricing, { enabled: false });
   __resetTestOverrides();
 });
