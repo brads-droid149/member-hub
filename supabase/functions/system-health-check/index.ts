@@ -39,18 +39,6 @@ interface AlertRow {
   notified_at: string | null
 }
 
-function parseJwtClaims(token: string): Record<string, unknown> | null {
-  const parts = token.split('.')
-  if (parts.length < 2) return null
-  try {
-    const payload = parts[1].replaceAll('-', '+').replaceAll('_', '/')
-      .padEnd(Math.ceil(parts[1].length / 4) * 4, '=')
-    return JSON.parse(atob(payload)) as Record<string, unknown>
-  } catch {
-    return null
-  }
-}
-
 async function getAdminEmails(): Promise<string[]> {
   const { data: roles } = await supabase.from('user_roles').select('user_id').eq('role', 'admin')
   const emails: string[] = []
@@ -151,10 +139,10 @@ Deno.serve(async (req) => {
     const token = req.headers.get('Authorization')?.replace('Bearer ', '').trim()
     if (!token) return json({ error: 'Unauthorized' }, 401)
 
-    const claims = parseJwtClaims(token)
-    const isServiceRole = claims !== null
-      ? claims.role === 'service_role'
-      : token === Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+    // Never trust unverified JWT payload claims: the only way to be treated as
+    // the internal cron caller is presenting the actual service-role secret.
+    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    const isServiceRole = serviceKey.length > 0 && token === serviceKey
 
     let notify = isServiceRole
     if (!isServiceRole) {
