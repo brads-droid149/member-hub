@@ -121,15 +121,24 @@ async function syncMember(opts: {
   const { userId, subscription } = opts;
   const memberStatus = mapMemberStatus(subscription.status);
 
+  // Anchor entry crediting to the Stripe billing period start when available,
+  // so entries never drift ahead of actual payments.
+  const periodStartUnix =
+    (subscription as unknown as { current_period_start?: number }).current_period_start ??
+    subscription.items?.data?.[0]?.current_period_start;
+  const anchorIso = periodStartUnix
+    ? new Date(periodStartUnix * 1000).toISOString()
+    : new Date().toISOString();
+
   const { data: existing } = await supa
     .from("members")
-    .select("id, status")
+    .select("id, status, stripe_subscription_id")
     .eq("user_id", userId)
     .maybeSingle();
 
   if (!existing) {
     // New member — first month active, first entry. Anchor the monthly
-    // credit cron to now so the next +1 happens ~1 month from today.
+    // credit cron to the subscription's current period start.
     await supa.from("members").insert({
       user_id: userId,
       stripe_customer_id: subscription.customer,
@@ -137,11 +146,14 @@ async function syncMember(opts: {
       status: memberStatus,
       months_active: 1,
       entries: 1,
-      last_entry_credited_at: new Date().toISOString(),
+      last_entry_credited_at: anchorIso,
     });
   } else {
     const isReactivation =
       existing.status === "cancelled" && memberStatus === "active";
+    // Pre-existing member row that never had a subscription attached (e.g.
+    // billing-exempt or legacy row): realign counters to this subscription.
+    const isFirstAttach = !existing.stripe_subscription_id;
 
     const update: Record<string, unknown> = {
       stripe_customer_id: subscription.customer,
@@ -155,10 +167,10 @@ async function syncMember(opts: {
     } else if (memberStatus !== "past_due" && existing.status === "past_due") {
       update.past_due_since = null;
     }
-    if (isReactivation) {
+    if (isReactivation || isFirstAttach) {
       update.months_active = 1;
       update.entries = 1;
-      update.last_entry_credited_at = new Date().toISOString();
+      update.last_entry_credited_at = anchorIso;
     }
     await supa.from("members").update(update).eq("user_id", userId);
   }
