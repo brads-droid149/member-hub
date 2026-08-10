@@ -262,7 +262,13 @@ Deno.serve(async (req) => {
             text: payload.text,
             purpose: payload.purpose,
             label: payload.label,
-            idempotency_key: payload.idempotency_key,
+            // Mint a fresh idempotency key per retry: the email API rejects a
+            // reused key after a failed attempt (409 "already failed, send
+            // again with a new idempotency key"), which would otherwise make
+            // every retry fail until the message dead-letters.
+            idempotency_key: failedAttempts > 0
+              ? `${payload.idempotency_key}-r${failedAttempts}`
+              : payload.idempotency_key,
             unsubscribe_token: payload.unsubscribe_token,
             message_id: payload.message_id,
           },
