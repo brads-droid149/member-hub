@@ -400,6 +400,45 @@ export type Database = {
         }
         Relationships: []
       }
+      system_alerts: {
+        Row: {
+          check_key: string
+          detail: Json
+          first_seen_at: string
+          id: string
+          last_seen_at: string
+          notified_at: string | null
+          resolved_at: string | null
+          severity: string
+          status: string
+          title: string
+        }
+        Insert: {
+          check_key: string
+          detail?: Json
+          first_seen_at?: string
+          id?: string
+          last_seen_at?: string
+          notified_at?: string | null
+          resolved_at?: string | null
+          severity?: string
+          status?: string
+          title: string
+        }
+        Update: {
+          check_key?: string
+          detail?: Json
+          first_seen_at?: string
+          id?: string
+          last_seen_at?: string
+          notified_at?: string | null
+          resolved_at?: string | null
+          severity?: string
+          status?: string
+          title?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
@@ -504,6 +543,7 @@ export type Database = {
           read_ct: number
         }[]
       }
+      system_health_snapshot: { Args: never; Returns: Json }
     }
     Enums: {
       app_role: "admin" | "user"
