@@ -1,80 +1,138 @@
+import { useState } from "react";
+import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Gift, Lock, Ticket, Tags } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Check } from "lucide-react";
 
 /**
- * Read-only marketing preview shown below the login form.
- * Display-only: no props, no fetches, no authenticated state.
+ * Manually editable giveaway teaser. This is a static teaser, not a live
+ * giveaway board — it is updated by hand each draw cycle.
  */
+const GIVEAWAY_TITLE = "This month's prize pack";
+const GIVEAWAY_IMAGE_URL = "/placeholder.svg";
+
+const membershipSnapshot = [
+  "Member-only partner deals and discounts",
+  "Exclusive gear drops and apparel access",
+  "Founding rate, locked in while you're a member",
+  "Access to surfboard, travel and gear giveaways",
+  "Accumulating draw entries every month. Entries stack the longer you stay a member",
+  "More added as the club grows",
+];
+
 export function LoginHomePreview() {
+  const [plan, setPlan] = useState<"monthly" | "annual">("monthly");
+
+  const price = plan === "monthly" ? "A$5" : "A$55";
+  const cadence = plan === "monthly" ? "/ month" : "/ year";
+
   return (
-    <section className="space-y-4">
-      <div className="text-center">
-        <h2 className="text-xl font-display font-bold text-foreground">What you get</h2>
-        <p className="text-sm text-muted-foreground mt-1">
-          Monthly giveaway entries and partner discounts for surfers.
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Monthly</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold text-foreground">
-              A$5<span className="text-sm font-normal text-muted-foreground">/month</span>
-            </p>
-            <p className="text-xs text-muted-foreground mt-1">Cancel anytime.</p>
-          </CardContent>
-        </Card>
-        <Card className="border-primary/40">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Yearly</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold text-foreground">
-              A$55<span className="text-sm font-normal text-muted-foreground">/year</span>
-            </p>
-            <p className="text-xs text-muted-foreground mt-1">Two months free.</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card>
+    <section className="space-y-6">
+      {/* 1. Static giveaway teaser */}
+      <Card className="overflow-hidden border-border/50">
+        <div className="aspect-[4/5] sm:aspect-[16/9] w-full max-h-80 overflow-hidden bg-muted">
+          <img
+            src={GIVEAWAY_IMAGE_URL}
+            alt={GIVEAWAY_TITLE}
+            className="h-full w-full object-cover"
+          />
+        </div>
         <CardHeader className="pb-2">
-          <CardTitle className="text-base">How it works</CardTitle>
+          <p className="text-sm font-medium text-primary">This month's giveaway</p>
+          <CardTitle className="text-xl font-display">{GIVEAWAY_TITLE}</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex gap-3">
-            <Ticket className="h-4 w-4 text-primary mt-0.5 shrink-0" aria-hidden="true" />
-            <p className="text-sm text-muted-foreground">
-              Join the club and get an entry into the monthly giveaway.
-            </p>
-          </div>
-          <div className="flex gap-3">
-            <Gift className="h-4 w-4 text-primary mt-0.5 shrink-0" aria-hidden="true" />
-            <p className="text-sm text-muted-foreground">
-              Your entries stack every month you stay a member — the longer you're in, the better your odds.
-            </p>
-          </div>
-          <div className="flex gap-3">
-            <Tags className="h-4 w-4 text-primary mt-0.5 shrink-0" aria-hidden="true" />
-            <p className="text-sm text-muted-foreground">
-              Unlock discount codes with our partner brands, all in one place.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card className="border-dashed">
-        <CardContent className="p-6 flex flex-col items-center text-center gap-2">
-          <Lock className="h-5 w-5 text-primary" aria-hidden="true" />
-          <p className="text-sm font-medium text-foreground">This month's giveaway</p>
-          <p className="text-xs text-muted-foreground">
-            Sign in to see this month's giveaway and your entry count.
+        <CardContent>
+          <p className="text-sm text-muted-foreground">
+            Members are automatically in the draw. Entries stack the longer you stay a member.
           </p>
         </CardContent>
       </Card>
+
+      {/* 2 + 3. Membership snapshot + Pricing */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card className="bg-primary/90 text-primary-foreground border-primary">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg font-display text-primary-foreground">
+              Membership snapshot
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-3">
+              {membershipSnapshot.map((item) => (
+                <li key={item} className="flex items-start gap-2 text-sm text-primary-foreground/90">
+                  <Check className="h-4 w-4 shrink-0 mt-0.5 text-primary-foreground" />
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-primary/90 text-primary-foreground border-primary flex flex-col">
+          <CardContent className="p-6 flex flex-col justify-between h-full gap-8">
+            <div>
+              <p className="text-lg font-display font-bold text-primary-foreground">
+                One Membership Tier
+              </p>
+              <p className="text-sm text-primary-foreground/80">Built for Surfers</p>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <p className="text-6xl sm:text-7xl font-bold tracking-tight text-primary-foreground">
+                  {price}
+                  <span className="text-base sm:text-lg font-normal text-primary-foreground/70 ml-1">
+                    {cadence}
+                  </span>
+                </p>
+                {plan === "annual" && (
+                  <span className="text-xs font-semibold text-primary bg-primary-foreground px-2 py-1 rounded-full">
+                    Save ~8%
+                  </span>
+                )}
+              </div>
+
+              <div
+                className="relative h-12 rounded-full bg-black/20 border border-white/20 p-1 cursor-pointer select-none"
+                onClick={() => setPlan((p) => (p === "monthly" ? "annual" : "monthly"))}
+                role="switch"
+                aria-checked={plan === "annual"}
+                aria-label="Toggle monthly or annual billing"
+              >
+                <div
+                  className="absolute top-1 bottom-1 w-[calc(50%-4px)] bg-primary-foreground rounded-full transition-all duration-200"
+                  style={{ left: plan === "monthly" ? "4px" : "calc(50%)" }}
+                />
+                <div className="relative z-10 flex h-full items-center">
+                  <span
+                    className={`flex-1 text-center text-sm font-medium transition-colors ${
+                      plan === "monthly" ? "text-primary" : "text-primary-foreground/70"
+                    }`}
+                  >
+                    Monthly
+                  </span>
+                  <span
+                    className={`flex-1 text-center text-sm font-medium transition-colors ${
+                      plan === "annual" ? "text-primary" : "text-primary-foreground/70"
+                    }`}
+                  >
+                    Annual
+                  </span>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* 4. CTA */}
+      <Button
+        asChild
+        size="lg"
+        className="w-full rounded-full text-lg font-bold border-2 border-background hover:opacity-90 transition-opacity"
+      >
+        <Link to="/signup">Join the Club Here Now</Link>
+      </Button>
     </section>
   );
 }
