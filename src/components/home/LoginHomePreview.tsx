@@ -2,14 +2,17 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Check } from "lucide-react";
+import { Check, ImageIcon } from "lucide-react";
 
 /**
  * Manually editable giveaway teaser. This is a static teaser, not a live
  * giveaway board — it is updated by hand each draw cycle.
+ *
+ * Swap the placeholder below for a real giveaway image URL when the draw is ready.
  */
-const GIVEAWAY_TITLE = "This month's prize pack";
+const GIVEAWAY_TITLE = "";
 const GIVEAWAY_IMAGE_URL = "/placeholder.svg";
+const isPlaceholder = GIVEAWAY_IMAGE_URL === "/placeholder.svg" || GIVEAWAY_IMAGE_URL === "";
 
 const membershipSnapshot = [
   "Member-only partner deals and discounts",
@@ -31,15 +34,24 @@ export function LoginHomePreview() {
       {/* 1. Static giveaway teaser */}
       <Card className="overflow-hidden border-border/50">
         <div className="aspect-[4/5] sm:aspect-[16/9] w-full max-h-80 overflow-hidden bg-muted">
-          <img
-            src={GIVEAWAY_IMAGE_URL}
-            alt={GIVEAWAY_TITLE}
-            className="h-full w-full object-cover"
-          />
+          {isPlaceholder ? (
+            <div className="h-full w-full flex flex-col items-center justify-center gap-2 text-muted-foreground">
+              <ImageIcon className="h-10 w-10" />
+              <span className="text-sm">Giveaway image placeholder</span>
+            </div>
+          ) : (
+            <img
+              src={GIVEAWAY_IMAGE_URL}
+              alt={GIVEAWAY_TITLE || "This month's giveaway"}
+              className="h-full w-full object-cover"
+            />
+          )}
         </div>
         <CardHeader className="pb-2">
           <p className="text-sm font-medium text-primary">This month's giveaway</p>
-          <CardTitle className="text-xl font-display">{GIVEAWAY_TITLE}</CardTitle>
+          {GIVEAWAY_TITLE && (
+            <CardTitle className="text-xl font-display">{GIVEAWAY_TITLE}</CardTitle>
+          )}
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground">
@@ -47,6 +59,7 @@ export function LoginHomePreview() {
           </p>
         </CardContent>
       </Card>
+
 
       {/* 2 + 3. Membership snapshot + Pricing */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
