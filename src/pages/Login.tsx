@@ -144,9 +144,25 @@ export default function Login() {
                 Sign up
               </Link>
             </p>
+
+            <p className="text-xs text-center">
+              <a
+                href="https://www.junkyardsurf.com.au/junkyard-surf-club"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-muted-foreground hover:text-foreground hover:underline"
+              >
+                Still deciding? Learn more about Junkyard Club
+              </a>
+            </p>
           </form>
         </CardContent>
       </Card>
+
+      <div className="w-full max-w-2xl space-y-10">
+        <LoginHomePreview />
+        <LoginPartnersPreview />
+      </div>
     </div>
   );
 }
