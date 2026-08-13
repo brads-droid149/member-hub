@@ -100,7 +100,7 @@ export function LoginHomePreview() {
                 </p>
                 {plan === "annual" && (
                   <span className="text-xs font-semibold text-primary bg-primary-foreground px-2 py-1 rounded-full">
-                    Save ~8%
+                    1 month free
                   </span>
                 )}
               </div>
