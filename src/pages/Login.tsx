@@ -7,6 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { LoginHomePreview } from "@/components/home/LoginHomePreview";
+import { LoginPartnersPreview } from "@/components/home/LoginPartnersPreview";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -46,7 +48,7 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+    <div className="min-h-screen flex flex-col items-center bg-background p-4 py-10 gap-10">
       <Helmet>
         <title>Sign In — Junkyard Surf Club</title>
         <meta name="description" content="Sign in to your Junkyard Surf Club member account to manage your membership, entries and partner perks." />
@@ -144,9 +146,25 @@ export default function Login() {
                 Sign up
               </Link>
             </p>
+
+            <p className="text-xs text-center">
+              <a
+                href="https://www.junkyardsurf.com.au/junkyard-surf-club"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-muted-foreground hover:text-foreground hover:underline"
+              >
+                Still deciding? Learn more about Junkyard Club
+              </a>
+            </p>
           </form>
         </CardContent>
       </Card>
+
+      <div className="w-full max-w-2xl space-y-10">
+        <LoginHomePreview />
+        <LoginPartnersPreview />
+      </div>
     </div>
   );
 }
