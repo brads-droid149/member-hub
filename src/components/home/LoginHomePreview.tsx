@@ -23,34 +23,54 @@ const membershipSnapshot = [
 
 export function LoginHomePreview() {
   const [plan, setPlan] = useState<"monthly" | "annual">("monthly");
+  const [giveaway, setGiveaway] = useState<GiveawayPreview | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase.rpc("get_active_giveaway_preview");
+      if (error) {
+        console.error("Failed to load giveaway preview:", error);
+        return;
+      }
+      if (!cancelled) setGiveaway((data as GiveawayPreview[] | null)?.[0] ?? null);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const giveawayTitle = giveaway?.title ?? "";
+  const giveawayImage = giveaway?.prize_image_url ?? "";
 
   const price = plan === "monthly" ? "A$5" : "A$55";
   const cadence = plan === "monthly" ? "/ month" : "/ year";
 
   return (
     <section className="space-y-6">
-      {/* 1. Static giveaway teaser */}
+      {/* 1. Current giveaway (live from admin) */}
       <Card className="overflow-hidden border-border/50">
         <div className="aspect-[4/5] sm:aspect-[16/9] w-full max-h-80 overflow-hidden bg-muted">
-          {isPlaceholder ? (
+          {!giveawayImage ? (
             <div className="h-full w-full flex flex-col items-center justify-center gap-2 text-muted-foreground">
               <ImageIcon className="h-10 w-10" />
               <span className="text-sm">Giveaway image placeholder</span>
             </div>
           ) : (
             <img
-              src={GIVEAWAY_IMAGE_URL}
-              alt={GIVEAWAY_TITLE || "This month's giveaway"}
+              src={giveawayImage}
+              alt={giveawayTitle || "This month's giveaway"}
               className="h-full w-full object-cover"
             />
           )}
         </div>
         <CardHeader className="pb-2">
           <p className="text-sm font-medium text-primary">This month's giveaway</p>
-          {GIVEAWAY_TITLE && (
-            <CardTitle className="text-xl font-display">{GIVEAWAY_TITLE}</CardTitle>
+          {giveawayTitle && (
+            <CardTitle className="text-xl font-display">{giveawayTitle}</CardTitle>
           )}
         </CardHeader>
+
         <CardContent>
           <p className="text-sm text-muted-foreground">
             Members are automatically in the draw. Entries stack the longer you stay a member.
