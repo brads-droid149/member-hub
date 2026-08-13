@@ -50,7 +50,7 @@ export function LoginHomePreview() {
     <section className="space-y-6">
       {/* 1. Current giveaway (live from admin) */}
       <Card className="overflow-hidden border-border/50">
-        <div className="aspect-[4/5] sm:aspect-[16/9] w-full max-h-80 overflow-hidden bg-muted">
+        <div className="aspect-[4/5] w-full max-h-96 overflow-hidden bg-muted">
           {!giveawayImage ? (
             <div className="h-full w-full flex flex-col items-center justify-center gap-2 text-muted-foreground">
               <ImageIcon className="h-10 w-10" />
