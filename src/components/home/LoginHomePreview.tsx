@@ -1,18 +1,16 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Check, ImageIcon } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
-/**
- * Manually editable giveaway teaser. This is a static teaser, not a live
- * giveaway board — it is updated by hand each draw cycle.
- *
- * Swap the placeholder below for a real giveaway image URL when the draw is ready.
- */
-const GIVEAWAY_TITLE = "";
-const GIVEAWAY_IMAGE_URL = "/placeholder.svg";
-const isPlaceholder = GIVEAWAY_IMAGE_URL === "/placeholder.svg" || GIVEAWAY_IMAGE_URL === "";
+type GiveawayPreview = {
+  title: string | null;
+  prize_image_url: string | null;
+  draw_date: string | null;
+};
+
 
 const membershipSnapshot = [
   "Member-only partner deals and discounts",
