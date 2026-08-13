@@ -482,6 +482,14 @@ export type Database = {
         Args: { payload: Json; queue_name: string }
         Returns: number
       }
+      get_active_giveaway_preview: {
+        Args: never
+        Returns: {
+          draw_date: string
+          prize_image_url: string
+          title: string
+        }[]
+      }
       get_admin_members_overview: {
         Args: {
           _limit?: number
