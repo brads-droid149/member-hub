@@ -46,7 +46,7 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+    <div className="min-h-screen flex flex-col items-center bg-background p-4 py-10 gap-10">
       <Helmet>
         <title>Sign In — Junkyard Surf Club</title>
         <meta name="description" content="Sign in to your Junkyard Surf Club member account to manage your membership, entries and partner perks." />
