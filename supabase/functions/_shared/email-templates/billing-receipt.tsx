@@ -47,7 +47,7 @@ export default BillingReceiptEmail
 
 const main = { backgroundColor: '#ffffff', fontFamily: "'Montserrat', Arial, sans-serif" }
 const container = { padding: '32px 28px', maxWidth: '560px' }
-const h1 = { fontSize: '24px', fontWeight: '700' as const, color: 'hsl(0, 0%, 10%)', margin: '0 0 20px' }
-const text = { fontSize: '15px', color: 'hsl(0, 0%, 25%)', lineHeight: '1.6', margin: '0 0 16px' }
-const link = { color: 'hsl(168, 100%, 36%)', textDecoration: 'underline' }
-const footer = { fontSize: '12px', color: 'hsl(0, 0%, 45%)', margin: '32px 0 0' }
+const h1 = { fontSize: '24px', fontWeight: '700' as const, color: '#1a1a1a', margin: '0 0 20px' }
+const text = { fontSize: '15px', color: '#404040', lineHeight: '1.6', margin: '0 0 16px' }
+const link = { color: '#00B894', textDecoration: 'underline' }
+const footer = { fontSize: '12px', color: '#737373', margin: '32px 0 0' }
