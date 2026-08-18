@@ -75,5 +75,8 @@ const button = {
   borderRadius: '12px',
   padding: '14px 24px',
   textDecoration: 'none',
+  display: 'inline-block' as const,
+  textAlign: 'center' as const,
+  border: '1px solid #00B894',
 }
 const footer = { fontSize: '12px', color: '#737373', margin: '32px 0 0' }
