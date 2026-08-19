@@ -8,7 +8,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { LoginHomePreview } from "@/components/home/LoginHomePreview";
-import { LoginPartnersPreview } from "@/components/home/LoginPartnersPreview";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -163,7 +162,6 @@ export default function Login() {
 
       <div className="w-full max-w-2xl space-y-10">
         <LoginHomePreview />
-        <LoginPartnersPreview />
       </div>
     </div>
   );
