@@ -23,23 +23,21 @@ export const RecoveryEmail = ({
   confirmationUrl,
 }: RecoveryEmailProps) => (
   <Html lang="en" dir="ltr">
-    <Head>
-      <style>{darkModeCss}</style>
-    </Head>
+    <Head />
     <Preview>Reset your password for {siteName}</Preview>
     <Body style={main}>
       <Container style={container}>
         <Heading style={h1}>Reset your password</Heading>
         <Text style={text}>
           We received a request to reset your password for {siteName}. Click
-          the button below to choose a new password.
+          the button below to choose a new one.
         </Text>
-        <Button className="dm-btn" style={button} href={confirmationUrl}>
-          Reset Password
+        <Button style={button} href={confirmationUrl}>
+          Reset password
         </Button>
         <Text style={footer}>
-          If you didn't request a password reset, you can safely ignore this
-          email. Your password will not be changed.
+          If you didn't request this, you can safely ignore this email — your
+          password won't change.
         </Text>
       </Container>
     </Body>
@@ -48,35 +46,30 @@ export const RecoveryEmail = ({
 
 export default RecoveryEmail
 
-const main = { backgroundColor: '#ffffff', fontFamily: 'Arial, sans-serif' }
-const container = { padding: '20px 25px' }
+const main = { backgroundColor: '#ffffff', fontFamily: "'Montserrat', Arial, sans-serif" }
+const container = { padding: '32px 28px', maxWidth: '560px' }
 const h1 = {
-  fontSize: '22px',
-  fontWeight: 'bold' as const,
-  color: '#000000',
+  fontSize: '24px',
+  fontWeight: '700' as const,
+  color: '#1a1a1a',
   margin: '0 0 20px',
 }
 const text = {
-  fontSize: '14px',
-  color: '#55575d',
-  lineHeight: '1.5',
-  margin: '0 0 25px',
+  fontSize: '15px',
+  color: '#404040',
+  lineHeight: '1.6',
+  margin: '0 0 24px',
 }
 const button = {
-  backgroundColor: '#000000',
+  backgroundColor: '#00B894',
   color: '#ffffff',
-  fontSize: '14px',
-  border: '1px solid #000000',
-  borderRadius: '8px',
-  padding: '12px 20px',
+  fontSize: '15px',
+  fontWeight: '600' as const,
+  borderRadius: '12px',
+  padding: '14px 24px',
   textDecoration: 'none',
+  display: 'inline-block' as const,
+  textAlign: 'center' as const,
+  border: '1px solid #00B894',
 }
-const footer = { fontSize: '12px', color: '#999999', margin: '30px 0 0' }
-// Rendered as a text child, which React may HTML-escape: keep this CSS free of >, &, and quotes.
-const darkModeCss = `
-  @media (prefers-color-scheme: dark) {
-    .dm-btn { background-color: #ffffff !important; color: #000000 !important; }
-  }
-  [data-ogsc] .dm-btn { background-color: #ffffff !important; color: #000000 !important; }
-  [data-ogsb] .dm-btn { background-color: #ffffff !important; color: #000000 !important; }
-`
+const footer = { fontSize: '12px', color: '#737373', margin: '32px 0 0' }
