@@ -8,7 +8,6 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import CheckEmail from "./pages/CheckEmail";
 import Subscribe from "./pages/Subscribe";
-import Unsubscribe from "./pages/Unsubscribe";
 import ResetPassword from "./pages/ResetPassword";
 import Home from "./pages/Home";
 import CheckoutReturn from "./pages/CheckoutReturn";
@@ -37,7 +36,6 @@ const App = () => (
           <Route path="/signup" element={<Signup />} />
           <Route path="/check-email" element={<CheckEmail />} />
           <Route path="/subscribe" element={<Subscribe />} />
-          <Route path="/unsubscribe" element={<Unsubscribe />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/checkout/return" element={<CheckoutReturn />} />
           <Route
