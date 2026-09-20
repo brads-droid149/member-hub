@@ -50,22 +50,6 @@ async function getAdminEmails(): Promise<string[]> {
   return [...new Set(emails)]
 }
 
-// The email API rejects transactional sends without an unsubscribe token,
-// so admins get one too (they simply never see the footer link used).
-async function getOrCreateUnsubscribeToken(email: string): Promise<string> {
-  const lower = email.toLowerCase()
-  const { data: existing } = await supabase
-    .from('email_unsubscribe_tokens')
-    .select('token')
-    .eq('email', lower)
-    .maybeSingle()
-  if (existing?.token) return existing.token as string
-  const token = crypto.randomUUID().replace(/-/g, '') + crypto.randomUUID().replace(/-/g, '')
-  await supabase.from('email_unsubscribe_tokens').insert({ email: lower, token })
-  return token
-}
-
-
 async function sendAlertEmail(payload: {
   newIssues: Issue[]
   ongoingIssues: Issue[]
@@ -79,48 +63,51 @@ async function sendAlertEmail(payload: {
   }
 
   // Dynamic import keeps @react-email out of the module graph unless we send.
-  const { renderAdminAlert } = await import('../_shared/admin-alert-email.ts')
-  const { html, text } = await renderAdminAlert({
+  const { sendTemplateEmail } = await import(
+    '../_shared/transactional-email-templates/send-email.ts'
+  )
+
+  const templateData = {
     siteName: SITE_NAME,
     adminUrl: `${SITE_URL}/admin`,
     ...payload,
-  })
-
-
-  const criticalCount = payload.newIssues.filter((i) => i.severity === 'critical').length
-  const subject = payload.newIssues.length > 0
-    ? `${criticalCount > 0 ? '🚨' : '⚠️'} ${SITE_NAME}: ${payload.newIssues.length} issue(s) detected`
-    : `✅ ${SITE_NAME}: ${payload.resolvedIssues.length} issue(s) resolved`
+  }
 
   let sent = 0
   for (const to of recipients) {
-    const messageId = crypto.randomUUID()
-    await supabase.from('email_send_log').insert({
-      message_id: messageId,
-      template_name: 'admin-system-alert',
-      recipient_email: to,
-      status: 'pending',
-    })
-    const { error } = await supabase.rpc('enqueue_email', {
-      queue_name: 'transactional_emails',
-      payload: {
-        message_id: messageId,
-        to,
-        from: `${SITE_NAME} Alerts <noreply@${FROM_DOMAIN}>`,
-        sender_domain: SENDER_DOMAIN,
-        subject,
-        html,
-        text,
-        purpose: 'transactional',
-        idempotency_key: messageId,
-        label: 'admin-system-alert',
-        unsubscribe_token: await getOrCreateUnsubscribeToken(to),
-        queued_at: new Date().toISOString(),
-
-      },
-    })
-    if (error) console.error('system-health-check enqueue failed', { to, error })
-    else sent++
+    try {
+      const result = await sendTemplateEmail('admin-system-alert', to, {
+        templateData,
+        idempotencyKey: `admin-system-alert-${payload.generatedAt}-${to}`,
+      })
+      if (!result.sent) {
+        const { error } = await supabase.from('email_send_log').insert({
+          template_name: 'admin-system-alert',
+          recipient_email: to,
+          status: 'suppressed',
+          error_message: 'Recipient suppressed',
+        })
+        if (error) console.error('email_send_log insert failed', { error })
+        continue
+      }
+      const { error } = await supabase.from('email_send_log').insert({
+        template_name: 'admin-system-alert',
+        recipient_email: to,
+        status: 'sent',
+      })
+      if (error) console.error('email_send_log insert failed', { error })
+      sent++
+    } catch (e) {
+      const message = e instanceof Error ? e.message : String(e)
+      console.error('system-health-check send failed', { message })
+      const { error } = await supabase.from('email_send_log').insert({
+        template_name: 'admin-system-alert',
+        recipient_email: to,
+        status: 'failed',
+        error_message: message.slice(0, 1000),
+      })
+      if (error) console.error('email_send_log insert failed', { error })
+    }
   }
   return sent
 }
