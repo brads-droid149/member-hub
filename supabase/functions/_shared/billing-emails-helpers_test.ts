@@ -1,11 +1,7 @@
-import { assertEquals, assertMatch } from 'jsr:@std/assert@1'
+import { assertEquals } from 'jsr:@std/assert@1'
 import {
-  buildEnqueuePayload,
-  FROM_DOMAIN,
   getSubjectAndLabel,
   pickFirstName,
-  SENDER_DOMAIN,
-  SITE_NAME,
   SUBJECTS,
 } from './billing-emails-helpers.ts'
 

@@ -53,33 +53,3 @@ export function getSubjectAndLabel(
   }
 }
 
-/** Build the queue payload — everything except the rendered html/text body. */
-export function buildEnqueuePayload(opts: {
-  messageId: string
-  email: string
-  subject: string
-  label: string
-  html: string
-  text: string
-  unsubscribeToken: string
-  queuedAt?: string
-}) {
-  return {
-    queue_name: 'transactional_emails' as const,
-    payload: {
-      message_id: opts.messageId,
-      to: opts.email,
-      from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
-      sender_domain: SENDER_DOMAIN,
-      subject: opts.subject,
-      html: opts.html,
-      text: opts.text,
-      purpose: 'transactional' as const,
-      // Required by the email API for app emails (no run_id).
-      idempotency_key: opts.messageId,
-      label: opts.label,
-      unsubscribe_token: opts.unsubscribeToken,
-      queued_at: opts.queuedAt ?? new Date().toISOString(),
-    },
-  }
-}
