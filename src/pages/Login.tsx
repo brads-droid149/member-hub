@@ -160,6 +160,18 @@ export default function Login() {
         </CardContent>
       </Card>
 
+      <div className="w-full max-w-md rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-center">
+        <p className="text-[15px] leading-relaxed">
+          <span className="font-bold text-foreground">New here?</span>{" "}
+          <span className="font-medium text-muted-foreground">
+            Sign up for a free account to have a look around the club.
+          </span>{" "}
+          <Link to="/signup" className="font-medium text-primary hover:underline">
+            Sign up
+          </Link>
+        </p>
+      </div>
+
       <div className="w-full max-w-2xl space-y-10">
         <LoginHomePreview />
       </div>
