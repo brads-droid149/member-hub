@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -140,10 +140,7 @@ export default function Login() {
             )}
 
             <p className="text-sm text-center text-muted-foreground">
-              No account?{" "}
-              <Link to="/signup" className="text-primary hover:underline">
-                Sign up
-              </Link>
+              Membership signups are currently closed.
             </p>
 
             <p className="text-xs text-center">
@@ -159,18 +156,6 @@ export default function Login() {
           </form>
         </CardContent>
       </Card>
-
-      <div className="w-full max-w-md rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-center">
-        <p className="text-[15px] leading-relaxed">
-          <span className="font-bold text-foreground">New here?</span>{" "}
-          <span className="font-medium text-muted-foreground">
-            Sign up for a free account to have a look around the club.
-          </span>{" "}
-          <Link to="/signup" className="font-medium text-primary hover:underline">
-            Sign up
-          </Link>
-        </p>
-      </div>
 
       <div className="w-full max-w-2xl space-y-10">
         <LoginHomePreview />

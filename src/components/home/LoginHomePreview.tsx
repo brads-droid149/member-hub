@@ -157,13 +157,9 @@ export function LoginHomePreview() {
       </div>
 
       {/* 4. CTA */}
-      <Button
-        asChild
-        size="lg"
-        className="w-full rounded-full text-lg font-bold border-2 border-background hover:opacity-90 transition-opacity"
-      >
-        <Link to="/signup">Join the Club Here Now</Link>
-      </Button>
+      <p className="text-center text-sm font-medium text-muted-foreground">
+        Membership signups are currently closed.
+      </p>
     </section>
   );
 }
