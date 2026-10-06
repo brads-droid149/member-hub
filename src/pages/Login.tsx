@@ -140,10 +140,7 @@ export default function Login() {
             )}
 
             <p className="text-sm text-center text-muted-foreground">
-              No account?{" "}
-              <Link to="/signup" className="text-primary hover:underline">
-                Sign up
-              </Link>
+              Membership signups are currently closed.
             </p>
 
             <p className="text-xs text-center">
