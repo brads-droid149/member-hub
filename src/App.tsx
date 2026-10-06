@@ -5,7 +5,6 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Loader2 } from "lucide-react";
 import Login from "./pages/Login";
-import Signup from "./pages/Signup";
 import CheckEmail from "./pages/CheckEmail";
 import Subscribe from "./pages/Subscribe";
 import ResetPassword from "./pages/ResetPassword";
