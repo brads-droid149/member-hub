@@ -10,18 +10,12 @@ const json = (b: unknown, status = 200) =>
 
 Deno.serve(async (req) => {
   const token = req.headers.get("Authorization")?.replace("Bearer ", "") ?? "";
-  // Prove the caller holds a service-role credential: only service role can
-  // read email_send_state (RLS). The database verifies the token signature.
-  let ok = false;
-  if (token.length > 20) {
-    const probe = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, {
-      global: { headers: { Authorization: `Bearer ${token}` } },
-      auth: { persistSession: false },
-    });
-    const { data } = await probe.from("email_send_state").select("id").limit(1);
-    ok = Array.isArray(data) && data.length > 0;
-  }
-  if (!ok) return json({ error: "Unauthorized" }, 401);
+  // Admin-only: verify the caller's session and admin role.
+  const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+  const { data: { user } } = await admin.auth.getUser(token);
+  if (!user) return json({ error: "Unauthorized" }, 401);
+  const { data: isAdmin } = await admin.rpc("has_role", { _user_id: user.id, _role: "admin" });
+  if (!isAdmin) return json({ error: "Forbidden" }, 403);
 
   const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
   const stripe = createStripeClient("live");
