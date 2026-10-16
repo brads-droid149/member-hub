@@ -182,6 +182,12 @@ export async function handler(req: Request): Promise<Response> {
   if (req.method !== "POST") {
     return new Response("Method not allowed", { status: 405, headers: corsHeaders });
   }
+  // Club has closed — no new payments are accepted.
+  return new Response(JSON.stringify({ error: "Junkyard Surf Club has closed. No new memberships are being accepted." }), {
+    status: 403,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+  // deno-lint-ignore no-unreachable
   try {
     const authHeader = req.headers.get("Authorization");
     const token = authHeader?.replace("Bearer ", "");

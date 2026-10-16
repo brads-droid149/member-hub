@@ -13,6 +13,7 @@ import { template as billingDunning } from './billing-dunning.tsx'
 import { template as billingCancelled } from './billing-cancelled.tsx'
 import { template as billingReceipt } from './billing-receipt.tsx'
 import { template as adminSystemAlert } from './admin-system-alert.tsx'
+import { template as clubClosure } from './club-closure.tsx'
 
 /**
  * Template registry — maps template names to their React Email components.
@@ -23,4 +24,5 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'billing-cancelled': billingCancelled,
   'billing-receipt': billingReceipt,
   'admin-system-alert': adminSystemAlert,
+  'club-closure': clubClosure,
 }
