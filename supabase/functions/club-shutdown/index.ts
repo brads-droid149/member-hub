@@ -10,7 +10,10 @@ const json = (b: unknown, status = 200) =>
 
 Deno.serve(async (req) => {
   const token = req.headers.get("Authorization")?.replace("Bearer ", "") ?? "";
-  if (!token || token !== Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")) return json({ error: "Unauthorized" }, 401);
+  const secretKeys = Deno.env.get("SUPABASE_SECRET_KEYS") ?? "";
+  const ok = token.length > 20 &&
+    (token === Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || secretKeys.includes(`"${token}"`));
+  if (!ok) return json({ error: "Unauthorized" }, 401);
 
   const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
   const stripe = createStripeClient("live");
